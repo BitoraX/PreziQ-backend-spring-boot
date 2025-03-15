@@ -1,4 +1,4 @@
-# ** PriziQ! - Nền tảng học tập tương tác theo mô hình Game-Based Learning**
+# ** PriziQ! - Nền tảng học tập tương tác theo mô hình Game-Based Learning **
 
 Ứng dụng Java Spring Boot kết hợp PostgreSQL, Maven, STOMP, Docker,...
 

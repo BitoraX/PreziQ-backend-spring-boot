@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Xác thực tài khoản</title>
+</head>
+<body style="margin:0; padding:0; font-family: 'Trebuchet MS', Arial, Helvetica, sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="background: linear-gradient(to bottom, #71C9CE, #A6E3E9, #CBF1F5, #E3FDFD);">
+    <tr>
+        <td align="center" style="padding: 2rem 0;">
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                <tr>
+                    <td align="center"
+                        style="font-size: 24px;
+                               color: #71C9CE;
+                               font-weight: bold;
+                               border-bottom: 2px solid #71C9CE;
+                               padding-bottom: 10px;">
+                        XÁC THỰC TÀI KHOẢN CỦA BẠN
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 20px; font-size: 16px; color: #333333;">
+                        <p>Chào <strong th:text="${name}"></strong>,</p>
+                        <p>
+                            Cảm ơn bạn đã sử dụng nền tảng học tập tương tác của chúng tôi.
+                            Vui lòng nhấn vào nút dưới đây để xác thực tài khoản của bạn:
+                        </p>
+                        <p style="text-align: center;">
+                            <a th:href="${verifyEmailUrl}"
+                               style="display: inline-block;
+                                      margin: 30px auto;
+                                      padding: 12px 24px;
+                                      background: linear-gradient(to right, #71C9CE, #A6E3E9);
+                                      color: #ffffff;
+                                      text-decoration: none;
+                                      border-radius: 5px;
+                                      font-size: 16px;
+                                      font-weight: bold;">
+                                XÁC THỰC TÀI KHOẢN
+                            </a>
+                        </p>
+                        <p style="margin-bottom: 0;">
+                            Nếu bạn không phải là người đang thực hiện, vui lòng bỏ qua email này.
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: center; font-size: 14px; color: #666666; padding-top: 20px;">
+                        Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ chúng tôi qua email
+                        <a href="mailto:priziq.support@gmail.com"
+                           style="color: #71C9CE; text-decoration: none;">
+                            priziq@support.gmail.com
+                        </a>.
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: center; font-size: 18px; color: #333333; padding-top: 20px; padding-bottom: 20px;">
+                        <p style="margin: 0; font-weight: bold; color: #71C9CE;">
+                            Đội ngũ hỗ trợ
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
