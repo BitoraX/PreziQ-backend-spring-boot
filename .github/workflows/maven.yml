@@ -22,7 +22,7 @@ jobs:
       - name: Create .env file from secret
         run: echo "${{ secrets.PROD_ENV_FILE }}" > .env
 
-      - name: Build with Maven (skip tests)
+      - name: Build with Maven (skip tests to save time)
         run: mvn -B clean package -DskipTests -T 1C --no-transfer-progress --file pom.xml
 
       - name: Stop and clean previous PM2 process
