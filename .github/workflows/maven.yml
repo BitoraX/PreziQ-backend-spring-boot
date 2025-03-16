@@ -27,17 +27,17 @@ jobs:
 
       - name: Stop and clean previous PM2 process
         run: |
-          if pm2 list | grep -q swiftera; then
+          if pm2 list | grep -q priziq; then
             echo "Stopping and deleting old process..."
-            pm2 stop swiftera || true
-            pm2 delete swiftera || true
+            pm2 stop priziq || true
+            pm2 delete priziq || true
           else
             echo "No existing process found, skipping cleanup"
           fi
 
       - name: Start application with PM2
         run: |
-          pm2 start --name swiftera "java -jar ./target/Swiftera-0.0.1-SNAPSHOT.jar"
+          pm2 start --name priziq "java -jar ./target/PriziQ-0.0.1-SNAPSHOT.jar"
 
       - name: Verify running process
         run: |
