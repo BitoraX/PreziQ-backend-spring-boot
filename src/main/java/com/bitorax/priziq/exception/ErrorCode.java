@@ -92,7 +92,7 @@ public enum ErrorCode {
     PERMISSION_MODULE_NAME_EXISTED(1413, HttpStatus.CONFLICT, "Tên module đã tồn tại trên hệ thống, vui lòng sử dụng tên khác"),
     PERMISSION_MODULE_NAME_INVALID(1414, HttpStatus.BAD_REQUEST, "Tên module không hợp lệ, vui lòng sử dụng tên khác"),
 
-    // Module upload files
+    // Module upload files errors
     FILE_NOT_FOUND(1501, HttpStatus.NOT_FOUND, "Không tìm thấy file trên hệ thống"),
     FILE_UPLOAD_FAILED(1502, HttpStatus.INTERNAL_SERVER_ERROR, "Tải lên file thất bại, vui lòng thử lại"),
     FILE_TYPE_NOT_ALLOWED(1503, HttpStatus.BAD_REQUEST, "Loại file không được phép, vui lòng kiểm tra lại"),
@@ -111,6 +111,10 @@ public enum ErrorCode {
     EMPTY_SOURCE_KEY(1516, HttpStatus.BAD_REQUEST, "Đường dẫn file nguồn (sourceKey) không được để trống"),
     EMPTY_SOURCE_LIST(1517, HttpStatus.BAD_REQUEST, "Danh sách file nguồn (sourceKeys) không được để trống"),
     DESTINATION_FOLDER_EMPTY(1518, HttpStatus.BAD_REQUEST, "Tên thư mục đích (destinationFolder) không được để trống"),
+
+    // Module collection errors
+    COLLECTION_TITLE_NOT_BLANK(1601, HttpStatus.BAD_REQUEST, "Tiêu đề của bộ sưu tập không được để trống"),
+    COLLECTION_NOT_FOUND(1602, HttpStatus.NOT_FOUND, "Không tìm thấy bộ sưu tập trên hệ thống")
 
     ;
 
