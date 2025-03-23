@@ -138,7 +138,8 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Di chuyển nhiều file từ nhiều thư mục sang một thư mục mới", "/api/v1/storage/aws-s3/move/multiple", "PUT", "FILES"),
 
                         // Module Collections
-                        new Permission("Tạo mới một bộ sưu tập", "/api/v1/collections", "POST", "COLLECTIONS")
+                        new Permission("Tạo mới một bộ sưu tập", "/api/v1/collections", "POST", "COLLECTIONS"),
+                        new Permission("Lấy một bộ sưu tập", "/api/v1/collections/{id}", "GET", "COLLECTIONS")
                 );
         }
 

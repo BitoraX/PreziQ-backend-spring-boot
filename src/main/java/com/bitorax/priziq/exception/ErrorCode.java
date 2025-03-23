@@ -114,6 +114,7 @@ public enum ErrorCode {
 
     // Module collection errors
     COLLECTION_TITLE_NOT_BLANK(1601, HttpStatus.BAD_REQUEST, "Tiêu đề của bộ sưu tập không được để trống"),
+    COLLECTION_NOT_FOUND(1602, HttpStatus.NOT_FOUND, "Không tìm thấy bộ sưu tập trên hệ thống")
 
     ;
 

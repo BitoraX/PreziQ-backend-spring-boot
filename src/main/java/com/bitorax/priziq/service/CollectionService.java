@@ -5,4 +5,6 @@ import com.bitorax.priziq.dto.response.collection.CollectionResponse;
 
 public interface CollectionService {
     CollectionResponse createCollection(CreateCollectionRequest createCollectionRequest);
+
+    CollectionResponse getCollectionById(String collectionId);
 }

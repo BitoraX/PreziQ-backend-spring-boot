@@ -3,6 +3,8 @@ package com.bitorax.priziq.service.implement;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionResponse;
+import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
 import com.bitorax.priziq.repository.CollectionRepository;
 import com.bitorax.priziq.service.CollectionService;
@@ -24,5 +26,10 @@ public class CollectionServiceImp implements CollectionService {
     public CollectionResponse createCollection(CreateCollectionRequest createCollectionRequest){
         Collection collection = collectionMapper.createCollectionRequestToCollection(createCollectionRequest);
         return collectionMapper.collectionToResponse(collectionRepository.save(collection));
+    }
+
+    @Override
+    public CollectionResponse getCollectionById(String collectionId){
+        return collectionMapper.collectionToResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND)));
     }
 }
