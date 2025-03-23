@@ -114,10 +114,8 @@ public class PermissionServiceImp implements PermissionService {
     }
 
     @Override
-    public PermissionResponse updatePermissionById(String permissionId,
-            UpdatePermissionRequest updatePermissionRequest) {
-        Permission currentPermission = this.permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+    public PermissionResponse updatePermissionById(String permissionId, UpdatePermissionRequest updatePermissionRequest) {
+        Permission currentPermission = this.permissionRepository.findById(permissionId).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
 
         String newHttpMethod = updatePermissionRequest.getHttpMethod();
         if (newHttpMethod != null) {
@@ -146,8 +144,7 @@ public class PermissionServiceImp implements PermissionService {
 
     @Override
     public void deletePermissionById(String permissionId) {
-        Permission currentPermission = this.permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+        Permission currentPermission = this.permissionRepository.findById(permissionId).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
 
         currentPermission.getRoles().forEach(role -> role.getPermissions().remove(currentPermission));
         currentPermission.getRoles().clear();
