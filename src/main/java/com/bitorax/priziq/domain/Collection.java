@@ -3,8 +3,6 @@ package com.bitorax.priziq.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -27,7 +25,5 @@ public class Collection extends BaseEntity {
     @Builder.Default
     Boolean isPublished = false;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    String media;
+    String coverImage;
 }

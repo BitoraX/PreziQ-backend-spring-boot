@@ -135,7 +135,10 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Xóa một file trên AWS S3", "/api/v1/storage/aws-s3/delete/single", "DELETE", "FILES"),
                         new Permission("Xóa nhiều file trên AWS S3", "/api/v1/storage/aws-s3/upload/multiple", "DELETE", "FILES"),
                         new Permission("Di chuyển một file từ một thư mục sang một thư mục mới", "/api/v1/storage/aws-s3/move/single", "PUT", "FILES"),
-                        new Permission("Di chuyển nhiều file từ nhiều thư mục sang một thư mục mới", "/api/v1/storage/aws-s3/move/multiple", "PUT", "FILES")
+                        new Permission("Di chuyển nhiều file từ nhiều thư mục sang một thư mục mới", "/api/v1/storage/aws-s3/move/multiple", "PUT", "FILES"),
+
+                        // Module Collections
+                        new Permission("Tạo mới một bộ sưu tập", "/api/v1/collections", "POST", "COLLECTIONS")
                 );
         }
 
@@ -151,6 +154,8 @@ public class DataInitializer implements ApplicationRunner {
                         .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
                 List<Permission> moduleFileAllPermissions = permissionRepository.findByModule("FILES")
                         .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
+                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
                 // Permission for role admin
                 List<Permission> adminRolePermissions = combinePermissions(
@@ -159,7 +164,8 @@ public class DataInitializer implements ApplicationRunner {
                                 moduleUserAllPermissions,
                                 moduleRoleAllPermissions,
                                 modulePermissionAllPermissions,
-                                moduleFileAllPermissions
+                                moduleFileAllPermissions,
+                                moduleCollectionAllPermissions
                         )
                 );
 
