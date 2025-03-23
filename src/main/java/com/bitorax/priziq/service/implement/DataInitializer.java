@@ -139,7 +139,10 @@ public class DataInitializer implements ApplicationRunner {
 
                         // Module Collections
                         new Permission("Tạo mới một bộ sưu tập", "/api/v1/collections", "POST", "COLLECTIONS"),
-                        new Permission("Lấy một bộ sưu tập", "/api/v1/collections/{id}", "GET", "COLLECTIONS")
+                        new Permission("Lấy một bộ sưu tập", "/api/v1/collections/{id}", "GET", "COLLECTIONS"),
+                        new Permission("Cập nhật thông tin một bộ sưu tập", "/api/v1/collections/{id}", "PATCH", "COLLECTIONS"),
+                        new Permission("Lấy thông tin tất cả bộ sưu tập với điều kiện truy vấn", "/api/v1/collections", "GET", "COLLECTIONS"),
+                        new Permission("Xóa một bộ sưu tập", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS")
                 );
         }
 
