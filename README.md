@@ -18,7 +18,7 @@ Trước khi chạy dự án, hãy đảm bảo bạn đã cài đặt các côn
 
 3. **Cơ sở dữ liệu PostgreSQL**
    - Đảm bảo PostgreSQL đã được cài đặt và đang chạy.
-   - Tạo cơ sở dữ liệu cho dự án (mặc định: `priziq`).
+   - Tạo cơ sở dữ liệu cho dự án (mặc định: `preziq`).
 
 4. **Git**
    - [Tải Git tại đây](https://git-scm.com/downloads)
@@ -45,13 +45,13 @@ cd PreziQ-backend-spring-boot
    ```yaml
    spring:
      datasource:
-       url: jdbc:postgresql://localhost:5432/priziq
+       url: jdbc:postgresql://localhost:5432/preziq
        username: tên_đăng_nhập_postgresql
        password: mật_khẩu_postgresql
    ```
 3. Tạo cơ sở dữ liệu nếu chưa có:
    ```sql
-   CREATE DATABASE priziq;
+   CREATE DATABASE preziq;
    ```
 
 ### **Bước 3: Build dự án**
@@ -70,7 +70,7 @@ mvn spring-boot:run
 
 Hoặc chạy file JAR đã được build:
 ```bash
-java -jar target/priziq-0.0.1-SNAPSHOT.jar
+java -jar target/preziq-0.0.1-SNAPSHOT.jar
 ```
 
 ---
@@ -118,7 +118,7 @@ mvn test
 }
 ```
 
-### **2. Lỗi (Validation hoặc Service Error)**
+### **2. Lỗi (Validation / DTO Error)**
 
 ```json
 {
@@ -151,7 +151,7 @@ mvn test
   "success": false,
   "errors": [
     {
-      "code": 1000,
+      "code": 1002,
       "message": "Cannot update this record"
     }
   ],
@@ -161,6 +161,20 @@ mvn test
   }
 }
 ```
+
+### **Giải thích các trường trong response:**
+
+- `success`: Boolean, xác định request thành công hay thất bại.
+- `message`: Mô tả ngắn gọn khi `success = true`, dùng cho thông báo frontend.
+- `data`: Payload trả về từ server khi request thành công.
+- `errors`: Danh sách lỗi trả về khi request thất bại. Có thể là lỗi DTO hoặc lỗi service.
+   - `resource`: Tên entity bị lỗi (chỉ áp dụng với lỗi DTO).
+   - `field`: Tên trường cụ thể gây lỗi (chỉ áp dụng với lỗi DTO).
+   - `code`: Mã lỗi nội bộ giúp frontend xử lý logic.
+   - `message`: Mô tả chi tiết lỗi để hiển thị cho người dùng hoặc debug.
+- `meta`: Thông tin bổ sung cho phản hồi.
+   - `timestamp`: Thời điểm server xử lý response (ISO-8601).
+   - `instance`: API endpoint tương ứng với request.
 
 ---
 
