@@ -17,8 +17,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,70 +27,60 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RequestMapping("/api/v1/roles")
 public class RoleController {
+
     RoleService roleService;
 
     @PostMapping
-    ApiResponse<RoleResponse> createRole(@RequestBody @Valid CreateRoleRequest createRoleRequest,
-            HttpServletRequest servletRequest) {
+    ApiResponse<RoleResponse> createRole(@RequestBody @Valid CreateRoleRequest createRoleRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<RoleResponse>builder()
-                .statusCode(HttpStatus.CREATED.value())
-                .message("Tạo mới vai trò thành công")
-                .data(this.roleService.createRole(createRoleRequest))
-                .path(servletRequest.getRequestURI())
+                .message("Role created successfully")
+                .data(roleService.createRole(createRoleRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @GetMapping("/{id}")
     ApiResponse<RoleResponse> getRoleById(@PathVariable("id") String roleId, HttpServletRequest servletRequest) {
         return ApiResponse.<RoleResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Lấy thông tin vai trò thành công")
-                .data(this.roleService.getRoleById(roleId))
-                .path(servletRequest.getRequestURI())
+                .message("Role retrieved successfully")
+                .data(roleService.getRoleById(roleId))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @GetMapping
-    ApiResponse<PaginationResponse> getAllRoleWithQuery(@Filter Specification<Role> spec, Pageable pageable,
-            HttpServletRequest servletRequest) {
+    ApiResponse<PaginationResponse> getAllRoleWithQuery(@Filter Specification<Role> spec, Pageable pageable, HttpServletRequest servletRequest) {
         return ApiResponse.<PaginationResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Lấy thông tin tất cả vai trò với điều kiện truy vấn thành công")
-                .data(this.roleService.getAllRoleWithQuery(spec, pageable))
-                .path(servletRequest.getRequestURI())
+                .message("Roles retrieved successfully with query filters")
+                .data(roleService.getAllRoleWithQuery(spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PatchMapping("/{id}")
-    ApiResponse<RoleResponse> updateRoleById(@PathVariable("id") String roleId,
-            @RequestBody UpdateRoleRequest updateRoleRequest, HttpServletRequest servletRequest) {
+    ApiResponse<RoleResponse> updateRoleById(@PathVariable("id") String roleId, @RequestBody UpdateRoleRequest updateRoleRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<RoleResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Cập nhật thông tin vai trò thành công")
-                .data(this.roleService.updateRoleById(roleId, updateRoleRequest))
-                .path(servletRequest.getRequestURI())
+                .message("Role updated successfully")
+                .data(roleService.updateRoleById(roleId, updateRoleRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @DeleteMapping("/{id}/permissions")
-    ApiResponse<Void> deletePermissionFromRole(@PathVariable("id") String roleId,
-            @RequestBody DeletePermissionFromRoleRequest deletePermissionFromRoleRequest,
-            HttpServletRequest servletRequest) {
-        this.roleService.deletePermissionFromRole(roleId, deletePermissionFromRoleRequest);
+    ApiResponse<Void> deletePermissionFromRole(@PathVariable("id") String roleId, @RequestBody DeletePermissionFromRoleRequest deletePermissionFromRoleRequest, HttpServletRequest servletRequest) {
+        roleService.deletePermissionFromRole(roleId, deletePermissionFromRoleRequest);
         return ApiResponse.<Void>builder()
-                .statusCode(HttpStatus.NO_CONTENT.value())
-                .message("Xóa quyền hạn khỏi vai trò thành công")
-                .path(servletRequest.getRequestURI())
+                .message("Permission removed from role successfully")
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @DeleteMapping("/{id}")
     ApiResponse<Void> deleteRoleById(@PathVariable("id") String roleId, HttpServletRequest servletRequest) {
-        this.roleService.deleteRoleById(roleId);
+        roleService.deleteRoleById(roleId);
         return ApiResponse.<Void>builder()
-                .statusCode(HttpStatus.NO_CONTENT.value())
-                .message("Xóa vai trò thành công")
-                .path(servletRequest.getRequestURI())
+                .message("Role deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 }

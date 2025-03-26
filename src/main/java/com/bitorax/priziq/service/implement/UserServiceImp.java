@@ -4,7 +4,7 @@ import com.bitorax.priziq.constant.RegionType;
 import com.bitorax.priziq.domain.Role;
 import com.bitorax.priziq.dto.request.auth.VerifyEmailRequest;
 import com.bitorax.priziq.dto.request.user.*;
-import com.bitorax.priziq.dto.response.common.MetaResponse;
+import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.user.UserResponse;
 import com.bitorax.priziq.dto.response.user.UserSecureResponse;
@@ -116,7 +116,7 @@ public class UserServiceImp implements UserService {
         User userAuthenticated = this.securityUtils.getAuthenticatedUser();
 
         return PaginationResponse.builder()
-                .meta(MetaResponse.builder()
+                .meta(PaginationMeta.builder()
                         .currentPage(pageable.getPageNumber() + 1) // base-index = 0
                         .pageSize(pageable.getPageSize())
                         .totalPages(userPage.getTotalPages())

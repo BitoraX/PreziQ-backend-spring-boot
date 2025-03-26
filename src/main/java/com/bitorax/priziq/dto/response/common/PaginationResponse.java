@@ -11,6 +11,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PaginationResponse {
-    MetaResponse meta;
+    PaginationMeta meta;
     Object content;
 }

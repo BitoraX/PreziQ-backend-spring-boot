@@ -16,8 +16,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,55 +25,51 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RequestMapping("/api/v1/collections")
 public class CollectionController {
+
     CollectionService collectionService;
 
     @PostMapping
     ApiResponse<CollectionResponse> createCollection(@RequestBody @Valid CreateCollectionRequest createCollectionRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<CollectionResponse>builder()
-                .statusCode(HttpStatus.CREATED.value())
-                .message("Tạo mới bộ sưu tập thành công")
-                .data(this.collectionService.createCollection(createCollectionRequest))
-                .path(servletRequest.getRequestURI())
+                .message("Collection created successfully")
+                .data(collectionService.createCollection(createCollectionRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PatchMapping("/{id}")
     ApiResponse<CollectionResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable("id") String collectionId, HttpServletRequest servletRequest) {
         return ApiResponse.<CollectionResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Cập nhật thông tin bộ sưu tập thành công")
+                .message("Collection updated successfully")
                 .data(collectionService.updateCollectionById(collectionId, updateCollectionRequest))
-                .path(servletRequest.getRequestURI())
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @GetMapping("/{id}")
     ApiResponse<CollectionResponse> getCollectionById(@PathVariable("id") String collectionId, HttpServletRequest servletRequest) {
         return ApiResponse.<CollectionResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Lấy thông tin một bộ sưu tập thành công")
-                .data(this.collectionService.getCollectionById(collectionId))
-                .path(servletRequest.getRequestURI())
+                .message("Collection retrieved successfully")
+                .data(collectionService.getCollectionById(collectionId))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @GetMapping
     ApiResponse<PaginationResponse> getAllCollectionWithQuery(@Filter Specification<Collection> spec, Pageable pageable, HttpServletRequest servletRequest) {
         return ApiResponse.<PaginationResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Lấy tất cả thông tin bộ sưu tập với điều kiện truy vấn thành công")
-                .data(this.collectionService.getAllCollectionWithQuery(spec, pageable))
-                .path(servletRequest.getRequestURI())
+                .message("Collections retrieved successfully with query filters")
+                .data(collectionService.getAllCollectionWithQuery(spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @DeleteMapping("/{id}")
     ApiResponse<Void> deleteCollectionById(@PathVariable("id") String collectionId, HttpServletRequest servletRequest) {
-        this.collectionService.deleteCollectionById(collectionId);
+        collectionService.deleteCollectionById(collectionId);
         return ApiResponse.<Void>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Xóa bộ sưu tập thành công")
-                .path(servletRequest.getRequestURI())
+                .message("Collection deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 }
