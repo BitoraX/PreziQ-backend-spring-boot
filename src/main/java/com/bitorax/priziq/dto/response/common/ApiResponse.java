@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -16,16 +15,12 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL) // if field equal null, don't appear in body response
 public class ApiResponse<T> {
     @Builder.Default
-    int code = 1000;
+    Boolean success = true;
 
-    int statusCode;
-    String message;
-
+    String message; // success request
     T data; // success request
+
     List<ErrorDetail> errors; // fail request
 
-    @Builder.Default
-    Instant timestamp = Instant.now();
-
-    String path;
+    MetaInfo meta;
 }

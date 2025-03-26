@@ -1,7 +1,9 @@
 package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.response.common.ApiResponse;
+import com.bitorax.priziq.dto.response.common.MetaInfo;
 import com.bitorax.priziq.exception.ErrorCode;
+import com.bitorax.priziq.exception.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -14,31 +16,38 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException authException) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         ErrorCode errorCode = ErrorCode.DECODE_INVALID_TOKEN;
 
-        ApiResponse<Object> apiResponse = ApiResponse.builder()
+        MetaInfo meta = MetaInfo.builder()
+                .timestamp(Instant.now().toString())
+                .instance(request.getRequestURI())
+                .build();
+
+        ErrorDetail errorDetail = ErrorDetail.builder()
                 .code(errorCode.getCode())
-                .statusCode(errorCode.getStatusCode().value())
                 .message(errorCode.getMessage())
-                .timestamp(Instant.now())
-                .path(request.getRequestURI())
+                .build();
+
+        ApiResponse<Object> apiResponse = ApiResponse.builder()
+                .success(false)
+                .errors(List.of(errorDetail))
+                .meta(meta)
                 .build();
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // write date, hour as string ISO-8601
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         response.setStatus(errorCode.getStatusCode().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE); // "application/json"
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponse)); // convert object to string
-        response.flushBuffer(); // send this response to client immediate
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.flushBuffer();
     }
-
 }

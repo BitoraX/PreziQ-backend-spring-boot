@@ -6,7 +6,7 @@ import com.bitorax.priziq.domain.Role;
 import com.bitorax.priziq.dto.request.role.CreateRoleRequest;
 import com.bitorax.priziq.dto.request.role.DeletePermissionFromRoleRequest;
 import com.bitorax.priziq.dto.request.role.UpdateRoleRequest;
-import com.bitorax.priziq.dto.response.common.MetaResponse;
+import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.role.RoleResponse;
 import com.bitorax.priziq.exception.AppException;
@@ -67,7 +67,7 @@ public class RoleServiceImp implements RoleService {
     public PaginationResponse getAllRoleWithQuery(Specification<Role> spec, Pageable pageable) {
         Page<Role> rolePage = this.roleRepository.findAll(spec, pageable);
         return PaginationResponse.builder()
-                .meta(MetaResponse.builder()
+                .meta(PaginationMeta.builder()
                         .currentPage(pageable.getPageNumber() + 1) // base-index = 0
                         .pageSize(pageable.getPageSize())
                         .totalPages(rolePage.getTotalPages())

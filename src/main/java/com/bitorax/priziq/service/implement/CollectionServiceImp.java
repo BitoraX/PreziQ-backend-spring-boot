@@ -4,7 +4,7 @@ import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionResponse;
-import com.bitorax.priziq.dto.response.common.MetaResponse;
+import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -43,7 +43,7 @@ public class CollectionServiceImp implements CollectionService {
     public PaginationResponse getAllCollectionWithQuery(Specification<Collection> spec, Pageable pageable) {
         Page<Collection> collectionPage = this.collectionRepository.findAll(spec, pageable);
         return PaginationResponse.builder()
-                .meta(MetaResponse.builder()
+                .meta(PaginationMeta.builder()
                         .currentPage(pageable.getPageNumber() + 1) // base-index = 0
                         .pageSize(pageable.getPageSize())
                         .totalPages(collectionPage.getTotalPages())

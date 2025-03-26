@@ -1,4 +1,4 @@
-package com.bitorax.priziq.exception;
+package com.bitorax.priziq.dto.response.common;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,9 +8,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ErrorDetail {
-    Integer code;
-    String message;
-    String field;
-    String resource; // model
+public class MetaInfo {
+    String timestamp;
+    String instance;
 }
