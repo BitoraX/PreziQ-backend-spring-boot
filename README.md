@@ -1,4 +1,4 @@
-# ** PriziQ! - Nền tảng học tập tương tác theo mô hình Game-Based Learning **
+# ** PreziQ! - Nền tảng học tập tương tác theo mô hình Game-Based Learning **
 
 Ứng dụng Java Spring Boot kết hợp PostgreSQL, Maven, STOMP, Docker,...
 
@@ -9,22 +9,22 @@
 Trước khi chạy dự án, hãy đảm bảo bạn đã cài đặt các công cụ sau:
 
 1. **Java Development Kit (JDK)**
-    - Phiên bản: 21 hoặc cao hơn
-    - [Tải JDK tại đây](https://www.oracle.com/java/technologies/javase-downloads.html)
+   - Phiên bản: 21 hoặc cao hơn
+   - [Tải JDK tại đây](https://www.oracle.com/java/technologies/javase-downloads.html)
 
 2. **Apache Maven**
-    - Phiên bản: 3.8.6 hoặc cao hơn
-    - [Tải Maven tại đây](https://maven.apache.org/download.cgi)
+   - Phiên bản: 3.8.6 hoặc cao hơn
+   - [Tải Maven tại đây](https://maven.apache.org/download.cgi)
 
 3. **Cơ sở dữ liệu PostgreSQL**
-    - Đảm bảo PostgreSQL đã được cài đặt và đang chạy.
-    - Tạo cơ sở dữ liệu cho dự án (mặc định: `priziq`).
+   - Đảm bảo PostgreSQL đã được cài đặt và đang chạy.
+   - Tạo cơ sở dữ liệu cho dự án (mặc định: `preziq`).
 
 4. **Git**
-    - [Tải Git tại đây](https://git-scm.com/downloads)
+   - [Tải Git tại đây](https://git-scm.com/downloads)
 
 5. **IDE (không bắt buộc)**
-    - IntelliJ IDEA hoặc Eclipse để phát triển dễ dàng hơn.
+   - IntelliJ IDEA hoặc Eclipse để phát triển dễ dàng hơn.
 
 ---
 
@@ -45,13 +45,13 @@ cd PreziQ-backend-spring-boot
    ```yaml
    spring:
      datasource:
-       url: jdbc:postgresql://localhost:5432/priziq
+       url: jdbc:postgresql://localhost:5432/preziq
        username: tên_đăng_nhập_postgresql
        password: mật_khẩu_postgresql
    ```
 3. Tạo cơ sở dữ liệu nếu chưa có:
    ```sql
-   CREATE DATABASE priziq;
+   CREATE DATABASE preziq;
    ```
 
 ### **Bước 3: Build dự án**
@@ -70,7 +70,7 @@ mvn spring-boot:run
 
 Hoặc chạy file JAR đã được build:
 ```bash
-java -jar target/priziq-0.0.1-SNAPSHOT.jar
+java -jar target/preziq-0.0.1-SNAPSHOT.jar
 ```
 
 ---
@@ -83,7 +83,7 @@ java -jar target/priziq-0.0.1-SNAPSHOT.jar
    ```
 
 2. Các API sẽ được cung cấp tại `/api/v1`. Ví dụ:
-    - Đăng nhập: `POST /api/v1/auth/login`
+   - Đăng nhập: `POST /api/v1/auth/login`
 
 ---
 
@@ -104,54 +104,77 @@ mvn test
 
 ```json
 {
-  "code": 1000,
-  "statusCode": 200,
-  "message": "Yêu cầu xử lý thành công",
+  "success": true,
+  "message": "Request processed successfully",
   "data": {
     "id": "12345",
     "name": "Quách Phú Thuận",
     "email": "thuanflu@example.com"
   },
-  "timestamp": "2024-12-28T15:00:00Z",
-  "path": "/api/v1/auth/login"
+  "meta": {
+    "timestamp": "2024-12-28T15:00:00Z",
+    "instance": "/api/v1/auth/login"
+  }
 }
 ```
 
-- **`code`**: Mã trạng thái nội bộ của hệ thống.
-- **`statusCode`**: Mã HTTP tiêu chuẩn.
-- **`message`**: Mô tả ngắn gọn về trạng thái thành công của request.
-- **`data`**: Payload chứa dữ liệu trả về.
-- **`timestamp`**: Thời gian phản hồi.
-- **`path`**: API đã yêu cầu thành công.
-
-### **2. Lỗi**
+### **2. Lỗi (Validation / DTO Error)**
 
 ```json
 {
-   "code": 1003,
-   "statusCode": 400,
-   "message": "Dữ liệu trong yêu cầu không hợp lệ. Vui lòng kiểm tra và thử lại",
-   "errors": [
-      {
-         "code": 1001,
-         "message": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt"
-      },
-      {
-         "code": 1002,
-         "message": "Tên phải là chuỗi ký tự"
-      }
-   ],
-   "timestamp": "2025-01-26T03:50:52.555Z",
-   "path": "/api/v1/auth/register"
+  "success": false,
+  "errors": [
+    {
+      "resource": "user",
+      "field": "email",
+      "code": 2000,
+      "message": "Email has already been taken"
+    },
+    {
+      "resource": "user",
+      "field": "password",
+      "code": 2001,
+      "message": "Password must be at least 8 characters"
+    }
+  ],
+  "meta": {
+    "timestamp": "2025-01-26T03:50:52.555Z",
+    "instance": "/api/v1/auth/register"
+  }
 }
 ```
 
-- **`statusCode`**: Mã HTTP tiêu chuẩn.
-- **`errors`**: Danh sách toàn bộ lỗi.
-- **`code`**: Mã trạng thái nội bộ của hệ thống.
-- **`message`**: Mô tả ngắn gọn về trạng thái lỗi của request.
-- **`timestamp`**: Thời gian lỗi xảy ra.
-- **`path`**: API gây lỗi.
+### **3. Lỗi nghiệp vụ từ Service / Filter**
+
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "code": 1002,
+      "message": "Cannot update this record"
+    }
+  ],
+  "meta": {
+    "timestamp": "2025-01-26T03:50:52.555Z",
+    "instance": "/api/v1/resource/123"
+  }
+}
+```
+
+### **Giải thích các trường trong response:**
+
+- `success`: Boolean, xác định request thành công hay thất bại.
+- `message`: Mô tả ngắn gọn khi `success = true`, dùng cho thông báo frontend.
+- `data`: Payload trả về từ server khi request thành công.
+- `errors`: Danh sách lỗi trả về khi request thất bại. Có thể là lỗi DTO hoặc lỗi service.
+   - `resource`: Tên entity bị lỗi (chỉ áp dụng với lỗi DTO).
+   - `field`: Tên trường cụ thể gây lỗi (chỉ áp dụng với lỗi DTO).
+   - `code`: Mã lỗi nội bộ giúp frontend xử lý logic.
+   - `message`: Mô tả chi tiết lỗi để hiển thị cho người dùng hoặc debug.
+- `meta`: Thông tin bổ sung cho phản hồi.
+   - `timestamp`: Thời điểm server xử lý response (ISO-8601).
+   - `instance`: API endpoint tương ứng với request.
 
 ---
 

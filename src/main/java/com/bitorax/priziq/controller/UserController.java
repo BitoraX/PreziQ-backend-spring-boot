@@ -18,10 +18,11 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
+
+import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,94 +30,78 @@ import java.text.ParseException;
 @Slf4j
 @RequestMapping("/api/v1/users")
 public class UserController {
+
     UserService userService;
 
     @PatchMapping("/update-profile")
-    ApiResponse<UserSecureResponse> updateUserProfile(
-            @RequestBody @Valid UpdateUserProfileRequest updateUserProfileRequest, HttpServletRequest servletRequest) {
+    ApiResponse<UserSecureResponse> updateUserProfile(@RequestBody @Valid UpdateUserProfileRequest updateUserProfileRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<UserSecureResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Cập nhật thông tin người dùng thành công")
-                .data(this.userService.updateUserProfile(updateUserProfileRequest))
-                .path(servletRequest.getRequestURI())
+                .message("User profile updated successfully")
+                .data(userService.updateUserProfile(updateUserProfileRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PutMapping("/update-password")
-    ApiResponse<UserSecureResponse> updateUserPassword(
-            @RequestBody @Valid UpdateUserPasswordRequest updateUserPasswordRequest,
-            HttpServletRequest servletRequest) {
+    ApiResponse<UserSecureResponse> updateUserPassword(@RequestBody @Valid UpdateUserPasswordRequest updateUserPasswordRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<UserSecureResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Cập nhật mật khẩu mới thành công")
-                .data(this.userService.updateUserPassword(updateUserPasswordRequest))
-                .path(servletRequest.getRequestURI())
+                .message("Password updated successfully")
+                .data(userService.updateUserPassword(updateUserPasswordRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PutMapping("/update-email")
-    ApiResponse<Void> updateUserEmail(@RequestBody @Valid UpdateUserEmailRequest updateUserEmailRequest,
-            HttpServletRequest servletRequest) {
-        this.userService.updateUserEmail(updateUserEmailRequest);
+    ApiResponse<Void> updateUserEmail(@RequestBody @Valid UpdateUserEmailRequest updateUserEmailRequest, HttpServletRequest servletRequest) {
+        userService.updateUserEmail(updateUserEmailRequest);
         return ApiResponse.<Void>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Vui lòng kiểm tra email mới để xác thực và hoàn tất cập nhật tài khoản của bạn")
-                .path(servletRequest.getRequestURI())
+                .message("Please check your new email to verify and complete the update")
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PostMapping("/verify-change-email")
-    ApiResponse<UserSecureResponse> verifyEmailAndChangeNewEmail(
-            @RequestBody @Valid VerifyEmailRequest verifyEmailRequest, HttpServletRequest servletRequest)
-            throws ParseException, JOSEException {
+    ApiResponse<UserSecureResponse> verifyEmailAndChangeNewEmail(@RequestBody @Valid VerifyEmailRequest verifyEmailRequest, HttpServletRequest servletRequest) throws ParseException, JOSEException {
         return ApiResponse.<UserSecureResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Thay đổi địa chỉ email mới thành công, vui lòng đăng nhập lại ")
-                .data(this.userService.verifyEmailAndChangeNewEmail(verifyEmailRequest))
-                .path(servletRequest.getRequestURI())
+                .message("Email address changed successfully. Please log in again")
+                .data(userService.verifyEmailAndChangeNewEmail(verifyEmailRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @GetMapping
-    ApiResponse<PaginationResponse> getAllUserWithQuery(@Filter Specification<User> spec, Pageable pageable,
-            HttpServletRequest servletRequest) {
+    ApiResponse<PaginationResponse> getAllUserWithQuery(@Filter Specification<User> spec, Pageable pageable, HttpServletRequest servletRequest) {
         return ApiResponse.<PaginationResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Lấy tất cả thông tin người dùng với điều kiện truy vấn thành công")
-                .data(this.userService.getAllUserWithQuery(spec, pageable))
-                .path(servletRequest.getRequestURI())
+                .message("All users retrieved successfully with query filters")
+                .data(userService.getAllUserWithQuery(spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @GetMapping("/{id}")
     ApiResponse<Object> getUserById(@PathVariable("id") String userId, HttpServletRequest servletRequest) {
         return ApiResponse.builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Lấy thông tin thông tin người dùng thành công")
-                .data(this.userService.getUserById(userId))
-                .path(servletRequest.getRequestURI())
+                .message("User information retrieved successfully")
+                .data(userService.getUserById(userId))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PatchMapping("/{id}")
-    ApiResponse<UserResponse> updateUserForAdmin(@PathVariable("id") String userId,
-            @RequestBody @Valid UpdateUserForAdminRequest updateUserForAdminRequest,
-            HttpServletRequest servletRequest) {
+    ApiResponse<UserResponse> updateUserForAdmin(@PathVariable("id") String userId, @RequestBody @Valid UpdateUserForAdminRequest updateUserForAdminRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<UserResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Cập nhật thông tin người dùng thành công")
-                .data(this.userService.updateUserForAdmin(userId, updateUserForAdminRequest))
-                .path(servletRequest.getRequestURI())
+                .message("User information updated successfully")
+                .data(userService.updateUserForAdmin(userId, updateUserForAdminRequest))
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @DeleteMapping("/{id}")
-    ApiResponse<Void> updateUserForAdmin(@PathVariable("id") String userId, HttpServletRequest servletRequest) {
-        this.userService.deleteUserById(userId);
+    ApiResponse<Void> deleteUserById(@PathVariable("id") String userId, HttpServletRequest servletRequest) {
+        userService.deleteUserById(userId);
         return ApiResponse.<Void>builder()
-                .statusCode(HttpStatus.NO_CONTENT.value())
-                .message("Xóa tài khoản người dùng thành công")
-                .path(servletRequest.getRequestURI())
+                .message("User account deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 }

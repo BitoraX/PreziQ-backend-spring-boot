@@ -4,7 +4,7 @@ import com.bitorax.priziq.constant.HttpMethodType;
 import com.bitorax.priziq.dto.request.permission.CreateModuleRequest;
 import com.bitorax.priziq.dto.request.permission.CreatePermissionRequest;
 import com.bitorax.priziq.dto.request.permission.UpdatePermissionRequest;
-import com.bitorax.priziq.dto.response.common.MetaResponse;
+import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.permission.PermissionResponse;
 import com.bitorax.priziq.domain.Permission;
@@ -101,7 +101,7 @@ public class PermissionServiceImp implements PermissionService {
     public PaginationResponse getAllPermissionWithQuery(Specification<Permission> spec, Pageable pageable) {
         Page<Permission> permissionPage = this.permissionRepository.findAll(spec, pageable);
         return PaginationResponse.builder()
-                .meta(MetaResponse.builder()
+                .meta(PaginationMeta.builder()
                         .currentPage(pageable.getPageNumber() + 1) // base-index = 0
                         .pageSize(pageable.getPageSize())
                         .totalPages(permissionPage.getTotalPages())
