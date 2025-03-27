@@ -1,5 +1,6 @@
 package com.bitorax.priziq.configuration;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,13 +25,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfiguration {
 
-    private final String[] PUBLIC_ENDPOINTS = {
+    public static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/register", "/api/v1/auth/verify-active-account", "/api/v1/auth/login", "/api/v1/auth/refresh",
             "/api/v1/auth/resend-verify", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password"
     };

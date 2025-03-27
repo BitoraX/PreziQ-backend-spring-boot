@@ -21,7 +21,7 @@ public enum ErrorCode {
     INVALID_TOKEN(1006, HttpStatus.UNAUTHORIZED, "Invalid token"),
     NOT_FOUND_ROUTE(1007, HttpStatus.NOT_FOUND, "Resource not found"),
     DATE_FORMAT_INSTANT(1008, HttpStatus.BAD_REQUEST, "Date format must follow ISO-8601"),
-    DECODE_INVALID_TOKEN(1009, HttpStatus.UNAUTHORIZED, "Authentication failed: Token is invalid, missing, or expired"),
+    MISSING_TOKEN(1009, HttpStatus.UNAUTHORIZED, "Token is missing"),
     SYSTEM_EMAIL_CANNOT_BE_DELETED(1010, HttpStatus.BAD_REQUEST, "Cannot delete or modify the system default email"),
     SYSTEM_ROLE_CANNOT_BE_DELETED(1011, HttpStatus.BAD_REQUEST, "Cannot delete or modify the system default role"),
     INVALID_PHONE_NUMBER(1012, HttpStatus.BAD_REQUEST, "Invalid phone number"),

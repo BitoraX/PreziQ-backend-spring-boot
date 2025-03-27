@@ -7,6 +7,7 @@ import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.user.UserResponse;
 import com.bitorax.priziq.dto.response.user.UserSecureResponse;
 import com.nimbusds.jose.JOSEException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -17,8 +18,7 @@ public interface UserService {
 
     UserSecureResponse updateUserPassword(UpdateUserPasswordRequest updateUserPasswordRequest);
 
-    UserSecureResponse verifyEmailAndChangeNewEmail(VerifyEmailRequest verifyEmailRequest)
-            throws ParseException, JOSEException;
+    UserSecureResponse verifyEmailAndChangeNewEmail(VerifyEmailRequest verifyEmailRequest) throws ParseException, JOSEException;
 
     void updateUserEmail(UpdateUserEmailRequest updateUserEmailRequest);
 

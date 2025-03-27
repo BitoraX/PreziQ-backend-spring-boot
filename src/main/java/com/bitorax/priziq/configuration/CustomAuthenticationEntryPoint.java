@@ -2,6 +2,7 @@ package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.MetaInfo;
+import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.exception.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +23,18 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        ErrorCode errorCode = ErrorCode.DECODE_INVALID_TOKEN;
+        ErrorCode errorCode;
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || authHeader.trim().isEmpty()) {
+            errorCode = ErrorCode.MISSING_TOKEN;
+        }
+        else if (authException.getMessage() != null && authException.getMessage().toLowerCase().contains("expired")) {
+            errorCode = ErrorCode.TOKEN_EXPIRED;
+        }
+        else {
+            errorCode = ErrorCode.INVALID_TOKEN;
+        }
 
         MetaInfo meta = MetaInfo.builder()
                 .timestamp(Instant.now().toString())

@@ -21,6 +21,7 @@ import com.bitorax.priziq.utils.PhoneNumberUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -99,8 +100,7 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public UserSecureResponse verifyEmailAndChangeNewEmail(VerifyEmailRequest verifyEmailRequest)
-            throws ParseException, JOSEException {
+    public UserSecureResponse verifyEmailAndChangeNewEmail(VerifyEmailRequest verifyEmailRequest) throws ParseException, JOSEException {
         SignedJWT verifiedToken = this.securityUtils.verifyAccessToken(verifyEmailRequest.getToken());
         User userAuthenticated = this.securityUtils.getAuthenticatedUser();
 
