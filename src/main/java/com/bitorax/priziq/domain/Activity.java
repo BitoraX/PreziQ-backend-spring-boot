@@ -37,4 +37,7 @@ public class Activity extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "activity_type_id")
     ActivityType activityType;
+
+    @OneToOne(mappedBy = "activity")
+    Quiz quiz;
 }
