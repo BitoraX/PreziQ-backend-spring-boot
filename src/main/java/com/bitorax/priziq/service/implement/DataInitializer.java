@@ -142,7 +142,14 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve a collection", "/api/v1/collections/{id}", "GET", "COLLECTIONS"),
                         new Permission("Update collection information", "/api/v1/collections/{id}", "PATCH", "COLLECTIONS"),
                         new Permission("Retrieve all collections with query parameters", "/api/v1/collections", "GET", "COLLECTIONS"),
-                        new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS")
+                        new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS"),
+
+                        // Module Activity Types
+                        new Permission("Create a new activity type", "/api/v1/activity-types", "POST", "ACTIVITY TYPES"),
+                        new Permission("Retrieve a activity type", "/api/v1/activity-types/{id}", "GET", "ACTIVITY TYPES"),
+                        new Permission("Update activity type information", "/api/v1/activity-types/{id}", "PATCH", "ACTIVITY TYPES"),
+                        new Permission("Retrieve all activity types with query parameters", "/api/v1/activity-types", "GET", "ACTIVITY TYPES"),
+                        new Permission("Delete a activity type", "/api/v1/activity-types/{id}", "DELETE", "ACTIVITY TYPES")
                 );
         }
 
@@ -160,6 +167,8 @@ public class DataInitializer implements ApplicationRunner {
                         .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
                 List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
                         .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleActivityTypeAllPermissions = permissionRepository.findByModule("ACTIVITY TYPES")
+                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
                 // Permission for role admin
                 List<Permission> adminRolePermissions = combinePermissions(
@@ -169,7 +178,8 @@ public class DataInitializer implements ApplicationRunner {
                                 moduleRoleAllPermissions,
                                 modulePermissionAllPermissions,
                                 moduleFileAllPermissions,
-                                moduleCollectionAllPermissions
+                                moduleCollectionAllPermissions,
+                                moduleActivityTypeAllPermissions
                         )
                 );
 
