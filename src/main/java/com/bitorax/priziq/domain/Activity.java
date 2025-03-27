@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Getter
 @Setter
 @Builder
@@ -13,8 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "collections")
-public class Collection extends BaseEntity {
+@Table(name = "activities")
+public class Activity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
@@ -25,11 +23,18 @@ public class Collection extends BaseEntity {
     String description;
 
     @Builder.Default
-    Boolean isPublished = false;
+    Boolean isPublished = true;
 
-    String coverImage;
-    String defaultBackgroundMusic;
+    Integer orderIndex;
+    String backgroundColor;
+    String backgroundImage;
+    String customBackgroundMusic;
 
-    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
-    List<Activity> activities;
+    @ManyToOne
+    @JoinColumn(name = "collection_id")
+    Collection collection;
+
+    @ManyToOne
+    @JoinColumn(name = "activity_type_id")
+    ActivityType activityType;
 }

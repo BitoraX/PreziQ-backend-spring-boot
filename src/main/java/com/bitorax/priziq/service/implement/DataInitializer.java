@@ -149,41 +149,24 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve a activity type", "/api/v1/activity-types/{id}", "GET", "ACTIVITY TYPES"),
                         new Permission("Update activity type information", "/api/v1/activity-types/{id}", "PATCH", "ACTIVITY TYPES"),
                         new Permission("Retrieve all activity types with query parameters", "/api/v1/activity-types", "GET", "ACTIVITY TYPES"),
-                        new Permission("Delete a activity type", "/api/v1/activity-types/{id}", "DELETE", "ACTIVITY TYPES")
+                        new Permission("Delete a activity type", "/api/v1/activity-types/{id}", "DELETE", "ACTIVITY TYPES"),
+
+                        // Module Activity
+                        new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES")
                 );
         }
 
         private Map<RoleType, List<Permission>> getDefaultRoles() {
-                // Get all permissions of all modules
-                List<Permission> moduleAuthAllPermissions = permissionRepository.findByModule("AUTH")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-                List<Permission> moduleUserAllPermissions = permissionRepository.findByModule("USERS")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-                List<Permission> moduleRoleAllPermissions = permissionRepository.findByModule("ROLES")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-                List<Permission> modulePermissionAllPermissions = permissionRepository.findByModule("PERMISSIONS")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-                List<Permission> moduleFileAllPermissions = permissionRepository.findByModule("FILES")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-                List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-                List<Permission> moduleActivityTypeAllPermissions = permissionRepository.findByModule("ACTIVITY TYPES")
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
-
-                // Permission for role admin
-                List<Permission> adminRolePermissions = combinePermissions(
-                        List.of(
-                                moduleAuthAllPermissions,
-                                moduleUserAllPermissions,
-                                moduleRoleAllPermissions,
-                                modulePermissionAllPermissions,
-                                moduleFileAllPermissions,
-                                moduleCollectionAllPermissions,
-                                moduleActivityTypeAllPermissions
-                        )
+                List<String> modules = List.of(
+                        "AUTH", "USERS", "ROLES", "PERMISSIONS", "FILES",
+                        "COLLECTIONS", "ACTIVITY TYPES", "ACTIVITIES"
                 );
 
-                // Permissions for role user
+                List<Permission> allPermissions = modules.stream()
+                        .map(module -> permissionRepository.findByModule(module).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND)))
+                        .flatMap(List::stream)
+                        .toList();
+
                 List<Permission> userSpecificPermissions = List.of(
                         findPermissionOrThrow("/api/v1/users/update-profile", "PATCH"),
                         findPermissionOrThrow("/api/v1/users/update-password", "PUT"),
@@ -194,11 +177,10 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/single", "POST"),
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/multiple", "POST")
                 );
-                List<Permission> userRolePermissions = combinePermissions(List.of(moduleAuthAllPermissions, userSpecificPermissions));
 
                 return Map.of(
-                        RoleType.ADMIN_ROLE, adminRolePermissions,
-                        RoleType.USER_ROLE, userRolePermissions
+                        RoleType.ADMIN_ROLE, allPermissions,
+                        RoleType.USER_ROLE, combinePermissions(List.of(userSpecificPermissions))
                 );
         }
 

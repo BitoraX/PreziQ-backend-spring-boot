@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -23,4 +25,7 @@ public class ActivityType extends BaseEntity {
     String description;
 
     String icon;
+
+    @OneToMany(mappedBy = "activityType", fetch = FetchType.LAZY)
+    List<Activity> activities;
 }

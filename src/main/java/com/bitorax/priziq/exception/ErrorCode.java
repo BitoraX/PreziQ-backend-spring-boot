@@ -121,6 +121,10 @@ public enum ErrorCode {
     ACTIVITY_TYPE_NOT_FOUND(1702, HttpStatus.NOT_FOUND, "Activity type not found"),
     ACTIVITY_TYPE_NAME_EXISTED(1703, HttpStatus.CONFLICT, "Activity type name already exists in the system, please use a different name"),
 
+    // Module activity errors
+    COLLECTION_ID_REQUIRED(1801, HttpStatus.BAD_REQUEST, "Collection ID is required"),
+    ACTIVITY_TYPE_ID_REQUIRED(1802, HttpStatus.BAD_REQUEST, "Activity Type ID is required"),
+
     ;
 
     int code;
