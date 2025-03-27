@@ -16,4 +16,5 @@ public class CreateCollectionRequest {
     String description;
     Boolean isPublished;
     String coverImage;
+    String defaultBackgroundMusic;
 }

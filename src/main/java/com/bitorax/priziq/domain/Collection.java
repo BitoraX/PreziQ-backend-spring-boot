@@ -26,4 +26,5 @@ public class Collection extends BaseEntity {
     Boolean isPublished = false;
 
     String coverImage;
+    String defaultBackgroundMusic;
 }

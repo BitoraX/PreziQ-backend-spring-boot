@@ -61,7 +61,7 @@ public class ActivityTypeServiceImp implements ActivityTypeService {
 
     @Override
     public ActivityTypeResponse updateActivityTypeById(String activityTypeId, UpdateActivityTypeRequest updateActivityTypeRequest){
-        ActivityType currentActivityType = this.activityTypeRepository.findById(activityTypeId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_TYPE_NOT_FOUND));
+        ActivityType currentActivityType = this.activityTypeRepository.findById(activityTypeId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_TYPE_NOT_FOUND    ));
         if(activityTypeRepository.existsByName(updateActivityTypeRequest.getName())){
             throw new AppException(ErrorCode.ACTIVITY_TYPE_NAME_EXISTED);
         }
@@ -72,7 +72,7 @@ public class ActivityTypeServiceImp implements ActivityTypeService {
 
     @Override
     public void deleteActivityTypeById(String activityTypeId){
-        ActivityType currentActivityType = this.activityTypeRepository.findById(activityTypeId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_TYPE_NOT_FOUND));
+        ActivityType currentActivityType = this.activityTypeRepository.findById(activityTypeId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_TYPE_NOT_FOUND    ));
         this.activityTypeRepository.delete(currentActivityType);
     }
 }

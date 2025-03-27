@@ -13,4 +13,5 @@ public class UpdateCollectionRequest {
     String description;
     Boolean isPublished;
     String coverImage;
+    String defaultBackgroundMusic;
 }
