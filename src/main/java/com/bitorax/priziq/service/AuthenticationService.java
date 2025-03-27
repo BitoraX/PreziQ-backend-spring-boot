@@ -4,6 +4,7 @@ import com.bitorax.priziq.dto.request.auth.*;
 import com.bitorax.priziq.dto.response.auth.AuthenticationResponse;
 import com.bitorax.priziq.dto.response.user.UserSecureResponse;
 import com.nimbusds.jose.JOSEException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
 import java.text.ParseException;
@@ -11,8 +12,7 @@ import java.text.ParseException;
 public interface AuthenticationService {
     void register(RegisterUserRequest registerUserRequest);
 
-    AuthenticationResponse verifyEmailAndActivateAccount(VerifyEmailRequest verifyEmailRequest)
-            throws ParseException, JOSEException;
+    AuthenticationResponse verifyEmailAndActivateAccount(VerifyEmailRequest verifyEmailRequest) throws ParseException, JOSEException;
 
     ResponseEntity<AuthenticationResponse> login(LoginRequest loginRequest);
 

@@ -136,18 +136,29 @@ public class SecurityUtils {
     }
 
     private SignedJWT verifyToken(String token, String keyType) throws JOSEException, ParseException {
+        if (token == null || token.trim().isEmpty()) {
+            throw new AppException(ErrorCode.MISSING_TOKEN);
+        }
+
+        SignedJWT signedJWT;
+        try {
+            signedJWT = SignedJWT.parse(token);
+        } catch (ParseException e) {
+            throw new AppException(ErrorCode.INVALID_TOKEN);
+        }
+
         JWSVerifier verifier = new MACVerifier(
                 (Objects.equals(keyType, TokenType.ACCESS_TOKEN.getKey()) ? ACCESS_SIGNER_KEY : REFRESH_SIGNER_KEY)
                         .getBytes());
-        SignedJWT signedJWT = SignedJWT.parse(token);
-
         boolean isVerified = signedJWT.verify(verifier);
-        if (!isVerified)
+        if (!isVerified) {
             throw new AppException(ErrorCode.INVALID_TOKEN);
+        }
 
         Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-        if (expiryTime.before(new Date()))
+        if (expiryTime.before(new Date())) {
             throw new AppException(ErrorCode.TOKEN_EXPIRED);
+        }
 
         return signedJWT;
     }
@@ -179,9 +190,7 @@ public class SecurityUtils {
     public void enforceProtectedEmailPolicy(String email) {
         List<String> protectedEmails = Arrays.asList(
                 "priziq.admin@gmail.com",
-                "priziq.user@gmail.com",
-                "priziq.shipper@gmail.com",
-                "priziq.seller@gmail.com");
+                "priziq.user@gmail.com");
 
         if (protectedEmails.contains(email))
             throw new AppException(ErrorCode.SYSTEM_EMAIL_CANNOT_BE_DELETED);
