@@ -13,6 +13,7 @@ public class CreateActivityRequest {
     String title;
     String description;
     Boolean isPublished;
+    Integer orderIndex;
     String backgroundColor;
     String backgroundImage;
     String customBackgroundMusic;
