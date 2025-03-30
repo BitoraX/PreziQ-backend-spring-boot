@@ -74,8 +74,8 @@ public class SecurityUtils {
         // Set refresh token to cookies
         ResponseCookie resCookies = ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true) // avoid javascript (client) to access cookies
-                // .secure(true) // use HTTPS
-                .sameSite(String.valueOf(Cookie.SameSite.LAX))
+                .secure(true) // use HTTPS
+                .sameSite(String.valueOf(Cookie.SameSite.NONE)) // LAX
                 .path("/")
                 .maxAge(REFRESH_TOKEN_EXPIRATION)
                 .build();
