@@ -1,6 +1,5 @@
 package com.bitorax.priziq.configuration;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +24,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
-import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
