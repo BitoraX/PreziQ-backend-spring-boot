@@ -1,5 +1,6 @@
 package com.bitorax.priziq.constant;
 
+import com.bitorax.priziq.dto.response.common.ActivityTypeInfo;
 import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
 import lombok.AccessLevel;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
@@ -29,5 +31,17 @@ public enum ActivityType {
         if (!isValid) {
             throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
+    }
+
+    public static List<ActivityTypeInfo> getAllTypes() {
+        return Arrays.stream(values())
+                .map(type -> ActivityTypeInfo.builder()
+                        .key(type.name())
+                        .name(type.getName())
+                        .description(type.getDescription())
+                        .icon(type.getIcon())
+                        .build()
+                )
+                .toList();
     }
 }

@@ -144,22 +144,16 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve all collections with query parameters", "/api/v1/collections", "GET", "COLLECTIONS"),
                         new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS"),
 
-                        // Module Activity Types
-                        new Permission("Create a new activity type", "/api/v1/activity-types", "POST", "ACTIVITY TYPES"),
-                        new Permission("Retrieve a activity type", "/api/v1/activity-types/{id}", "GET", "ACTIVITY TYPES"),
-                        new Permission("Update activity type information", "/api/v1/activity-types/{id}", "PATCH", "ACTIVITY TYPES"),
-                        new Permission("Retrieve all activity types with query parameters", "/api/v1/activity-types", "GET", "ACTIVITY TYPES"),
-                        new Permission("Delete a activity type", "/api/v1/activity-types/{id}", "DELETE", "ACTIVITY TYPES"),
-
                         // Module Activity
-                        new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES")
+                        new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
+                        new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES")
                 );
         }
 
         private Map<RoleType, List<Permission>> getDefaultRoles() {
                 List<String> modules = List.of(
                         "AUTH", "USERS", "ROLES", "PERMISSIONS", "FILES",
-                        "COLLECTIONS", "ACTIVITY TYPES", "ACTIVITIES"
+                        "COLLECTIONS", "ACTIVITIES"
                 );
 
                 List<Permission> allPermissions = modules.stream()
