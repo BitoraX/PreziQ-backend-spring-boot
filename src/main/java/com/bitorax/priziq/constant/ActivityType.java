@@ -25,8 +25,7 @@ public enum ActivityType {
     String icon;
 
     public static void validateActivityType(String type) {
-        boolean isValid = Arrays.stream(values())
-                .anyMatch(activityType -> activityType.name().equalsIgnoreCase(type));
+        boolean isValid = Arrays.stream(values()).anyMatch(activityType -> activityType.name().equalsIgnoreCase(type));
         if (!isValid) {
             throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
