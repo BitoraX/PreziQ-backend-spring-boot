@@ -12,9 +12,11 @@ import java.util.List;
 public interface CollectionMapper {
     CollectionResponse collectionToResponse(Collection collection);
 
+    @Mapping(target = "activities", ignore = true)
     Collection createCollectionRequestToCollection(CreateCollectionRequest createCollectionRequest);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "activities", ignore = true)
     void updateCollectionRequestToCollection(@MappingTarget Collection collection, UpdateCollectionRequest updateCollectionRequest);
 
     List<CollectionResponse> collectionsToCollectionResponseList(List<Collection> collections);
