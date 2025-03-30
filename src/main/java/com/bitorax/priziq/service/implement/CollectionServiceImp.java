@@ -1,16 +1,21 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.domain.Collection;
+import com.bitorax.priziq.domain.activity.Activity;
+import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionResponse;
+import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
+import com.bitorax.priziq.repository.ActivityRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
 import com.bitorax.priziq.service.CollectionService;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,12 +25,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CollectionServiceImp implements CollectionService {
     CollectionRepository collectionRepository;
+    ActivityRepository activityRepository;
     CollectionMapper collectionMapper;
 
     @Override
@@ -66,5 +76,96 @@ public class CollectionServiceImp implements CollectionService {
     public void deleteCollectionById(String collectionId){
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND));
         this.collectionRepository.delete(currentCollection);
+    }
+
+    @Override
+    @Transactional
+    public List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest) {
+        // Get collection or throw if not found
+        Collection currentCollection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND, "Collection ID: " + collectionId + " not found"));
+
+        // Get all activity IDs in this collection
+        Set<String> currentActivityIds = currentCollection.getActivities().stream()
+                .map(Activity::getId)
+                .collect(Collectors.toSet());
+
+        List<String> newOrderList = activityReorderRequest.getOrderedActivityIds();
+
+        // Validate all IDs belong to this collection
+        for (String activityId : newOrderList) {
+            if (!currentActivityIds.contains(activityId)) {
+                throw new AppException(
+                        ErrorCode.ACTIVITY_NOT_IN_COLLECTION,
+                        "Activity ID: " + activityId + " does not belong to Collection ID: " + collectionId
+                );
+            }
+        }
+
+        // Validate duplicated IDs in request
+        Set<String> duplicates = findDuplicates(newOrderList);
+        if (!duplicates.isEmpty()) {
+            throw new AppException(
+                    ErrorCode.DUPLICATE_ACTIVITY_ID,
+                    "Duplicate activity IDs found: " + String.join(", ", duplicates)
+            );
+        }
+
+        // Validate missing activity IDs
+        Set<String> missing = new HashSet<>(currentActivityIds);
+        newOrderList.forEach(missing::remove);
+        if (!missing.isEmpty()) {
+            throw new AppException(
+                    ErrorCode.MISSING_ACTIVITY_ID,
+                    "Missing activity IDs: " + String.join(", ", missing)
+            );
+        }
+
+        // Fetch all activities from DB
+        List<Activity> activities = activityRepository.findAllById(newOrderList);
+
+        Map<String, Activity> activityMap = activities.stream()
+                .collect(Collectors.toMap(Activity::getId, Function.identity()));
+
+        List<ReorderedActivityResponse> updatedActivities = new ArrayList<>();
+
+        // Update orderIndex if changed
+        for (int newIndex = 0; newIndex < newOrderList.size(); newIndex++) {
+            String activityId = newOrderList.get(newIndex);
+            Activity activity = activityMap.get(activityId);
+
+            if (activity == null) {
+                throw new AppException(
+                        ErrorCode.ACTIVITY_NOT_FOUND,
+                        "Activity ID: " + activityId + " not found in database"
+                );
+            }
+
+            if (!Objects.equals(activity.getOrderIndex(), newIndex)) {
+                activity.setOrderIndex(newIndex);
+                updatedActivities.add(new ReorderedActivityResponse(activityId, newIndex));
+            }
+        }
+
+        // Save only if any changes
+        if (!updatedActivities.isEmpty()) {
+            activityRepository.saveAll(
+                    updatedActivities.stream()
+                            .map(r -> {
+                                Activity a = activityMap.get(r.getActivityId());
+                                a.setOrderIndex(r.getNewOrderIndex());
+                                return a;
+                            }).collect(Collectors.toList())
+            );
+        }
+
+        return updatedActivities;
+    }
+
+    private Set<String> findDuplicates(List<String> ids) {
+        Set<String> seen = new HashSet<>();
+        return ids.stream()
+                .filter(id -> !seen.add(id))
+                .collect(Collectors.toSet());
     }
 }

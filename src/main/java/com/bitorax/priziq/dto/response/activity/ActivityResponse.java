@@ -1,5 +1,6 @@
-package com.bitorax.priziq.dto.response.collection;
+package com.bitorax.priziq.dto.response.activity;
 
+import com.bitorax.priziq.dto.response.collection.CollectionResponse;
 import com.bitorax.priziq.dto.response.common.AuditResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -13,11 +14,15 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CollectionResponse extends AuditResponse {
+public class ActivityResponse extends AuditResponse {
     String id;
+    String activityType;
     String title;
     String description;
     Boolean isPublished;
-    String coverImage;
-    String defaultBackgroundMusic;
+    Integer orderIndex;
+    String backgroundColor;
+    String backgroundImage;
+    String customBackgroundMusic;
+    CollectionResponse collection;
 }

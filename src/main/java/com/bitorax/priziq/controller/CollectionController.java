@@ -1,9 +1,11 @@
 package com.bitorax.priziq.controller;
 
 import com.bitorax.priziq.domain.Collection;
+import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionResponse;
+import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.service.CollectionService;
@@ -17,6 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 
 @RestController
@@ -69,6 +74,15 @@ public class CollectionController {
         collectionService.deleteCollectionById(collectionId);
         return ApiResponse.<Void>builder()
                 .message("Collection deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @PutMapping("/{id}/activities/reorder")
+    ApiResponse<List<ReorderedActivityResponse>> reorderActivities(@PathVariable("id") String collectionId, @RequestBody @Valid ActivityReorderRequest activityReorderRequest, HttpServletRequest servletRequest){
+        return ApiResponse.<List<ReorderedActivityResponse>>builder()
+                .message("Activities reordered successfully")
+                .data(collectionService.reorderActivities(collectionId, activityReorderRequest))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

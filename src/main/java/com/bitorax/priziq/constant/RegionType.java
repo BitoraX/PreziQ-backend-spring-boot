@@ -60,7 +60,9 @@ public enum RegionType {
     UNITED_KINGDOM("GB", "United Kingdom", "GBR", 826, "Europe/London"),
     UNITED_STATES("US", "United States", "USA", 840, "America/New_York"),
     VIETNAM("VN", "Vietnam", "VNM", 704, "Asia/Ho_Chi_Minh"),
-    ZIMBABWE("ZW", "Zimbabwe", "ZWE", 716, "Africa/Harare");
+    ZIMBABWE("ZW", "Zimbabwe", "ZWE", 716, "Africa/Harare"),
+
+    ;
 
     String alpha2Code;
     String countryName;

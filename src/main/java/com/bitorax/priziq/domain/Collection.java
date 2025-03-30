@@ -1,8 +1,11 @@
 package com.bitorax.priziq.domain;
 
+import com.bitorax.priziq.domain.activity.Activity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,4 +29,8 @@ public class Collection extends BaseEntity {
     Boolean isPublished = false;
 
     String coverImage;
+    String defaultBackgroundMusic;
+
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    List<Activity> activities;
 }
