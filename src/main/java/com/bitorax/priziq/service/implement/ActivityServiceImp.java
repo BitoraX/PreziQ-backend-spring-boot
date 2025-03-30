@@ -17,6 +17,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -34,9 +36,20 @@ public class ActivityServiceImp implements ActivityService {
 
         ActivityType.validateActivityType(createActivityRequest.getActivityType());
 
+        // Mapper other fields and set collection
         Activity activity = activityMapper.createActivityRequestToActivity(createActivityRequest);
         activity.setCollection(currentCollection);
 
+        // Handle increase order index of activity (max + 1)
+        Integer maxOrderIndex = currentCollection.getActivities().stream()
+                .map(Activity::getOrderIndex)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(-1);
+
+        activity.setOrderIndex(maxOrderIndex + 1); // index final
+
+        // Save and return response
         return activityMapper.activityToResponse(activityRepository.save(activity));
     }
 }

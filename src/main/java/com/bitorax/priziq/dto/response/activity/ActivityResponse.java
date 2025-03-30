@@ -20,6 +20,7 @@ public class ActivityResponse extends AuditResponse {
     String title;
     String description;
     Boolean isPublished;
+    Integer orderIndex;
     String backgroundColor;
     String backgroundImage;
     String customBackgroundMusic;

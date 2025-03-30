@@ -115,6 +115,10 @@ public enum ErrorCode {
     // Module collection errors
     COLLECTION_TITLE_NOT_BLANK(1601, HttpStatus.BAD_REQUEST, "Collection title must not be blank"),
     COLLECTION_NOT_FOUND(1602, HttpStatus.NOT_FOUND, "Collection not found"),
+    ORDER_ACTIVITY_IDS_NOT_EMPTY(1603, HttpStatus.NOT_FOUND, "Activity order list cannot be empty, please provide at least one activity ID"),
+    DUPLICATE_ACTIVITY_ID(1604, HttpStatus.BAD_REQUEST, "Duplicate activity IDs found in request"),
+    MISSING_ACTIVITY_ID(1605, HttpStatus.BAD_REQUEST, "Some activity IDs from the collection are missing in the request"),
+    ACTIVITY_NOT_IN_COLLECTION(1606, HttpStatus.BAD_REQUEST, "Activity does not belong to the specified collection"),
 
     // Module activity errors
     COLLECTION_ID_REQUIRED(1701, HttpStatus.BAD_REQUEST, "Collection ID is required"),
@@ -123,6 +127,7 @@ public enum ErrorCode {
     INVALID_ACTIVITY_TYPE(1704, HttpStatus.BAD_REQUEST, "Invalid activity type. Only the following types are supported: QUIZ_BUTTONS, QUIZ_CHECKBOXES, QUIZ_TRUE_OR_FALSE, QUIZ_TYPE_ANSWER, QUIZ_REORDER, INFO_SLIDE"),
     INVALID_POINT_TYPE(1705, HttpStatus.BAD_REQUEST, "Invalid point type. Only the following types are supported: NO_POINTS, STANDARD, DOUBLE_POINTS"),
     ACTIVITY_TYPE_NOT_BLANK(1706, HttpStatus.BAD_REQUEST, "Activity type must not be blank"),
+    ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
 
     ;
 
