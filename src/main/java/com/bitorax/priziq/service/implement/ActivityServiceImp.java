@@ -1,5 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -23,7 +24,6 @@ import org.springframework.stereotype.Service;
 public class ActivityServiceImp implements ActivityService {
     ActivityRepository activityRepository;
     CollectionRepository collectionRepository;
-
     ActivityMapper activityMapper;
 
     @Override
@@ -31,6 +31,8 @@ public class ActivityServiceImp implements ActivityService {
         Collection currentCollection = collectionRepository
                 .findById(createActivityRequest.getCollectionId())
                 .orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND));
+
+        ActivityType.validateActivityType(createActivityRequest.getActivityType());
 
         Activity activity = activityMapper.createActivityRequestToActivity(createActivityRequest);
         activity.setCollection(currentCollection);

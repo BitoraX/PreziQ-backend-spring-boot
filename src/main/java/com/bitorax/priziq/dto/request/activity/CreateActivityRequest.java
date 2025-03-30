@@ -10,6 +10,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class CreateActivityRequest {
+    @NotBlank(message = "COLLECTION_ID_REQUIRED")
+    String collectionId;
+
+    @Builder.Default
+    String activityType = "QUIZ_BUTTONS";
+
     String title;
     String description;
     Boolean isPublished;
@@ -17,10 +23,4 @@ public class CreateActivityRequest {
     String backgroundColor;
     String backgroundImage;
     String customBackgroundMusic;
-
-    @NotBlank(message = "COLLECTION_ID_REQUIRED")
-    String collectionId;
-
-    @NotBlank(message = "ACTIVITY_TYPE_ID_REQUIRED")
-    String activityTypeId;
 }

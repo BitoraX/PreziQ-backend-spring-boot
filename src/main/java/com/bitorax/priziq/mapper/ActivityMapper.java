@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ActivityMapper {
     @Mapping(target = "collection", ignore = true)
+    @Mapping(target = "activityType", source = "activityType")
     Activity createActivityRequestToActivity(CreateActivityRequest createActivityRequest);
 
     ActivityResponse activityToResponse(Activity activity);

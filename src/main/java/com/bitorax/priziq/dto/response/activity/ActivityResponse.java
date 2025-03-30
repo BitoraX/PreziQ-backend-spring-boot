@@ -16,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ActivityResponse extends AuditResponse {
     String id;
+    String activityType;
     String title;
     String description;
     Boolean isPublished;
