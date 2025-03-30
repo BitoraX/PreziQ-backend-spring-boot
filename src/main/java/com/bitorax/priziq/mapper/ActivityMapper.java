@@ -1,6 +1,6 @@
 package com.bitorax.priziq.mapper;
 
-import com.bitorax.priziq.domain.Activity;
+import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
 import org.mapstruct.Mapper;

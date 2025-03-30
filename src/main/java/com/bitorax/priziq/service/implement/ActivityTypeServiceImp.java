@@ -1,6 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
-import com.bitorax.priziq.domain.ActivityType;
+import com.bitorax.priziq.domain.activity.ActivityType;
 import com.bitorax.priziq.dto.request.activity_types.CreateActivityTypeRequest;
 import com.bitorax.priziq.dto.request.activity_types.UpdateActivityTypeRequest;
 import com.bitorax.priziq.dto.response.activity_types.ActivityTypeResponse;

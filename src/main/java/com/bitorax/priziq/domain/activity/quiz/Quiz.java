@@ -1,5 +1,7 @@
-package com.bitorax.priziq.domain;
+package com.bitorax.priziq.domain.activity.quiz;
 
+import com.bitorax.priziq.domain.BaseEntity;
+import com.bitorax.priziq.domain.activity.Activity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -22,8 +24,6 @@ public class Quiz extends BaseEntity {
     @MapsId
     @JoinColumn(name = "activity_id")
     Activity activity;
-
-    String quizType;
 
     @Column(columnDefinition = "TEXT")
     String questionText;

@@ -1,7 +1,7 @@
 package com.bitorax.priziq.service.implement;
 
-import com.bitorax.priziq.domain.Activity;
-import com.bitorax.priziq.domain.ActivityType;
+import com.bitorax.priziq.domain.activity.Activity;
+import com.bitorax.priziq.domain.activity.ActivityType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
@@ -26,6 +26,7 @@ public class ActivityServiceImp implements ActivityService {
     ActivityRepository activityRepository;
     CollectionRepository collectionRepository;
     ActivityTypeRepository activityTypeRepository;
+
     ActivityMapper activityMapper;
 
     @Override

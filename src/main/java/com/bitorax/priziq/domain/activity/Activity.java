@@ -1,5 +1,8 @@
-package com.bitorax.priziq.domain;
+package com.bitorax.priziq.domain.activity;
 
+import com.bitorax.priziq.domain.BaseEntity;
+import com.bitorax.priziq.domain.Collection;
+import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;

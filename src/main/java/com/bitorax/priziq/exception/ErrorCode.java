@@ -123,7 +123,8 @@ public enum ErrorCode {
 
     // Module activity errors
     COLLECTION_ID_REQUIRED(1801, HttpStatus.BAD_REQUEST, "Collection ID is required"),
-    ACTIVITY_TYPE_ID_REQUIRED(1802, HttpStatus.BAD_REQUEST, "Activity Type ID is required"),
+    ACTIVITY_TYPE_ID_REQUIRED(1802, HttpStatus.BAD_REQUEST, "Activity type ID is required"),
+    ACTIVITY_ID_REQUIRED(1803, HttpStatus.BAD_REQUEST, "Activity ID is required"),
 
     ;
 

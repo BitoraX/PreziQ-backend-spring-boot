@@ -1,5 +1,6 @@
 package com.bitorax.priziq.domain;
 
+import com.bitorax.priziq.domain.activity.Activity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
