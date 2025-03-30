@@ -116,15 +116,11 @@ public enum ErrorCode {
     COLLECTION_TITLE_NOT_BLANK(1601, HttpStatus.BAD_REQUEST, "Collection title must not be blank"),
     COLLECTION_NOT_FOUND(1602, HttpStatus.NOT_FOUND, "Collection not found"),
 
-    // Module activity type errors
-    ACTIVITY_TYPE_NAME_NOT_BLANK(1701, HttpStatus.BAD_REQUEST, "Activity type name must not be blank"),
-    ACTIVITY_TYPE_NOT_FOUND(1702, HttpStatus.NOT_FOUND, "Activity type not found"),
-    ACTIVITY_TYPE_NAME_EXISTED(1703, HttpStatus.CONFLICT, "Activity type name already exists in the system, please use a different name"),
-
     // Module activity errors
-    COLLECTION_ID_REQUIRED(1801, HttpStatus.BAD_REQUEST, "Collection ID is required"),
-    ACTIVITY_TYPE_ID_REQUIRED(1802, HttpStatus.BAD_REQUEST, "Activity type ID is required"),
-    ACTIVITY_ID_REQUIRED(1803, HttpStatus.BAD_REQUEST, "Activity ID is required"),
+    COLLECTION_ID_REQUIRED(1701, HttpStatus.BAD_REQUEST, "Collection ID is required"),
+    ACTIVITY_TYPE_ID_REQUIRED(1702, HttpStatus.BAD_REQUEST, "Activity type ID is required"),
+    ACTIVITY_ID_REQUIRED(1703, HttpStatus.BAD_REQUEST, "Activity ID is required"),
+    INVALID_ACTIVITY_TYPE(1704, HttpStatus.BAD_REQUEST, "Invalid activity type. Only the following types are supported: QUIZ_BUTTONS, QUIZ_CHECKBOXES, QUIZ_TRUE_OR_FALSE, QUIZ_TYPE_ANSWER, QUIZ_REORDER, INFO_SLIDE"),
 
     ;
 
