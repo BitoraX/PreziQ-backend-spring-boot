@@ -18,9 +18,10 @@ public class QuizReorderStep extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
+    @Column(nullable = false)
     Integer stepOrder;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     String stepText;
 
     @Column(columnDefinition = "TEXT")

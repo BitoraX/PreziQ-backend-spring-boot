@@ -1,5 +1,6 @@
 package com.bitorax.priziq.domain.activity.quiz;
 
+import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.activity.Activity;
 import jakarta.persistence.*;
@@ -25,14 +26,16 @@ public class Quiz extends BaseEntity {
     @JoinColumn(name = "activity_id")
     Activity activity;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     String questionText;
 
+    @Column(nullable = false)
     @Builder.Default
     Integer timeLimitSeconds = 30;
 
-    @Builder.Default
-    String pointType = "STANDARD";
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    PointType pointType;
 
     @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY)
     List<QuizAnswer> quizAnswers;

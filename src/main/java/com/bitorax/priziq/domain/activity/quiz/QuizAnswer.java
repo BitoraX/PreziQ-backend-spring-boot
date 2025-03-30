@@ -18,9 +18,10 @@ public class QuizAnswer extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     String answerText;
 
+    @Column(nullable = false)
     @Builder.Default
     Boolean isCorrect = false;
 
