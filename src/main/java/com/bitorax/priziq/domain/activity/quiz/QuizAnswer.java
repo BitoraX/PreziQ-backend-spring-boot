@@ -18,6 +18,10 @@ public class QuizAnswer extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     String quizAnswerId;
 
+    @ManyToOne
+    @JoinColumn(name = "quiz_id", nullable = false)
+    Quiz quiz;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     String answerText;
 
@@ -30,8 +34,4 @@ public class QuizAnswer extends BaseEntity {
 
     @Column(nullable = false)
     Integer orderIndex;
-
-    @ManyToOne
-    @JoinColumn(name = "quiz_id")
-    Quiz quiz;
 }

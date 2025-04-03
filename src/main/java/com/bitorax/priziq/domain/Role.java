@@ -21,14 +21,6 @@ public class Role extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     String roleId;
 
-    String name;
-
-    @Column(columnDefinition = "TEXT")
-    String description;
-
-    @Builder.Default
-    Boolean active = true;
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "permission_roles", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
     @JsonIgnoreProperties(value = { "roles" })
@@ -37,4 +29,12 @@ public class Role extends BaseEntity {
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "roles")
     @JsonIgnore
     List<User> users;
+
+    String name;
+
+    @Column(columnDefinition = "TEXT")
+    String description;
+
+    @Builder.Default
+    Boolean active = true;
 }

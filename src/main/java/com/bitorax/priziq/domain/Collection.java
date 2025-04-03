@@ -1,6 +1,7 @@
 package com.bitorax.priziq.domain;
 
 import com.bitorax.priziq.domain.activity.Activity;
+import com.bitorax.priziq.domain.session.Session;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -20,6 +21,16 @@ public class Collection extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     String collectionId;
 
+    @ManyToOne
+    @JoinColumn(name = "creator_id", nullable = false)
+    User creator;
+
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    List<Activity> activities;
+
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    List<Session> sessions;
+
     String title;
 
     @Column(columnDefinition = "TEXT")
@@ -30,7 +41,4 @@ public class Collection extends BaseEntity {
 
     String coverImage;
     String defaultBackgroundMusic;
-
-    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
-    List<Activity> activities;
 }

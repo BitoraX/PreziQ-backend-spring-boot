@@ -128,6 +128,7 @@ public enum ErrorCode {
     INVALID_POINT_TYPE(1705, HttpStatus.BAD_REQUEST, "Invalid point type. Only the following types are supported: NO_POINTS, STANDARD, DOUBLE_POINTS"),
     ACTIVITY_TYPE_NOT_BLANK(1706, HttpStatus.BAD_REQUEST, "Activity type must not be blank"),
     ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
+    INVALID_SLIDE_ELEMENT_TYPE(1708, HttpStatus.BAD_REQUEST, "Invalid slide element type. Only the following types are supported: TEXT, IMAGE"),
 
     ;
 

@@ -4,9 +4,13 @@ import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
+import com.bitorax.priziq.domain.activity.slide.Slide;
+import com.bitorax.priziq.domain.session.ActivitySubmission;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,6 +24,19 @@ public class Activity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String activityId;
+
+    @ManyToOne
+    @JoinColumn(name = "collection_id")
+    Collection collection;
+
+    @OneToOne(mappedBy = "activity")
+    Quiz quiz;
+
+    @OneToOne(mappedBy = "activity")
+    Slide slide;
+
+    @OneToMany(mappedBy = "activity", fetch = FetchType.LAZY)
+    List<ActivitySubmission> activitySubmissions;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -40,11 +57,4 @@ public class Activity extends BaseEntity {
     String backgroundColor;
     String backgroundImage;
     String customBackgroundMusic;
-
-    @ManyToOne
-    @JoinColumn(name = "collection_id")
-    Collection collection;
-
-    @OneToOne(mappedBy = "activity")
-    Quiz quiz;
 }
