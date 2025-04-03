@@ -18,7 +18,7 @@ import java.util.List;
 public class Permission extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String permissionId;
 
     String name;
     String apiPath;

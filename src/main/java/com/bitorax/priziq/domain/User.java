@@ -19,7 +19,7 @@ import java.util.List;
 public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String userId;
 
     @Column(unique = true)
     String email;

@@ -27,7 +27,7 @@ public class PermissionUtils {
         List<Permission> existingPermissions = this.permissionRepository.findAllById(providedIds);
 
         Set<String> existingIds = existingPermissions.stream()
-                .map(Permission::getId)
+                .map(Permission::getPermissionId)
                 .collect(Collectors.toSet());
 
         Set<String> nonExistentIds = providedIds.stream()
@@ -49,7 +49,7 @@ public class PermissionUtils {
     }
 
     public Set<String> getPermissionIdsFromRole(Role role) {
-        return role.getPermissions().stream().map(Permission::getId).collect(Collectors.toSet());
+        return role.getPermissions().stream().map(Permission::getPermissionId).collect(Collectors.toSet());
     }
 
     public void validatePermissionsBelongToModule(List<Permission> permissions, String targetModule) {
@@ -60,7 +60,7 @@ public class PermissionUtils {
         if (!conflictingPermissions.isEmpty()) {
             String errorMessage = "Quyền hạn sau đã thuộc về module khác: " +
                     conflictingPermissions.stream()
-                            .map(permission -> permission.getId() + " (Module: " + permission.getModule() + ")")
+                            .map(permission -> permission.getPermissionId() + " (Module: " + permission.getModule() + ")")
                             .collect(Collectors.joining(", "));
             throw new AppException(ErrorCode.PERMISSION_ALREADY_IN_ANOTHER_MODULE, errorMessage);
         }
@@ -77,11 +77,11 @@ public class PermissionUtils {
     }
 
     public void validateUniquePermissionOnUpdate(String permissionId, String name, String apiPath, String httpMethod) {
-        if (name != null && this.permissionRepository.existsByNameAndIdNot(name, permissionId)) {
+        if (name != null && this.permissionRepository.existsByNameAndPermissionIdNot(name, permissionId)) {
             throw new AppException(ErrorCode.PERMISSION_NAME_EXISTED);
         }
         if (apiPath != null && httpMethod != null
-                && this.permissionRepository.existsByApiPathAndHttpMethodAndIdNot(apiPath, httpMethod, permissionId)) {
+                && this.permissionRepository.existsByApiPathAndHttpMethodAndPermissionIdNot(apiPath, httpMethod, permissionId)) {
             throw new AppException(ErrorCode.PERMISSION_PATH_AND_METHOD_EXISTED);
         }
     }

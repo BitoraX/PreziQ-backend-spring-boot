@@ -19,7 +19,7 @@ import java.util.List;
 public class Role extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String roleId;
 
     String name;
 

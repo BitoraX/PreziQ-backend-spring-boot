@@ -16,7 +16,7 @@ import lombok.experimental.FieldDefaults;
 public class QuizAnswer extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String quizAnswerId;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     String answerText;
@@ -27,6 +27,9 @@ public class QuizAnswer extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     String explanation;
+
+    @Column(nullable = false)
+    Integer orderIndex;
 
     @ManyToOne
     @JoinColumn(name = "quiz_id")

@@ -19,7 +19,7 @@ import java.util.List;
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserSecureResponse extends AuditResponse {
-    String id;
+    String userId;
     String email;
     String firstName;
     String lastName;

@@ -19,7 +19,7 @@ import java.util.List;
 @Table(name = "quizzes")
 public class Quiz extends BaseEntity {
     @Id
-    String id;
+    String quizId;
 
     @OneToOne
     @MapsId
@@ -39,7 +39,4 @@ public class Quiz extends BaseEntity {
 
     @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY)
     List<QuizAnswer> quizAnswers;
-
-    @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY)
-    List<QuizReorderStep> quizReorderSteps;
 }

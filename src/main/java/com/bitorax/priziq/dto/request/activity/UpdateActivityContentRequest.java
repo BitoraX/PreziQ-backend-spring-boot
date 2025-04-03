@@ -1,6 +1,5 @@
 package com.bitorax.priziq.dto.request.activity;
 
-import com.bitorax.priziq.domain.activity.quiz.QuizReorderStep;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +20,4 @@ public class UpdateActivityContentRequest {
     String pointType;
 
     List<String> quizAnswers;
-
-    List<QuizReorderStep> quizReorderSteps;
 }

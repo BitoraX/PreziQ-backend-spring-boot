@@ -19,7 +19,7 @@ import lombok.experimental.FieldDefaults;
 public class Activity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String activityId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

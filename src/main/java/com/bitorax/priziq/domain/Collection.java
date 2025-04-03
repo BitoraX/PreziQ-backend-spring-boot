@@ -18,7 +18,7 @@ import java.util.List;
 public class Collection extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String collectionId;
 
     String title;
 

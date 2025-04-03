@@ -87,7 +87,7 @@ public class CollectionServiceImp implements CollectionService {
 
         // Get all activity IDs in this collection
         Set<String> currentActivityIds = currentCollection.getActivities().stream()
-                .map(Activity::getId)
+                .map(Activity::getActivityId)
                 .collect(Collectors.toSet());
 
         List<String> newOrderList = activityReorderRequest.getOrderedActivityIds();
@@ -125,7 +125,7 @@ public class CollectionServiceImp implements CollectionService {
         List<Activity> activities = activityRepository.findAllById(newOrderList);
 
         Map<String, Activity> activityMap = activities.stream()
-                .collect(Collectors.toMap(Activity::getId, Function.identity()));
+                .collect(Collectors.toMap(Activity::getActivityId, Function.identity()));
 
         List<ReorderedActivityResponse> updatedActivities = new ArrayList<>();
 

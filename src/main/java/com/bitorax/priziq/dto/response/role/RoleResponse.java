@@ -17,7 +17,7 @@ import java.util.List;
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RoleResponse extends AuditResponse {
-    String id;
+    String roleId;
     String name;
     String description;
     Boolean active;
