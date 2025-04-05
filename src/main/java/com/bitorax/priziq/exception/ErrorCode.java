@@ -130,6 +130,26 @@ public enum ErrorCode {
     ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
     INVALID_SLIDE_ELEMENT_TYPE(1708, HttpStatus.BAD_REQUEST, "Invalid slide element type. Only the following types are supported: TEXT, IMAGE"),
 
+    // Quiz errors
+    QUESTION_TEXT_REQUIRED(1709, HttpStatus.BAD_REQUEST, "Question text is required"),
+    TIME_LIMIT_REQUIRED(1710, HttpStatus.BAD_REQUEST, "Time limit is required"),
+    TIME_LIMIT_POSITIVE(1711, HttpStatus.BAD_REQUEST, "Time limit must be positive"),
+    POINT_TYPE_REQUIRED(1712, HttpStatus.BAD_REQUEST, "Point type is required"),
+    ANSWERS_REQUIRED(1713, HttpStatus.BAD_REQUEST, "Answers are required"),
+    MINIMUM_ANSWERS(1714, HttpStatus.BAD_REQUEST, "At least 2 answers are required"),
+    ANSWER_TEXT_REQUIRED(1715, HttpStatus.BAD_REQUEST, "Answer text is required"),
+    IS_CORRECT_REQUIRED(1716, HttpStatus.BAD_REQUEST, "isCorrect is required"),
+    CORRECT_ORDER_REQUIRED(1717, HttpStatus.BAD_REQUEST, "Correct order is required"),
+    MINIMUM_CORRECT_ORDER(1718, HttpStatus.BAD_REQUEST, "Correct order must have at least one item"),
+    CORRECT_ANSWER_REQUIRED(1719, HttpStatus.BAD_REQUEST, "Correct answer is required"),
+
+    ACTIVITY_NOT_QUIZ_TYPE(1720, HttpStatus.BAD_REQUEST, "Activity is not a quiz type"),
+    INVALID_REQUEST_TYPE(1721, HttpStatus.BAD_REQUEST, "Request type does not match quiz type"),
+    INVALID_QUIZ_BUTTONS_ANSWERS(1722, HttpStatus.BAD_REQUEST, "QUIZ_BUTTONS must have exactly one correct answer"),
+    INVALID_QUIZ_CHECKBOXES_ANSWERS(1723, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least one correct answer"),
+    INVALID_QUIZ_REORDER_ANSWERS(1724, HttpStatus.BAD_REQUEST, "QUIZ_REORDER must have at least one answer in correct order"),
+    QUIZ_NOT_FOUND(1725, HttpStatus.BAD_REQUEST, "Quiz not found"),
+
     ;
 
     int code;

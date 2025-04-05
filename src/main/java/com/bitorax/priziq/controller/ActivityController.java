@@ -2,7 +2,9 @@ package com.bitorax.priziq.controller;
 
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
+import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.common.ActivityTypeInfo;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.service.ActivityService;
@@ -40,6 +42,15 @@ public class ActivityController {
         return ApiResponse.<List<ActivityTypeInfo>>builder()
                 .message("Retrieved the list of activity types successfully")
                 .data(ActivityType.getAllTypes())
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @PutMapping("/{activityId}/quiz")
+    ApiResponse<QuizResponse> updateQuiz(@PathVariable String activityId, @RequestBody @Valid UpdateQuizRequest updateQuizRequest, HttpServletRequest servletRequest) {
+        return ApiResponse.<QuizResponse>builder()
+                .message("Quiz updated successfully")
+                .data(activityService.updateQuiz(activityId, updateQuizRequest))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

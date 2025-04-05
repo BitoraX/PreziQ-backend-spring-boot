@@ -1,10 +1,7 @@
 package com.bitorax.priziq.domain;
 
 import com.bitorax.priziq.utils.SecurityUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,6 +24,9 @@ public abstract class BaseEntity {
     String createdBy;
 
     String updatedBy;
+
+    @Version
+    Long version;
 
     @PrePersist
     protected void onCreate() {

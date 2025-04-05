@@ -147,7 +147,8 @@ public class DataInitializer implements ApplicationRunner {
 
                         // Module Activity
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
-                        new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES")
+                        new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES"),
+                        new Permission("Update quiz for activity", "/api/v1/activities/{activityId}/quiz", "PUT", "ACTIVITIES")
                 );
         }
 
