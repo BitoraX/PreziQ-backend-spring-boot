@@ -131,8 +131,7 @@ public class ActivityServiceImp implements ActivityService {
 
         // Save and return response
         quizRepository.save(quiz);
-        Quiz updatedQuiz = quizRepository.findById(activityId)
-                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
+        Quiz updatedQuiz = quizRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
         updatedQuiz.getQuizAnswers().size(); // Ensure lazy-loaded quizAnswers are fetched
         return activityMapper.quizToResponse(updatedQuiz);
     }

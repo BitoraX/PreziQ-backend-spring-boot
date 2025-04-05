@@ -3,6 +3,7 @@ package com.bitorax.priziq.domain.activity.quiz;
 import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.activity.Activity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +25,7 @@ public class Quiz extends BaseEntity {
     @OneToOne
     @MapsId
     @JoinColumn(name = "activity_id", nullable = false)
+    @JsonIgnore
     Activity activity;
 
     @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

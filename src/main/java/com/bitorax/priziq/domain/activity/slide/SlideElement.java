@@ -2,6 +2,7 @@ package com.bitorax.priziq.domain.activity.slide;
 
 import com.bitorax.priziq.constant.SlideElementType;
 import com.bitorax.priziq.domain.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +24,7 @@ public class SlideElement extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "slide_id", nullable = false)
+    @JsonIgnore
     Slide slide;
 
     @Column(nullable = false)

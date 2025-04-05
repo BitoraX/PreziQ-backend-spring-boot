@@ -6,6 +6,7 @@ import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -27,6 +28,7 @@ public class Activity extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "collection_id")
+    @JsonIgnore
     Collection collection;
 
     @OneToOne(mappedBy = "activity")

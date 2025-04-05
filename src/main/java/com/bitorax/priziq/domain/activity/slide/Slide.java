@@ -2,6 +2,7 @@ package com.bitorax.priziq.domain.activity.slide;
 
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.activity.Activity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +25,7 @@ public class Slide extends BaseEntity {
     @OneToOne
     @MapsId
     @JoinColumn(name = "activity_id", nullable = false)
+    @JsonIgnore
     Activity activity;
 
     @OneToMany(mappedBy = "slide", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
