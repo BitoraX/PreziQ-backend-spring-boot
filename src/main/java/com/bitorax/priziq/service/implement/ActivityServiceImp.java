@@ -1,6 +1,7 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.constant.ActivityType;
+import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -39,70 +41,82 @@ public class ActivityServiceImp implements ActivityService {
     QuizAnswerRepository quizAnswerRepository;
     ActivityMapper activityMapper;
 
+    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE");
+
     @Override
-    public ActivityResponse createActivity(CreateActivityRequest createActivityRequest){
+    public ActivityResponse createActivity(CreateActivityRequest createActivityRequest) {
         Collection currentCollection = collectionRepository
                 .findById(createActivityRequest.getCollectionId())
                 .orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND));
 
         ActivityType.validateActivityType(createActivityRequest.getActivityType());
 
-        // Mapper other fields and set collection
         Activity activity = activityMapper.createActivityRequestToActivity(createActivityRequest);
         activity.setCollection(currentCollection);
 
-        // Handle increase order index of activity (max + 1)
         Integer maxOrderIndex = currentCollection.getActivities().stream()
                 .map(Activity::getOrderIndex)
                 .filter(Objects::nonNull)
                 .max(Integer::compareTo)
                 .orElse(-1);
 
-        activity.setOrderIndex(maxOrderIndex + 1); // index final
+        activity.setOrderIndex(maxOrderIndex + 1);
 
-        // Save and return response
         return activityMapper.activityToResponse(activityRepository.save(activity));
     }
 
     @Override
     @Transactional
     public QuizResponse updateQuiz(String activityId, UpdateQuizRequest updateQuizRequest) {
-        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+        // Validate quiz type
+        String requestType = updateQuizRequest.getType();
+        if (requestType == null || !VALID_QUIZ_TYPES.contains(requestType.toUpperCase())) {
+            throw new AppException(ErrorCode.INVALID_QUIZ_TYPE);
+        }
+
+        // Validate pointType
+        PointType.validatePointType(updateQuizRequest.getPointType());
+
+        // Fetch activity
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
 
         ActivityType activityType = activity.getActivityType();
         if (!activityType.name().startsWith("QUIZ_")) {
             throw new AppException(ErrorCode.ACTIVITY_NOT_QUIZ_TYPE);
         }
 
+        // Validate request type matches activity type
         validateRequestType(updateQuizRequest, activityType);
 
-        Quiz quiz = activity.getQuiz();
-        if (quiz == null) {
-            quiz = Quiz.builder()
-                    .quizId(activityId)
-                    .activity(activity)
-                    .build();
-            activity.setQuiz(quiz);
-        } else {
-            quiz = quizRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
-        }
+        // Get or create quiz
+        Quiz quiz = quizRepository.findById(activityId)
+                .orElseGet(() -> {
+                    Quiz newQuiz = Quiz.builder()
+                            .quizId(activityId)
+                            .activity(activity)
+                            .build();
+                    activity.setQuiz(newQuiz);
+                    return newQuiz;
+                });
 
+        // Update basic quiz fields from request
         activityMapper.updateQuizFromRequest(updateQuizRequest, quiz);
 
+        // Handle specific quiz types
         switch (activityType) {
             case QUIZ_BUTTONS:
                 UpdateChoiceQuizRequest buttonsRequest = (UpdateChoiceQuizRequest) updateQuizRequest;
                 validateQuizButtons(buttonsRequest);
-                handleChoiceQuiz(quiz, buttonsRequest, activityType);
+                handleChoiceQuiz(quiz, buttonsRequest);
                 break;
             case QUIZ_CHECKBOXES:
                 UpdateChoiceQuizRequest checkboxesRequest = (UpdateChoiceQuizRequest) updateQuizRequest;
                 validateQuizCheckboxes(checkboxesRequest);
-                handleChoiceQuiz(quiz, checkboxesRequest, activityType);
+                handleChoiceQuiz(quiz, checkboxesRequest);
                 break;
             case QUIZ_REORDER:
                 UpdateReorderQuizRequest reorderRequest = (UpdateReorderQuizRequest) updateQuizRequest;
-                validateQuizReorder(reorderRequest);
                 handleReorderQuiz(quiz, reorderRequest);
                 break;
             case QUIZ_TYPE_ANSWER:
@@ -117,30 +131,35 @@ public class ActivityServiceImp implements ActivityService {
                 throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
 
+        // Save and return response
         quizRepository.save(quiz);
-        return activityMapper.quizToResponse(quiz);
+        Quiz updatedQuiz = quizRepository.findById(activityId)
+                .orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
+        updatedQuiz.getQuizAnswers().size(); // Ensure lazy-loaded quizAnswers are fetched
+        return activityMapper.quizToResponse(updatedQuiz);
     }
 
     private void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
+        String requestType = request.getType().toUpperCase();
         switch (activityType) {
             case QUIZ_BUTTONS:
             case QUIZ_CHECKBOXES:
-                if (!(request instanceof UpdateChoiceQuizRequest)) {
+                if (!requestType.equals("CHOICE") || !(request instanceof UpdateChoiceQuizRequest)) {
                     throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             case QUIZ_REORDER:
-                if (!(request instanceof UpdateReorderQuizRequest)) {
+                if (!requestType.equals("REORDER") || !(request instanceof UpdateReorderQuizRequest)) {
                     throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             case QUIZ_TYPE_ANSWER:
-                if (!(request instanceof UpdateTypeAnswerQuizRequest)) {
+                if (!requestType.equals("TYPE_ANSWER") || !(request instanceof UpdateTypeAnswerQuizRequest)) {
                     throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             case QUIZ_TRUE_OR_FALSE:
-                if (!(request instanceof UpdateTrueFalseQuizRequest)) {
+                if (!requestType.equals("TRUE_FALSE") || !(request instanceof UpdateTrueFalseQuizRequest)) {
                     throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
@@ -163,13 +182,7 @@ public class ActivityServiceImp implements ActivityService {
         }
     }
 
-    private void validateQuizReorder(UpdateReorderQuizRequest request) {
-        if (request.getCorrectOrder().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_QUIZ_REORDER_ANSWERS);
-        }
-    }
-
-    private void handleChoiceQuiz(Quiz quiz, UpdateChoiceQuizRequest request, ActivityType type) {
+    private void handleChoiceQuiz(Quiz quiz, UpdateChoiceQuizRequest request) {
         List<QuizAnswer> answers = new ArrayList<>();
         for (int i = 0; i < request.getAnswers().size(); i++) {
             ChoiceAnswerRequest answerReq = request.getAnswers().get(i);
@@ -226,10 +239,10 @@ public class ActivityServiceImp implements ActivityService {
     }
 
     private void updateQuizAnswers(Quiz quiz, List<QuizAnswer> newAnswers) {
-        if (quiz.getQuizAnswers() == null) {
-            quiz.setQuizAnswers(new ArrayList<>());
-        } else {
+        if (quiz.getQuizAnswers() != null) {
             quiz.getQuizAnswers().clear();
+        } else {
+            quiz.setQuizAnswers(new ArrayList<>());
         }
         quiz.getQuizAnswers().addAll(newAnswers);
     }

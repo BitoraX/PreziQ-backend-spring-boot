@@ -17,5 +17,10 @@ public class UpdateChoiceQuizRequest extends UpdateQuizRequest {
     @NotNull(message = "ANSWERS_REQUIRED")
     @Size(min = 2, message = "MINIMUM_ANSWERS")
     List<ChoiceAnswerRequest> answers;
+
+    @Override
+    public String getType() {
+        return "CHOICE";
+    }
 }
 

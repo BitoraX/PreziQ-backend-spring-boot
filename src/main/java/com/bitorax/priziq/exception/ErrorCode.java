@@ -149,6 +149,9 @@ public enum ErrorCode {
     INVALID_QUIZ_CHECKBOXES_ANSWERS(1723, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least one correct answer"),
     INVALID_QUIZ_REORDER_ANSWERS(1724, HttpStatus.BAD_REQUEST, "QUIZ_REORDER must have at least one answer in correct order"),
     QUIZ_NOT_FOUND(1725, HttpStatus.BAD_REQUEST, "Quiz not found"),
+    INVALID_QUIZ_TYPE(1726, HttpStatus.BAD_REQUEST,"Invalid quiz type provided"),
+    INVALID_QUIZ_BUTTONS_ANSWERS_COUNT(1727, HttpStatus.BAD_REQUEST, "QUIZ_BUTTONS must have at least 2 answers"),
+    INVALID_QUIZ_CHECKBOXES_ANSWERS_COUNT(1728, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least 2 answers"),
 
     ;
 

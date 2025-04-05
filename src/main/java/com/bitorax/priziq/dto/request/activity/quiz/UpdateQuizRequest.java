@@ -29,4 +29,6 @@ public abstract class UpdateQuizRequest {
 
     @NotBlank(message = "POINT_TYPE_REQUIRED")
     String pointType;
+
+    public abstract String getType();
 }

@@ -14,4 +14,9 @@ import lombok.experimental.SuperBuilder;
 public class UpdateTrueFalseQuizRequest extends UpdateQuizRequest {
     @NotNull(message = "CORRECT_ANSWER_REQUIRED")
     Boolean correctAnswer;
+
+    @Override
+    public String getType() {
+        return "TRUE_FALSE";
+    }
 }

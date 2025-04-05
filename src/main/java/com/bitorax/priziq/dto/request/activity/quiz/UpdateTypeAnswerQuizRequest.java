@@ -14,4 +14,9 @@ import lombok.experimental.SuperBuilder;
 public class UpdateTypeAnswerQuizRequest extends UpdateQuizRequest {
     @NotBlank(message = "CORRECT_ANSWER_REQUIRED")
     String correctAnswer;
+
+    @Override
+    public String getType() {
+        return "TYPE_ANSWER";
+    }
 }

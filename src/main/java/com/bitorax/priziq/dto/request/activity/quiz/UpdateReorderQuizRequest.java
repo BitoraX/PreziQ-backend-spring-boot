@@ -17,4 +17,9 @@ public class UpdateReorderQuizRequest extends UpdateQuizRequest {
     @NotNull(message = "CORRECT_ORDER_REQUIRED")
     @Size(min = 1, message = "MINIMUM_CORRECT_ORDER")
     List<String> correctOrder;
+
+    @Override
+    public String getType() {
+        return "REORDER";
+    }
 }
