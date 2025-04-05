@@ -2,6 +2,7 @@ package com.bitorax.priziq.controller;
 
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
+import com.bitorax.priziq.dto.request.activity.UpdateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
@@ -60,6 +61,15 @@ public class ActivityController {
         activityService.deleteActivity(activityId);
         return ApiResponse.<Void>builder()
                 .message("Activity deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @PutMapping("/{activityId}")
+    ApiResponse<ActivityResponse> updateActivity(@PathVariable String activityId, @RequestBody @Valid UpdateActivityRequest updateActivityRequest, HttpServletRequest servletRequest) {
+        return ApiResponse.<ActivityResponse>builder()
+                .message("Activity updated successfully")
+                .data(activityService.updateActivity(activityId, updateActivityRequest))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

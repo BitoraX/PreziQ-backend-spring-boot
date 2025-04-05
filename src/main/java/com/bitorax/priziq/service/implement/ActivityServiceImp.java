@@ -8,6 +8,7 @@ import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
+import com.bitorax.priziq.dto.request.activity.UpdateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.*;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
@@ -256,5 +257,55 @@ public class ActivityServiceImp implements ActivityService {
         }
 
         activityRepository.delete(activity);
+    }
+
+    @Override
+    @Transactional
+    public ActivityResponse updateActivity(String activityId, UpdateActivityRequest updateActivityRequest) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        if (updateActivityRequest.getActivityType() != null) {
+            ActivityType newType;
+            try {
+                newType = ActivityType.valueOf(updateActivityRequest.getActivityType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
+            }
+
+            if (newType == activity.getActivityType()) {
+                throw new AppException(ErrorCode.ACTIVITY_TYPE_UNCHANGED);
+            }
+
+            Integer orderIndex = activity.getOrderIndex();
+            Collection collection = activity.getCollection();
+
+            String oldTitle = activity.getTitle();
+            String oldDescription = activity.getDescription();
+            Boolean oldIsPublished = activity.getIsPublished();
+            String oldBackgroundColor = activity.getBackgroundColor();
+            String oldBackgroundImage = activity.getBackgroundImage();
+            String oldCustomBackgroundMusic = activity.getCustomBackgroundMusic();
+
+            deleteActivity(activityId);
+
+            Activity newActivity = Activity.builder()
+                    .activityType(newType)
+                    .collection(collection)
+                    .orderIndex(orderIndex)
+                    .title(updateActivityRequest.getTitle() != null ? updateActivityRequest.getTitle() : oldTitle)
+                    .description(updateActivityRequest.getDescription() != null ? updateActivityRequest.getDescription() : oldDescription)
+                    .isPublished(updateActivityRequest.getIsPublished() != null ? updateActivityRequest.getIsPublished() : oldIsPublished)
+                    .backgroundColor(updateActivityRequest.getBackgroundColor() != null ? updateActivityRequest.getBackgroundColor() : oldBackgroundColor)
+                    .backgroundImage(updateActivityRequest.getBackgroundImage() != null ? updateActivityRequest.getBackgroundImage() : oldBackgroundImage)
+                    .customBackgroundMusic(updateActivityRequest.getCustomBackgroundMusic() != null ? updateActivityRequest.getCustomBackgroundMusic() : oldCustomBackgroundMusic)
+                    .build();
+
+            Activity savedActivity = activityRepository.save(newActivity);
+            return activityMapper.activityToResponse(savedActivity);
+        }
+
+        activityMapper.updateActivityFromRequest(updateActivityRequest, activity);
+        Activity updatedActivity = activityRepository.save(activity);
+        return activityMapper.activityToResponse(updatedActivity);
     }
 }

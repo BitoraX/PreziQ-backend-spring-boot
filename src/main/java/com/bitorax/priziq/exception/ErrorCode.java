@@ -152,6 +152,7 @@ public enum ErrorCode {
     INVALID_QUIZ_TYPE(1726, HttpStatus.BAD_REQUEST,"Invalid quiz type provided"),
     INVALID_QUIZ_BUTTONS_ANSWERS_COUNT(1727, HttpStatus.BAD_REQUEST, "QUIZ_BUTTONS must have at least 2 answers"),
     INVALID_QUIZ_CHECKBOXES_ANSWERS_COUNT(1728, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least 2 answers"),
+    ACTIVITY_TYPE_UNCHANGED(1729, HttpStatus.BAD_REQUEST, "Activity type unchanged"),
 
     ;
 

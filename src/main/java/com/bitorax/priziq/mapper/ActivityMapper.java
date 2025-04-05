@@ -4,13 +4,12 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
+import com.bitorax.priziq.dto.request.activity.UpdateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizAnswerResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface ActivityMapper {
@@ -28,4 +27,7 @@ public interface ActivityMapper {
     QuizResponse quizToResponse(Quiz quiz);
 
     QuizAnswerResponse quizAnswerToResponse(QuizAnswer quizAnswer);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateActivityFromRequest(UpdateActivityRequest updateActivityRequest, @MappingTarget Activity activity);
 }
