@@ -6,6 +6,7 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
+import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.*;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
@@ -13,10 +14,7 @@ import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
-import com.bitorax.priziq.repository.ActivityRepository;
-import com.bitorax.priziq.repository.CollectionRepository;
-import com.bitorax.priziq.repository.QuizAnswerRepository;
-import com.bitorax.priziq.repository.QuizRepository;
+import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.ActivityService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -38,7 +36,7 @@ public class ActivityServiceImp implements ActivityService {
     ActivityRepository activityRepository;
     CollectionRepository collectionRepository;
     QuizRepository quizRepository;
-    QuizAnswerRepository quizAnswerRepository;
+    SlideRepository slideRepository;
     ActivityMapper activityMapper;
 
     private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE");
@@ -245,5 +243,19 @@ public class ActivityServiceImp implements ActivityService {
             quiz.setQuizAnswers(new ArrayList<>());
         }
         quiz.getQuizAnswers().addAll(newAnswers);
+    }
+
+    @Override
+    @Transactional
+    public void deleteActivity(String activityId) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        if (activity.getActivityType().name().startsWith("QUIZ_")) {
+            quizRepository.findById(activityId).ifPresent(quizRepository::delete);
+        } else if (activity.getActivityType() == ActivityType.INFO_SLIDE) {
+            slideRepository.findById(activityId).ifPresent(slideRepository::delete);
+        }
+
+        activityRepository.delete(activity);
     }
 }

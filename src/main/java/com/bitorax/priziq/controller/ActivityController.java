@@ -54,4 +54,13 @@ public class ActivityController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @DeleteMapping("/{activityId}")
+    ApiResponse<Void> deleteActivity(@PathVariable String activityId, HttpServletRequest servletRequest) {
+        activityService.deleteActivity(activityId);
+        return ApiResponse.<Void>builder()
+                .message("Activity deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
 }

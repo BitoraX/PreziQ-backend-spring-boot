@@ -9,4 +9,6 @@ public interface ActivityService {
     ActivityResponse createActivity(CreateActivityRequest createActivityRequest);
 
     QuizResponse updateQuiz(String activityId, UpdateQuizRequest updateQuizRequest);
+
+    void deleteActivity(String activityId);
 }

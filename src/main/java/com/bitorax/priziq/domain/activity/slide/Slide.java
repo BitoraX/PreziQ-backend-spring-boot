@@ -26,7 +26,7 @@ public class Slide extends BaseEntity {
     @JoinColumn(name = "activity_id", nullable = false)
     Activity activity;
 
-    @OneToMany(mappedBy = "slide", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "slide", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     List<SlideElement> slideElements;
 
     String transitionEffect;
