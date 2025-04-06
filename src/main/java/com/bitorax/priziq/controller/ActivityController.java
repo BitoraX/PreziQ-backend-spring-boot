@@ -30,11 +30,11 @@ import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
-@RequestMapping("/api/v1/activities")
+@RequestMapping("/api/v1")
 public class ActivityController {
     ActivityService activityService;
 
-    @PostMapping
+    @PostMapping("/activities")
     ApiResponse<ActivityResponse> createActivity(@RequestBody @Valid CreateActivityRequest createActivityRequest, HttpServletRequest servletRequest){
         return ApiResponse.<ActivityResponse>builder()
                 .message("Activity created successfully")
@@ -43,7 +43,7 @@ public class ActivityController {
                 .build();
     }
 
-    @GetMapping("/types")
+    @GetMapping("/activities/types")
     ApiResponse<List<ActivityTypeInfo>> getAllActivityTypes(HttpServletRequest servletRequest){
         return ApiResponse.<List<ActivityTypeInfo>>builder()
                 .message("Retrieved the list of activity types successfully")
@@ -52,7 +52,7 @@ public class ActivityController {
                 .build();
     }
 
-    @PutMapping("/{activityId}/quiz")
+    @PutMapping("/activities/{activityId}/quiz")
     ApiResponse<QuizResponse> updateQuiz(@PathVariable String activityId, @RequestBody @Valid UpdateQuizRequest updateQuizRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<QuizResponse>builder()
                 .message("Quiz updated successfully")
@@ -61,7 +61,7 @@ public class ActivityController {
                 .build();
     }
 
-    @DeleteMapping("/{activityId}")
+    @DeleteMapping("/activities/{activityId}")
     ApiResponse<Void> deleteActivity(@PathVariable String activityId, HttpServletRequest servletRequest) {
         activityService.deleteActivity(activityId);
         return ApiResponse.<Void>builder()
@@ -70,7 +70,7 @@ public class ActivityController {
                 .build();
     }
 
-    @PutMapping("/{activityId}")
+    @PutMapping("/activities/{activityId}")
     ApiResponse<ActivityResponse> updateActivity(@PathVariable String activityId, @RequestBody @Valid UpdateActivityRequest updateActivityRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<ActivityResponse>builder()
                 .message("Activity updated successfully")

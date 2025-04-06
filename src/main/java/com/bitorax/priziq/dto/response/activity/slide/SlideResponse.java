@@ -13,8 +13,8 @@ import java.util.List;
 @Builder
 public class SlideResponse {
     String slideId;
-    List<SlideElementResponse> slideElements;
     String transitionEffect;
     BigDecimal transitionDuration;
     Integer autoAdvanceSeconds;
+    List<SlideElementResponse> slideElements;
 }

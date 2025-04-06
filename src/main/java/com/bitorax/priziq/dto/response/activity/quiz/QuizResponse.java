@@ -20,5 +20,5 @@ public class QuizResponse extends AuditResponse {
     String questionText;
     Integer timeLimitSeconds;
     String pointType;
-    List<QuizAnswerResponse> answers;
+    List<QuizAnswerResponse> quizAnswers;
 }

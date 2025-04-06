@@ -30,7 +30,7 @@ public interface ActivityMapper {
     @Mapping(target = "activity", ignore = true)
     void updateQuizFromRequest(UpdateQuizRequest request, @MappingTarget Quiz quiz);
 
-    @Mapping(target = "answers", source = "quizAnswers")
+    @Mapping(target = "quizAnswers", source = "quizAnswers")
     QuizResponse quizToResponse(Quiz quiz);
 
     QuizAnswerResponse quizAnswerToResponse(QuizAnswer quizAnswer);

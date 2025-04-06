@@ -344,7 +344,7 @@ public class ActivityServiceImp implements ActivityService {
     @Override
     @Transactional
     public SlideElementResponse addSlideElement(String slideId, CreateSlideElementRequest createSlideElementRequest) {
-        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        Slide slide = getSlideById(slideId);
 
         SlideElementType.validateSlideElementType(createSlideElementRequest.getSlideElementType());
         SlideElement slideElement = activityMapper.createSlideElementRequestToSlideElement(createSlideElementRequest);
@@ -356,7 +356,7 @@ public class ActivityServiceImp implements ActivityService {
     @Override
     @Transactional
     public SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest) {
-        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        Slide slide = getSlideById(slideId);
         SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
 
         if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
@@ -372,7 +372,7 @@ public class ActivityServiceImp implements ActivityService {
     @Override
     @Transactional
     public void deleteSlideElement(String slideId, String elementId) {
-        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        Slide slide = getSlideById(slideId);
         SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
 
         if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
@@ -380,5 +380,9 @@ public class ActivityServiceImp implements ActivityService {
         }
 
         slideElementRepository.delete(slideElement);
+    }
+
+    private Slide getSlideById(String slideId) {
+        return slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
     }
 }

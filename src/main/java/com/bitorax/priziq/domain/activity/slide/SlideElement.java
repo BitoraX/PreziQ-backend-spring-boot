@@ -48,7 +48,7 @@ public class SlideElement extends BaseEntity {
 
     @Column(nullable = false)
     @Builder.Default
-    Integer zIndex = 0;
+    Integer layerOrder = 0;
 
     @Column(columnDefinition = "TEXT")
     String content;

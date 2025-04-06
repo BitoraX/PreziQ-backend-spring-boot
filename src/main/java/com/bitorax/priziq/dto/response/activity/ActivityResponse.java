@@ -1,6 +1,7 @@
 package com.bitorax.priziq.dto.response.activity;
 
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
+import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
 import com.bitorax.priziq.dto.response.common.AuditResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -25,4 +26,5 @@ public class ActivityResponse extends AuditResponse {
     String backgroundImage;
     String customBackgroundMusic;
     QuizResponse quiz;
+    SlideResponse slide;
 }

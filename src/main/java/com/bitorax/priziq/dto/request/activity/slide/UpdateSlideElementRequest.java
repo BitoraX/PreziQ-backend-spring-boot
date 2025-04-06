@@ -31,7 +31,7 @@ public class UpdateSlideElementRequest {
 
     BigDecimal rotation;
 
-    Integer zIndex;
+    Integer layerOrder;
 
     String content;
 

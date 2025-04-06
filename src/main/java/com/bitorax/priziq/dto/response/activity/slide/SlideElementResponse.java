@@ -19,7 +19,7 @@ public class SlideElementResponse {
     BigDecimal width;
     BigDecimal height;
     BigDecimal rotation;
-    Integer zIndex;
+    Integer layerOrder;
     String content;
     String sourceUrl;
     String entryAnimation;

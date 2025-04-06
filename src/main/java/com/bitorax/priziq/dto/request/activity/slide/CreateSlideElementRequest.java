@@ -31,7 +31,7 @@ public class CreateSlideElementRequest {
 
     BigDecimal rotation;
 
-    Integer zIndex;
+    Integer layerOrder;
 
     String content;
 
