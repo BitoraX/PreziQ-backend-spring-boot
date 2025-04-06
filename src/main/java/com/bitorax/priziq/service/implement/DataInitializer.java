@@ -150,7 +150,11 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES"),
                         new Permission("Update quiz for activity", "/api/v1/activities/{activityId}/quiz", "PUT", "ACTIVITIES"),
                         new Permission("Delete a activity", "/api/v1/activities/{activityId}", "DELETE", "ACTIVITIES"),
-                        new Permission("Update a activity", "/api/v1/activities/{activityId}", "PUT", "ACTIVITIES")
+                        new Permission("Update a activity", "/api/v1/activities/{activityId}", "PUT", "ACTIVITIES"),
+                        new Permission("Update a slide", "/api/v1/slides/{slideId}", "PUT", "ACTIVITIES"),
+                        new Permission("Add a slide element", "/api/v1/slides/{slideId}/elements", "POST", "ACTIVITIES"),
+                        new Permission("Update a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "PUT", "ACTIVITIES"),
+                        new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES")
                 );
         }
 

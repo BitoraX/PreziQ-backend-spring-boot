@@ -130,7 +130,7 @@ public enum ErrorCode {
     ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
     INVALID_SLIDE_ELEMENT_TYPE(1708, HttpStatus.BAD_REQUEST, "Invalid slide element type. Only the following types are supported: TEXT, IMAGE"),
 
-    // Quiz errors
+    // Quiz-related errors
     QUESTION_TEXT_REQUIRED(1709, HttpStatus.BAD_REQUEST, "Question text is required"),
     TIME_LIMIT_REQUIRED(1710, HttpStatus.BAD_REQUEST, "Time limit is required"),
     TIME_LIMIT_POSITIVE(1711, HttpStatus.BAD_REQUEST, "Time limit must be positive"),
@@ -153,6 +153,24 @@ public enum ErrorCode {
     INVALID_QUIZ_BUTTONS_ANSWERS_COUNT(1727, HttpStatus.BAD_REQUEST, "QUIZ_BUTTONS must have at least 2 answers"),
     INVALID_QUIZ_CHECKBOXES_ANSWERS_COUNT(1728, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least 2 answers"),
     ACTIVITY_TYPE_UNCHANGED(1729, HttpStatus.BAD_REQUEST, "Activity type unchanged"),
+
+    // Slide-related errors
+    SLIDE_NOT_FOUND(1730, HttpStatus.BAD_REQUEST, "Slide not found"),
+    SLIDE_ELEMENT_NOT_FOUND(1731, HttpStatus.BAD_REQUEST, "Slide element not found"),
+    SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE(1732, HttpStatus.BAD_REQUEST, "Slide element does not belong to the slide"),
+    SLIDE_ELEMENT_TYPE_REQUIRED(1733, HttpStatus.BAD_REQUEST, "Slide element type is required"),
+    POSITION_X_REQUIRED(1734, HttpStatus.BAD_REQUEST, "Position X is required"),
+    POSITION_Y_REQUIRED(1735, HttpStatus.BAD_REQUEST, "Position Y is required"),
+    WIDTH_NON_NEGATIVE(1736, HttpStatus.BAD_REQUEST, "Width must be non-negative"),
+    HEIGHT_NON_NEGATIVE(1737, HttpStatus.BAD_REQUEST, "Height must be non-negative"),
+    TRANSITION_DURATION_REQUIRED(1738, HttpStatus.BAD_REQUEST, "Transition duration is required"),
+    TRANSITION_DURATION_NON_NEGATIVE(1739, HttpStatus.BAD_REQUEST, "Transition duration must be non-negative"),
+    AUTO_ADVANCE_SECONDS_REQUIRED(1740, HttpStatus.BAD_REQUEST, "Auto advance seconds is required"),
+    AUTO_ADVANCE_SECONDS_NON_NEGATIVE(1741, HttpStatus.BAD_REQUEST, "Auto advance seconds must be non-negative"),
+    ENTRY_ANIMATION_DURATION_NON_NEGATIVE(1742, HttpStatus.BAD_REQUEST, "Entry animation duration must be non-negative"),
+    ENTRY_ANIMATION_DELAY_NON_NEGATIVE(1743, HttpStatus.BAD_REQUEST, "Entry animation delay must be non-negative"),
+    EXIT_ANIMATION_DURATION_NON_NEGATIVE(1744, HttpStatus.BAD_REQUEST, "Exit animation duration must be non-negative"),
+    EXIT_ANIMATION_DELAY_NON_NEGATIVE(1745, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative");
 
     ;
 

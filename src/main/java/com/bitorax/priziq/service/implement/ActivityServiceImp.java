@@ -2,16 +2,23 @@ package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.constant.PointType;
+import com.bitorax.priziq.constant.SlideElementType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
 import com.bitorax.priziq.domain.activity.slide.Slide;
+import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.UpdateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.*;
+import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
+import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
+import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
+import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
+import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
 import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
@@ -38,11 +45,13 @@ public class ActivityServiceImp implements ActivityService {
     CollectionRepository collectionRepository;
     QuizRepository quizRepository;
     SlideRepository slideRepository;
+    SlideElementRepository slideElementRepository;
     ActivityMapper activityMapper;
 
     private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE");
 
     @Override
+    @Transactional
     public ActivityResponse createActivity(CreateActivityRequest createActivityRequest) {
         Collection currentCollection = collectionRepository
                 .findById(createActivityRequest.getCollectionId())
@@ -61,7 +70,18 @@ public class ActivityServiceImp implements ActivityService {
 
         activity.setOrderIndex(maxOrderIndex + 1);
 
-        return activityMapper.activityToResponse(activityRepository.save(activity));
+        Activity savedActivity = activityRepository.save(activity);
+
+        if (savedActivity.getActivityType() == ActivityType.INFO_SLIDE) {
+            Slide slide = Slide.builder()
+                    .slideId(savedActivity.getActivityId())
+                    .activity(savedActivity)
+                    .build();
+            slideRepository.save(slide);
+            savedActivity.setSlide(slide);
+        }
+
+        return activityMapper.activityToResponse(savedActivity);
     }
 
     @Override
@@ -307,5 +327,58 @@ public class ActivityServiceImp implements ActivityService {
         activityMapper.updateActivityFromRequest(updateActivityRequest, activity);
         Activity updatedActivity = activityRepository.save(activity);
         return activityMapper.activityToResponse(updatedActivity);
+    }
+
+    @Override
+    @Transactional
+    public SlideResponse updateSlide(String slideId, UpdateSlideRequest updateSlideRequest) {
+        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+
+        activityMapper.updateSlideFromRequest(updateSlideRequest, slide);
+        slideRepository.save(slide);
+        Slide updatedSlide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        updatedSlide.getSlideElements().size(); // Fetch lazy-loaded slideElements
+        return activityMapper.slideToResponse(updatedSlide);
+    }
+
+    @Override
+    @Transactional
+    public SlideElementResponse addSlideElement(String slideId, CreateSlideElementRequest createSlideElementRequest) {
+        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+
+        SlideElementType.validateSlideElementType(createSlideElementRequest.getSlideElementType());
+        SlideElement slideElement = activityMapper.createSlideElementRequestToSlideElement(createSlideElementRequest);
+        slideElement.setSlide(slide);
+        slideElementRepository.save(slideElement);
+        return activityMapper.slideElementToResponse(slideElement);
+    }
+
+    @Override
+    @Transactional
+    public SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest) {
+        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
+
+        if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
+            throw new AppException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
+        }
+
+        SlideElementType.validateSlideElementType(updateSlideElementRequest.getSlideElementType());
+        activityMapper.updateSlideElementFromRequest(updateSlideElementRequest, slideElement);
+        slideElementRepository.save(slideElement);
+        return activityMapper.slideElementToResponse(slideElement);
+    }
+
+    @Override
+    @Transactional
+    public void deleteSlideElement(String slideId, String elementId) {
+        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
+
+        if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
+            throw new AppException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
+        }
+
+        slideElementRepository.delete(slideElement);
     }
 }
