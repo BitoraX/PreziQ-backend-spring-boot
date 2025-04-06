@@ -1,6 +1,7 @@
 package com.bitorax.priziq.dto.response.activity;
 
-import com.bitorax.priziq.dto.response.collection.CollectionResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
+import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
 import com.bitorax.priziq.dto.response.common.AuditResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -15,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ActivityResponse extends AuditResponse {
-    String id;
+    String activityId;
     String activityType;
     String title;
     String description;
@@ -24,5 +25,6 @@ public class ActivityResponse extends AuditResponse {
     String backgroundColor;
     String backgroundImage;
     String customBackgroundMusic;
-    CollectionResponse collection;
+    QuizResponse quiz;
+    SlideResponse slide;
 }

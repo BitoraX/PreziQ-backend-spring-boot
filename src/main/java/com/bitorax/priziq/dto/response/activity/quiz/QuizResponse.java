@@ -1,7 +1,6 @@
-package com.bitorax.priziq.dto.response.role;
+package com.bitorax.priziq.dto.response.activity.quiz;
 
 import com.bitorax.priziq.dto.response.common.AuditResponse;
-import com.bitorax.priziq.dto.response.permission.PermissionResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -16,10 +15,10 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RoleResponse extends AuditResponse {
-    String roleId;
-    String name;
-    String description;
-    Boolean active;
-    List<PermissionResponse> permissions;
+public class QuizResponse extends AuditResponse {
+    String quizId;
+    String questionText;
+    Integer timeLimitSeconds;
+    String pointType;
+    List<QuizAnswerResponse> quizAnswers;
 }

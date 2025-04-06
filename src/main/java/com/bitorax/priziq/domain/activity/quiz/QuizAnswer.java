@@ -1,6 +1,7 @@
 package com.bitorax.priziq.domain.activity.quiz;
 
 import com.bitorax.priziq.domain.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -16,7 +17,12 @@ import lombok.experimental.FieldDefaults;
 public class QuizAnswer extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String quizAnswerId;
+
+    @ManyToOne
+    @JoinColumn(name = "quiz_id", nullable = false)
+    @JsonIgnore
+    Quiz quiz;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     String answerText;
@@ -28,7 +34,6 @@ public class QuizAnswer extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     String explanation;
 
-    @ManyToOne
-    @JoinColumn(name = "quiz_id")
-    Quiz quiz;
+    @Column(nullable = false)
+    Integer orderIndex;
 }

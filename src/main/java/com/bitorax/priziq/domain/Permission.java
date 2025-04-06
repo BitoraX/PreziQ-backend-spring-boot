@@ -18,16 +18,16 @@ import java.util.List;
 public class Permission extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    String permissionId;
+
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "permissions")
+    @JsonIgnore
+    List<Role> roles;
 
     String name;
     String apiPath;
     String httpMethod;
     String module;
-
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "permissions")
-    @JsonIgnore
-    List<Role> roles;
 
     public Permission(String name, String apiPath, String httpMethod, String module) {
         this.name = name;

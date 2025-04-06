@@ -102,7 +102,7 @@ public class SecurityUtils {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getId())
+                .subject(user.getUserId())
                 .issuer("priziq") // domain
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now()
