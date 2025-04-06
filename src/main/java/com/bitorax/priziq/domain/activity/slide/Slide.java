@@ -1,6 +1,5 @@
-package com.bitorax.priziq.domain.activity.quiz;
+package com.bitorax.priziq.domain.activity.slide;
 
-import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -17,10 +17,10 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "quizzes")
-public class Quiz extends BaseEntity {
+@Table(name = "slides")
+public class Slide extends BaseEntity {
     @Id
-    String quizId;
+    String slideId;
 
     @OneToOne
     @MapsId
@@ -28,17 +28,15 @@ public class Quiz extends BaseEntity {
     @JsonIgnore
     Activity activity;
 
-    @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    List<QuizAnswer> quizAnswers;
+    @OneToMany(mappedBy = "slide", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    List<SlideElement> slideElements;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    String questionText;
+    String transitionEffect;
+
+    @Builder.Default
+    BigDecimal transitionDuration = BigDecimal.ONE;
 
     @Column(nullable = false)
     @Builder.Default
-    Integer timeLimitSeconds = 30;
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    PointType pointType;
+    Integer autoAdvanceSeconds = 0;
 }

@@ -1,6 +1,7 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.domain.Collection;
+import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -14,12 +15,15 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
 import com.bitorax.priziq.repository.ActivityRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
+import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.CollectionService;
+import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,11 +40,16 @@ import java.util.stream.Collectors;
 public class CollectionServiceImp implements CollectionService {
     CollectionRepository collectionRepository;
     ActivityRepository activityRepository;
+    UserRepository userRepository;
     CollectionMapper collectionMapper;
 
     @Override
     public CollectionResponse createCollection(CreateCollectionRequest createCollectionRequest){
         Collection collection = collectionMapper.createCollectionRequestToCollection(createCollectionRequest);
+
+        User creator = this.userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        collection.setCreator(creator);
+
         return collectionMapper.collectionToResponse(collectionRepository.save(collection));
     }
 
@@ -87,7 +96,7 @@ public class CollectionServiceImp implements CollectionService {
 
         // Get all activity IDs in this collection
         Set<String> currentActivityIds = currentCollection.getActivities().stream()
-                .map(Activity::getId)
+                .map(Activity::getActivityId)
                 .collect(Collectors.toSet());
 
         List<String> newOrderList = activityReorderRequest.getOrderedActivityIds();
@@ -125,7 +134,7 @@ public class CollectionServiceImp implements CollectionService {
         List<Activity> activities = activityRepository.findAllById(newOrderList);
 
         Map<String, Activity> activityMap = activities.stream()
-                .collect(Collectors.toMap(Activity::getId, Function.identity()));
+                .collect(Collectors.toMap(Activity::getActivityId, Function.identity()));
 
         List<ReorderedActivityResponse> updatedActivities = new ArrayList<>();
 

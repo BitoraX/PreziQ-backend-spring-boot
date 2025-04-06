@@ -202,11 +202,11 @@ public class UserServiceImp implements UserService {
 
     private void validateUserDoesNotAlreadyHaveRoles(User user, List<Role> newRoles) {
         Set<String> currentRoleIds = user.getRoles().stream()
-                .map(Role::getId)
+                .map(Role::getRoleId)
                 .collect(Collectors.toSet());
 
         Set<String> duplicateRoles = newRoles.stream()
-                .map(Role::getId)
+                .map(Role::getRoleId)
                 .filter(currentRoleIds::contains)
                 .collect(Collectors.toSet());
 
@@ -220,7 +220,7 @@ public class UserServiceImp implements UserService {
         List<Role> existingRoles = this.roleRepository.findAllById(providedIds);
 
         Set<String> existingIds = existingRoles.stream()
-                .map(Role::getId)
+                .map(Role::getRoleId)
                 .collect(Collectors.toSet());
 
         Set<String> nonExistentIds = providedIds.stream()

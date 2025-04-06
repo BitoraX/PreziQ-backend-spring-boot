@@ -135,7 +135,7 @@ public class RoleServiceImp implements RoleService {
             throw new AppException(ErrorCode.PERMISSION_NOT_IN_ROLE,
                     "Quyền hạn với ID: " + nonExistentInRole + " không có trong vai trò " + currentRole.getName());
 
-        currentRole.getPermissions().removeIf(permission -> permissionIds.contains(permission.getId()));
+        currentRole.getPermissions().removeIf(permission -> permissionIds.contains(permission.getPermissionId()));
         this.roleRepository.save(currentRole);
     }
 
