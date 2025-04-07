@@ -29,8 +29,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -281,56 +283,6 @@ public class ActivityServiceImp implements ActivityService {
 
     @Override
     @Transactional
-    public ActivityResponse updateActivity(String activityId, UpdateActivityRequest updateActivityRequest) {
-        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
-
-        if (updateActivityRequest.getActivityType() != null) {
-            ActivityType newType;
-            try {
-                newType = ActivityType.valueOf(updateActivityRequest.getActivityType().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
-            }
-
-            if (newType == activity.getActivityType()) {
-                throw new AppException(ErrorCode.ACTIVITY_TYPE_UNCHANGED);
-            }
-
-            Integer orderIndex = activity.getOrderIndex();
-            Collection collection = activity.getCollection();
-
-            String oldTitle = activity.getTitle();
-            String oldDescription = activity.getDescription();
-            Boolean oldIsPublished = activity.getIsPublished();
-            String oldBackgroundColor = activity.getBackgroundColor();
-            String oldBackgroundImage = activity.getBackgroundImage();
-            String oldCustomBackgroundMusic = activity.getCustomBackgroundMusic();
-
-            deleteActivity(activityId);
-
-            Activity newActivity = Activity.builder()
-                    .activityType(newType)
-                    .collection(collection)
-                    .orderIndex(orderIndex)
-                    .title(updateActivityRequest.getTitle() != null ? updateActivityRequest.getTitle() : oldTitle)
-                    .description(updateActivityRequest.getDescription() != null ? updateActivityRequest.getDescription() : oldDescription)
-                    .isPublished(updateActivityRequest.getIsPublished() != null ? updateActivityRequest.getIsPublished() : oldIsPublished)
-                    .backgroundColor(updateActivityRequest.getBackgroundColor() != null ? updateActivityRequest.getBackgroundColor() : oldBackgroundColor)
-                    .backgroundImage(updateActivityRequest.getBackgroundImage() != null ? updateActivityRequest.getBackgroundImage() : oldBackgroundImage)
-                    .customBackgroundMusic(updateActivityRequest.getCustomBackgroundMusic() != null ? updateActivityRequest.getCustomBackgroundMusic() : oldCustomBackgroundMusic)
-                    .build();
-
-            Activity savedActivity = activityRepository.save(newActivity);
-            return activityMapper.activityToResponse(savedActivity);
-        }
-
-        activityMapper.updateActivityFromRequest(updateActivityRequest, activity);
-        Activity updatedActivity = activityRepository.save(activity);
-        return activityMapper.activityToResponse(updatedActivity);
-    }
-
-    @Override
-    @Transactional
     public SlideResponse updateSlide(String slideId, UpdateSlideRequest updateSlideRequest) {
         Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
 
@@ -384,5 +336,249 @@ public class ActivityServiceImp implements ActivityService {
 
     private Slide getSlideById(String slideId) {
         return slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public ActivityResponse updateActivity(String activityId, UpdateActivityRequest request) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        // Initialize related data to prevent lazy loading issues
+        if (activity.getQuiz() != null) {
+            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
+        }
+        if (activity.getSlide() != null) {
+            Hibernate.initialize(activity.getSlide());
+        }
+
+        ActivityType oldType = activity.getActivityType();
+
+        // Update fields from request but keep orderIndex
+        Integer originalOrderIndex = activity.getOrderIndex();
+        activityMapper.updateActivityFromRequest(request, activity);
+        activity.setOrderIndex(originalOrderIndex);
+
+        StringBuilder conversionWarning = new StringBuilder();
+
+        // Handle activityType change if provided
+        if (request.getActivityType() != null) {
+            ActivityType newType;
+            try {
+                newType = ActivityType.valueOf(request.getActivityType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
+            }
+
+            if (newType.name().equals(oldType.name())) {
+                throw new AppException(ErrorCode.SAME_ACTIVITY_TYPE);
+            }
+
+            handleTypeChange(activity, oldType, newType, conversionWarning);
+            activity.setActivityType(newType);
+        }
+
+        activityRepository.save(activity);
+
+        // Ensure response includes all related data
+        if (activity.getQuiz() != null) {
+            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
+        }
+        if (activity.getSlide() != null) {
+            Hibernate.initialize(activity.getSlide());
+        }
+
+        ActivityResponse response = activityMapper.activityToResponse(activity);
+        response.setConversionWarning(!conversionWarning.isEmpty() ? conversionWarning.toString() : null);
+        return response;
+    }
+
+    private void handleTypeChange(Activity activity, ActivityType oldType, ActivityType newType, StringBuilder warning) {
+        boolean isOldQuiz = oldType != ActivityType.INFO_SLIDE;
+        boolean isNewQuiz = newType != ActivityType.INFO_SLIDE;
+
+        if (isOldQuiz && isNewQuiz) {
+            // Quiz to Quiz: Retain Quiz and update quizAnswers
+            Quiz quiz = activity.getQuiz();
+            if (quiz == null) {
+                quiz = createDefaultQuiz(activity);
+            }
+            convertQuizType(quiz, oldType, newType, warning);
+            quizRepository.save(quiz);
+            activity.setSlide(null);
+        } else if (isOldQuiz) {
+            // Quiz to Slide: Delete Quiz and create Slide
+            if (activity.getQuiz() != null) {
+                quizRepository.delete(activity.getQuiz());
+            }
+            activity.setQuiz(null);
+            Slide slide = createDefaultSlide(activity);
+            slideRepository.save(slide);
+            activity.setSlide(slide);
+        } else if (isNewQuiz) {
+            // Slide to Quiz: Delete Slide and create Quiz
+            if (activity.getSlide() != null) {
+                slideRepository.delete(activity.getSlide());
+            }
+            activity.setSlide(null);
+            Quiz quiz = createDefaultQuiz(activity);
+            convertQuizType(quiz, oldType, newType, warning);
+            quizRepository.save(quiz);
+            activity.setQuiz(quiz);
+        }
+    }
+
+    private Quiz createDefaultQuiz(Activity activity) {
+        return Quiz.builder()
+                .quizId(activity.getActivityId())
+                .activity(activity)
+                .questionText("Default question")
+                .timeLimitSeconds(30)
+                .pointType(PointType.STANDARD)
+                .quizAnswers(new ArrayList<>())
+                .build();
+    }
+
+    private Slide createDefaultSlide(Activity activity) {
+        return Slide.builder()
+                .slideId(activity.getActivityId())
+                .activity(activity)
+                .slideElements(new ArrayList<>())
+                .transitionDuration(BigDecimal.ONE)
+                .autoAdvanceSeconds(0)
+                .build();
+    }
+
+    // Convert quiz type and adjust answers based on old and new types
+    private void convertQuizType(Quiz quiz, ActivityType oldType, ActivityType newType, StringBuilder warning) {
+        List<QuizAnswer> answers = quiz.getQuizAnswers() != null ? quiz.getQuizAnswers() : new ArrayList<>();
+        String questionText = quiz.getQuestionText() != null ? quiz.getQuestionText() : "Default question";
+
+        QuizAnswer correctAnswer = answers.stream().filter(QuizAnswer::getIsCorrect).findFirst().orElse(null);
+        QuizAnswer firstAnswer = answers.isEmpty() ? null : answers.get(0);
+
+        switch (oldType) {
+            case QUIZ_BUTTONS:
+                switch (newType) {
+                    case QUIZ_CHECKBOXES -> {}
+                    case QUIZ_REORDER -> {
+                        if (answers.isEmpty()) {
+                            answers.add(QuizAnswer.builder().quiz(quiz).answerText("Step 1").isCorrect(true).orderIndex(0).build());
+                            answers.add(QuizAnswer.builder().quiz(quiz).answerText("Step 2").isCorrect(true).orderIndex(1).build());
+                            warning.append("Created default reorder answers");
+                        } else {
+                            answers.forEach(answer -> answer.setIsCorrect(true));
+                        }
+                    }
+                    case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
+                    case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, correctAnswer, quiz, warning);
+                }
+                break;
+            case QUIZ_CHECKBOXES:
+                switch (newType) {
+                    case QUIZ_BUTTONS -> reduceToSingleCorrect(answers, warning);
+                    case QUIZ_REORDER -> answers.forEach(answer -> answer.setIsCorrect(true));
+                    case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
+                    case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, correctAnswer, quiz, warning);
+                }
+                break;
+            case QUIZ_REORDER:
+                switch (newType) {
+                    case QUIZ_BUTTONS -> reduceToSingleCorrect(answers, warning);
+                    case QUIZ_CHECKBOXES -> {}
+                    case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, firstAnswer, quiz, warning);
+                    case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, firstAnswer, quiz, warning);
+                }
+                break;
+            case QUIZ_TYPE_ANSWER:
+                switch (newType) {
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> addDefaultOptionsIfEmpty(answers, quiz, warning);
+                    case QUIZ_REORDER -> ensureReorderCompatibility(answers, quiz, warning);
+                    case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, firstAnswer, quiz, warning);
+                }
+                break;
+            case QUIZ_TRUE_OR_FALSE:
+                switch (newType) {
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {}
+                    case QUIZ_REORDER -> answers.forEach(answer -> answer.setIsCorrect(true));
+                    case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
+                }
+                break;
+            case INFO_SLIDE:
+                answers.clear();
+                switch (newType) {
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("Option 1").isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("Option 2").isCorrect(false).orderIndex(1).build());
+                        warning.append("Created default multiple-choice question with options");
+                    }
+                    case QUIZ_REORDER -> {
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("Step 1").isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("Step 2").isCorrect(true).orderIndex(1).build());
+                        warning.append("Created default reorder question");
+                    }
+                    case QUIZ_TYPE_ANSWER -> {
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("Default answer").isCorrect(true).orderIndex(0).build());
+                        warning.append("Created default type-answer question");
+                    }
+                    case QUIZ_TRUE_OR_FALSE -> {
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("True").isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText("False").isCorrect(false).orderIndex(1).build());
+                        warning.append("Created default True/False question");
+                    }
+                }
+                break;
+            default:
+                throw new IllegalStateException("The previous activity type is undefined: " + oldType);
+        }
+        quiz.setQuestionText(questionText);
+        quiz.setQuizAnswers(answers);
+    }
+
+    // Reduce multiple correct answers to a single correct answer
+    private void reduceToSingleCorrect(List<QuizAnswer> answers, StringBuilder warning) {
+        boolean firstCorrectSet = false;
+        for (QuizAnswer answer : answers) {
+            if (answer.getIsCorrect() && !firstCorrectSet) {
+                firstCorrectSet = true;
+            } else if (answer.getIsCorrect()) {
+                answer.setIsCorrect(false);
+                warning.append("Multiple correct answers reduced to one");
+            }
+        }
+    }
+
+    private void updateToSingleAnswer(List<QuizAnswer> answers, QuizAnswer answer, Quiz quiz, StringBuilder warning) {
+        answers.clear();
+        if (answer != null) {
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText(answer.getAnswerText()).isCorrect(true).orderIndex(0).build());
+        } else {
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText("Default answer").isCorrect(true).orderIndex(0).build());
+            warning.append("No correct answer found, using default answer");
+        }
+    }
+
+    private void updateToTrueFalse(List<QuizAnswer> answers, QuizAnswer answer, Quiz quiz, StringBuilder warning) {
+        answers.clear();
+        boolean isTrue = answer != null && answer.getAnswerText().toLowerCase().contains("true");
+        answers.add(QuizAnswer.builder().quiz(quiz).answerText("True").isCorrect(isTrue).orderIndex(0).build());
+        answers.add(QuizAnswer.builder().quiz(quiz).answerText("False").isCorrect(!isTrue).orderIndex(1).build());
+        if (answer != null) warning.append("Converted to True/False based on first answer");
+    }
+
+    private void addDefaultOptionsIfEmpty(List<QuizAnswer> answers, Quiz quiz, StringBuilder warning) {
+        if (answers.isEmpty()) {
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText("Default answer").isCorrect(true).orderIndex(0).build());
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText("Wrong answer").isCorrect(false).orderIndex(1).build());
+            warning.append("Converted to multiple-choice question with default wrong answer");
+        }
+    }
+
+    private void ensureReorderCompatibility(List<QuizAnswer> answers, Quiz quiz, StringBuilder warning) {
+        if (answers.isEmpty()) {
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText("Default step").isCorrect(true).orderIndex(0).build());
+            warning.append("Added default step");
+        } else {
+            answers.forEach(answer -> answer.setIsCorrect(true));
+        }
     }
 }
