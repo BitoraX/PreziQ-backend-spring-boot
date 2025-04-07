@@ -27,4 +27,5 @@ public class ActivityResponse extends AuditResponse {
     String customBackgroundMusic;
     QuizResponse quiz;
     SlideResponse slide;
+    String conversionWarning;
 }

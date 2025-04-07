@@ -170,7 +170,8 @@ public enum ErrorCode {
     ENTRY_ANIMATION_DURATION_NON_NEGATIVE(1742, HttpStatus.BAD_REQUEST, "Entry animation duration must be non-negative"),
     ENTRY_ANIMATION_DELAY_NON_NEGATIVE(1743, HttpStatus.BAD_REQUEST, "Entry animation delay must be non-negative"),
     EXIT_ANIMATION_DURATION_NON_NEGATIVE(1744, HttpStatus.BAD_REQUEST, "Exit animation duration must be non-negative"),
-    EXIT_ANIMATION_DELAY_NON_NEGATIVE(1745, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative");
+    EXIT_ANIMATION_DELAY_NON_NEGATIVE(1745, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative"),
+    SAME_ACTIVITY_TYPE(1746, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different");
 
     ;
 
