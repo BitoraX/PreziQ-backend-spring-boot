@@ -19,7 +19,7 @@ import com.bitorax.priziq.dto.response.activity.ActivityResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.repository.*;
@@ -57,7 +57,7 @@ public class ActivityServiceImp implements ActivityService {
     public ActivityResponse createActivity(CreateActivityRequest createActivityRequest) {
         Collection currentCollection = collectionRepository
                 .findById(createActivityRequest.getCollectionId())
-                .orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         ActivityType.validateActivityType(createActivityRequest.getActivityType());
 
@@ -92,7 +92,7 @@ public class ActivityServiceImp implements ActivityService {
         // Validate quiz type
         String requestType = updateQuizRequest.getType();
         if (requestType == null || !VALID_QUIZ_TYPES.contains(requestType.toUpperCase())) {
-            throw new AppException(ErrorCode.INVALID_QUIZ_TYPE);
+            throw new ApplicationException(ErrorCode.INVALID_QUIZ_TYPE);
         }
 
         // Validate pointType
@@ -100,11 +100,11 @@ public class ActivityServiceImp implements ActivityService {
 
         // Fetch activity
         Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
         ActivityType activityType = activity.getActivityType();
         if (!activityType.name().startsWith("QUIZ_")) {
-            throw new AppException(ErrorCode.ACTIVITY_NOT_QUIZ_TYPE);
+            throw new ApplicationException(ErrorCode.ACTIVITY_NOT_QUIZ_TYPE);
         }
 
         // Validate request type matches activity type
@@ -149,12 +149,12 @@ public class ActivityServiceImp implements ActivityService {
                 handleTrueFalseQuiz(quiz, trueFalseRequest);
                 break;
             default:
-                throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
+                throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
 
         // Save and return response
         quizRepository.save(quiz);
-        Quiz updatedQuiz = quizRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.QUIZ_NOT_FOUND));
+        Quiz updatedQuiz = quizRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_NOT_FOUND));
         updatedQuiz.getQuizAnswers().size(); // Ensure lazy-loaded quizAnswers are fetched
         return activityMapper.quizToResponse(updatedQuiz);
     }
@@ -165,40 +165,40 @@ public class ActivityServiceImp implements ActivityService {
             case QUIZ_BUTTONS:
             case QUIZ_CHECKBOXES:
                 if (!requestType.equals("CHOICE") || !(request instanceof UpdateChoiceQuizRequest)) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
+                    throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             case QUIZ_REORDER:
                 if (!requestType.equals("REORDER") || !(request instanceof UpdateReorderQuizRequest)) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
+                    throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             case QUIZ_TYPE_ANSWER:
                 if (!requestType.equals("TYPE_ANSWER") || !(request instanceof UpdateTypeAnswerQuizRequest)) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
+                    throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             case QUIZ_TRUE_OR_FALSE:
                 if (!requestType.equals("TRUE_FALSE") || !(request instanceof UpdateTrueFalseQuizRequest)) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST_TYPE);
+                    throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
             default:
-                throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
+                throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
     }
 
     private void validateQuizButtons(UpdateChoiceQuizRequest request) {
         long correctCount = request.getAnswers().stream().filter(ChoiceAnswerRequest::getIsCorrect).count();
         if (correctCount != 1) {
-            throw new AppException(ErrorCode.INVALID_QUIZ_BUTTONS_ANSWERS);
+            throw new ApplicationException(ErrorCode.INVALID_QUIZ_BUTTONS_ANSWERS);
         }
     }
 
     private void validateQuizCheckboxes(UpdateChoiceQuizRequest request) {
         long correctCount = request.getAnswers().stream().filter(ChoiceAnswerRequest::getIsCorrect).count();
         if (correctCount < 1) {
-            throw new AppException(ErrorCode.INVALID_QUIZ_CHECKBOXES_ANSWERS);
+            throw new ApplicationException(ErrorCode.INVALID_QUIZ_CHECKBOXES_ANSWERS);
         }
     }
 
@@ -270,7 +270,7 @@ public class ActivityServiceImp implements ActivityService {
     @Override
     @Transactional
     public void deleteActivity(String activityId) {
-        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
         if (activity.getActivityType().name().startsWith("QUIZ_")) {
             quizRepository.findById(activityId).ifPresent(quizRepository::delete);
@@ -284,11 +284,11 @@ public class ActivityServiceImp implements ActivityService {
     @Override
     @Transactional
     public SlideResponse updateSlide(String slideId, UpdateSlideRequest updateSlideRequest) {
-        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
 
         activityMapper.updateSlideFromRequest(updateSlideRequest, slide);
         slideRepository.save(slide);
-        Slide updatedSlide = slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        Slide updatedSlide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
         updatedSlide.getSlideElements().size(); // Fetch lazy-loaded slideElements
         return activityMapper.slideToResponse(updatedSlide);
     }
@@ -309,10 +309,10 @@ public class ActivityServiceImp implements ActivityService {
     @Transactional
     public SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest) {
         Slide slide = getSlideById(slideId);
-        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
+        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
 
         if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
-            throw new AppException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
+            throw new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
         }
 
         SlideElementType.validateSlideElementType(updateSlideElementRequest.getSlideElementType());
@@ -325,23 +325,23 @@ public class ActivityServiceImp implements ActivityService {
     @Transactional
     public void deleteSlideElement(String slideId, String elementId) {
         Slide slide = getSlideById(slideId);
-        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
+        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
 
         if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
-            throw new AppException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
+            throw new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
         }
 
         slideElementRepository.delete(slideElement);
     }
 
     private Slide getSlideById(String slideId) {
-        return slideRepository.findById(slideId).orElseThrow(() -> new AppException(ErrorCode.SLIDE_NOT_FOUND));
+        return slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
     }
 
     @Override
     @Transactional
     public ActivityResponse updateActivity(String activityId, UpdateActivityRequest request) {
-        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
         // Initialize related data to prevent lazy loading issues
         if (activity.getQuiz() != null) {
@@ -366,11 +366,11 @@ public class ActivityServiceImp implements ActivityService {
             try {
                 newType = ActivityType.valueOf(request.getActivityType().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
+                throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
             }
 
             if (newType.name().equals(oldType.name())) {
-                throw new AppException(ErrorCode.SAME_ACTIVITY_TYPE);
+                throw new ApplicationException(ErrorCode.SAME_ACTIVITY_TYPE);
             }
 
             handleTypeChange(activity, oldType, newType, conversionWarning);

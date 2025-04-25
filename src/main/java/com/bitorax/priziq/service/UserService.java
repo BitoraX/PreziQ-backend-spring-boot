@@ -28,5 +28,7 @@ public interface UserService {
 
     UserResponse updateUserForAdmin(String userId, UpdateUserForAdminRequest updateUserForAdminRequest);
 
+    void deleteRoleFromUser(String userId, DeleteRoleFromUserRequest deleteRoleFromUserRequest);
+
     void deleteUserById(String userId);
 }

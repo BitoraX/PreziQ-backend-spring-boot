@@ -1,4 +1,4 @@
-package com.bitorax.priziq.controller;
+package com.bitorax.priziq.controller.rest;
 
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.dto.request.auth.VerifyEmailRequest;
@@ -101,6 +101,15 @@ public class UserController {
         userService.deleteUserById(userId);
         return ApiResponse.<Void>builder()
                 .message("User account deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @DeleteMapping("/{id}/roles")
+    ApiResponse<Void> deleteRoleFromUser(@PathVariable("id") String userId, @RequestBody DeleteRoleFromUserRequest deleteRoleFromUserRequest, HttpServletRequest servletRequest) {
+        userService.deleteRoleFromUser(userId, deleteRoleFromUserRequest);
+        return ApiResponse.<Void>builder()
+                .message("Xóa vai trò khỏi người dùng thành công")
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

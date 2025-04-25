@@ -7,7 +7,7 @@ import com.bitorax.priziq.dto.request.auth.*;
 import com.bitorax.priziq.dto.response.auth.AuthenticationResponse;
 import com.bitorax.priziq.dto.response.user.UserSecureResponse;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.UserMapper;
 import com.bitorax.priziq.repository.RoleRepository;
@@ -17,7 +17,6 @@ import com.bitorax.priziq.utils.PhoneNumberUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -51,12 +50,12 @@ public class AuthenticationServiceImp implements AuthenticationService {
     @Override
     public void register(RegisterUserRequest registerUserRequest) {
         if (this.userRepository.existsByEmail(registerUserRequest.getEmail()))
-            throw new AppException(ErrorCode.EMAIL_EXISTED);
+            throw new ApplicationException(ErrorCode.EMAIL_EXISTED);
 
         String formattedPhoneNumber = this.phoneNumberUtils
                 .formatPhoneNumberToE164(registerUserRequest.getPhoneNumber(), RegionType.VIETNAM.getAlpha2Code());
         if (this.userRepository.existsByPhoneNumber(formattedPhoneNumber))
-            throw new AppException(ErrorCode.PHONE_NUMBER_EXISTED);
+            throw new ApplicationException(ErrorCode.PHONE_NUMBER_EXISTED);
 
         User user = this.userMapper.registerRequestToUser(registerUserRequest);
         user.setPassword(this.passwordEncoder.encode(registerUserRequest.getPassword()));
@@ -65,19 +64,19 @@ public class AuthenticationServiceImp implements AuthenticationService {
         // Set default USER role
         List<Role> roles = new ArrayList<>();
         roles.add(this.roleRepository.findByName(RoleType.USER_ROLE.getName())
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NAME_NOT_FOUND)));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NAME_NOT_FOUND)));
         user.setRoles(roles);
 
         this.userRepository.save(user);
-        this.emailService.sendVerifyEmail(user);
+        this.emailService.sendVerifyActiveAccountEmail(user);
     }
 
     @Override
     public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
         User currentUser = this.userRepository.findByEmail(forgotPasswordRequest.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         if (!currentUser.getIsVerified())
-            throw new AppException(ErrorCode.NOT_VERIFIED_ACCOUNT);
+            throw new ApplicationException(ErrorCode.NOT_VERIFIED_ACCOUNT);
         this.emailService.sendForgotPasswordEmail(currentUser);
     }
 
@@ -87,11 +86,11 @@ public class AuthenticationServiceImp implements AuthenticationService {
         SignedJWT verifiedToken = this.securityUtils.verifyAccessToken(resetPasswordRequest.getToken());
         String userId = verifiedToken.getJWTClaimsSet().getSubject();
         User currentUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
         // New password same current password
         if (passwordEncoder.matches(resetPasswordRequest.getNewPassword(), currentUser.getPassword()))
-            throw new AppException(ErrorCode.PASSWORD_SAME_AS_CURRENT);
+            throw new ApplicationException(ErrorCode.PASSWORD_SAME_AS_CURRENT);
 
         // Update new password, logout user and notification login again
         currentUser.setPassword(passwordEncoder.encode(resetPasswordRequest.getNewPassword()));
@@ -106,9 +105,9 @@ public class AuthenticationServiceImp implements AuthenticationService {
         String userId = verifiedToken.getJWTClaimsSet().getSubject();
 
         User currentUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         if (currentUser.getIsVerified())
-            throw new AppException(ErrorCode.NOT_VERIFIED_ACCOUNT_TWICE);
+            throw new ApplicationException(ErrorCode.NOT_VERIFIED_ACCOUNT_TWICE);
 
         currentUser.setIsVerified(true);
         userRepository.save(currentUser);
@@ -122,10 +121,10 @@ public class AuthenticationServiceImp implements AuthenticationService {
     @Override
     public void resendVerifyEmail(ResendVerifyEmailRequest resendVerifyEmailRequest) {
         User currentUser = this.userRepository.findByEmail(resendVerifyEmailRequest.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         if (currentUser.getIsVerified())
-            throw new AppException(ErrorCode.NOT_VERIFIED_ACCOUNT_TWICE);
-        this.emailService.sendVerifyEmail(currentUser);
+            throw new ApplicationException(ErrorCode.NOT_VERIFIED_ACCOUNT_TWICE);
+        this.emailService.sendVerifyActiveAccountEmail(currentUser);
     }
 
     @Override
@@ -138,22 +137,22 @@ public class AuthenticationServiceImp implements AuthenticationService {
 
         if (emailLoginForm != null && !emailLoginForm.isEmpty()) {
             currentUser = this.userRepository.findByEmail(emailLoginForm)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         } else {
             String formattedPhoneNumber = this.phoneNumberUtils.formatPhoneNumberToE164(phoneNumberLoginForm,
                     RegionType.VIETNAM.getAlpha2Code());
             currentUser = this.userRepository.findByPhoneNumber(formattedPhoneNumber)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         }
 
         // Not verified account
         if (!currentUser.getIsVerified())
-            throw new AppException(ErrorCode.NOT_VERIFIED_ACCOUNT);
+            throw new ApplicationException(ErrorCode.NOT_VERIFIED_ACCOUNT);
 
         // Compare form request password with database password
         boolean isPasswordMatch = passwordEncoder.matches(passwordLoginForm, currentUser.getPassword());
         if (!isPasswordMatch)
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new ApplicationException(ErrorCode.UNAUTHENTICATED);
 
         return this.securityUtils.createAuthResponse(currentUser);
     }
@@ -162,7 +161,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
     public UserSecureResponse getMyInfo() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
         return this.userMapper.userToSecureResponse(
-                userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
+                userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND)));
     }
 
     @Override
@@ -191,7 +190,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
 
         String userId = verifiedRefreshToken.getJWTClaimsSet().getSubject();
         User currentUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
         return this.securityUtils.createAuthResponse(currentUser);
     }

@@ -2,7 +2,7 @@ package com.bitorax.priziq.interceptor;
 
 import com.bitorax.priziq.domain.Permission;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.utils.SecurityUtils;
@@ -42,7 +42,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
         boolean isAuthorized = allPermissions.stream().anyMatch(permission -> permission.getApiPath().equals(apiPath)
                 && permission.getHttpMethod().equalsIgnoreCase(httpMethod));
         if (!isAuthorized)
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new ApplicationException(ErrorCode.UNAUTHORIZED);
 
         return true;
     }

@@ -1,6 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.S3FileStorageService;
 import com.bitorax.priziq.utils.FileUtils;
@@ -72,7 +72,7 @@ public class S3FileStorageServiceImp implements S3FileStorageService {
     public void deleteSingleFile(String filePath) {
         this.fileUtils.validateFilePath(filePath);
         if (!this.fileUtils.isFileExists(filePath))
-            throw new AppException(ErrorCode.FILE_NOT_FOUND);
+            throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
 
         DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
                 .bucket(BUCKET_NAME)
@@ -92,7 +92,7 @@ public class S3FileStorageServiceImp implements S3FileStorageService {
     public void moveSingleFile(String sourceKey, String destinationFolder) {
         this.fileUtils.validateFilePath(sourceKey);
         if (!this.fileUtils.isFileExists(sourceKey))
-            throw new AppException(ErrorCode.FILE_NOT_FOUND, "File nguồn không tồn tại: " + sourceKey);
+            throw new ApplicationException(ErrorCode.FILE_NOT_FOUND, "File nguồn không tồn tại: " + sourceKey);
 
         String fileName = sourceKey.substring(sourceKey.lastIndexOf("/") + 1);
         String destinationKey = destinationFolder + "/" + fileName;

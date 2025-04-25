@@ -1,4 +1,4 @@
-package com.bitorax.priziq.controller;
+package com.bitorax.priziq.controller.rest;
 
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
