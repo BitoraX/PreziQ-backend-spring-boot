@@ -160,30 +160,59 @@ public class DataInitializer implements ApplicationRunner {
         }
 
         private Map<RoleType, List<Permission>> getDefaultRoles() {
-                List<String> modules = List.of(
-                        "AUTH", "USERS", "ROLES", "PERMISSIONS", "FILES",
-                        "COLLECTIONS", "ACTIVITIES"
-                );
+                // Get all permissions of modules
+                List<Permission> moduleAuthAllPermissions = permissionRepository.findByModule("AUTH")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleUserAllPermissions = permissionRepository.findByModule("USERS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleRoleAllPermissions = permissionRepository.findByModule("ROLES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> modulePermissionAllPermissions = permissionRepository.findByModule("PERMISSIONS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleFileAllPermissions = permissionRepository.findByModule("FILES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleActivityAllPermissions = permissionRepository.findByModule("ACTIVITIES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
-                List<Permission> allPermissions = modules.stream()
-                        .map(module -> permissionRepository.findByModule(module).orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND)))
-                        .flatMap(List::stream)
-                        .toList();
-
-                List<Permission> userSpecificPermissions = List.of(
+                // General permission for user login (USER, ADMIN)
+                List<Permission> commonAuthenticatedPermissions = List.of(
+                        findPermissionOrThrow("/api/v1/auth/logout", "POST"),
+                        findPermissionOrThrow("/api/v1/auth/account", "GET"),
                         findPermissionOrThrow("/api/v1/users/update-profile", "PATCH"),
                         findPermissionOrThrow("/api/v1/users/update-password", "PUT"),
                         findPermissionOrThrow("/api/v1/users/update-email", "PUT"),
                         findPermissionOrThrow("/api/v1/users/verify-change-email", "POST"),
                         findPermissionOrThrow("/api/v1/users/{id}", "GET"),
-                        findPermissionOrThrow("/api/v1/users", "GET"),
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/single", "POST"),
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/multiple", "POST")
                 );
 
+                // Permission for ADMIN (entire system)
+                List<Permission> adminRolePermissions = combinePermissions(
+                        List.of(
+                                moduleAuthAllPermissions,
+                                moduleUserAllPermissions,
+                                moduleRoleAllPermissions,
+                                modulePermissionAllPermissions,
+                                moduleFileAllPermissions,
+                                moduleCollectionAllPermissions,
+                                moduleActivityAllPermissions
+                        )
+                );
+
+                // Permission for USER
+                List<Permission> userRolePermissions = combinePermissions(
+                        List.of(
+                                moduleAuthAllPermissions,
+                                commonAuthenticatedPermissions
+                        )
+                );
+
                 return Map.of(
-                        RoleType.ADMIN_ROLE, allPermissions,
-                        RoleType.USER_ROLE, combinePermissions(List.of(userSpecificPermissions))
+                        RoleType.ADMIN_ROLE, adminRolePermissions,
+                        RoleType.USER_ROLE, userRolePermissions
                 );
         }
 
