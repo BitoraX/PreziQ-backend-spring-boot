@@ -40,8 +40,8 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.empty(), null, request);
     }
 
-    @ExceptionHandler(value = AppException.class)
-    public ResponseEntity<ApiResponse<?>> handleAppException(AppException exception, HttpServletRequest request) {
+    @ExceptionHandler(value = ApplicationException.class)
+    public ResponseEntity<ApiResponse<?>> handleAppException(ApplicationException exception, HttpServletRequest request) {
         String message = (exception.getCustomMessage() != null)
                 ? exception.getCustomMessage()
                 : exception.getErrorCode().getMessage();

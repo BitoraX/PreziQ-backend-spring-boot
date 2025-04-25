@@ -8,7 +8,7 @@ import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.permission.PermissionResponse;
 import com.bitorax.priziq.domain.Permission;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.PermissionMapper;
 import com.bitorax.priziq.repository.PermissionRepository;
@@ -41,7 +41,7 @@ public class PermissionServiceImp implements PermissionService {
         String moduleName = createModuleRequest.getModuleName().toUpperCase();
         boolean moduleExists = this.permissionRepository.existsByModule(moduleName);
         if (moduleExists)
-            throw new AppException(ErrorCode.PERMISSION_MODULE_NAME_EXISTED);
+            throw new ApplicationException(ErrorCode.PERMISSION_MODULE_NAME_EXISTED);
 
         this.permissionUtils.checkDuplicatePermissionIds(permissionIds);
         List<Permission> permissions = this.permissionUtils.validatePermissionsExist(permissionIds);
@@ -57,10 +57,10 @@ public class PermissionServiceImp implements PermissionService {
     public void deleteModuleByName(String moduleName) {
         boolean moduleExists = this.permissionRepository.existsByModule(moduleName.toUpperCase());
         if (!moduleExists)
-            throw new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND);
+            throw new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND);
 
         List<Permission> permissionsInModule = this.permissionRepository.findByModule(moduleName)
-                .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
         permissionsInModule.forEach(permission -> permission.setModule(null));
 
         this.permissionRepository.saveAll(permissionsInModule);
@@ -82,7 +82,7 @@ public class PermissionServiceImp implements PermissionService {
             moduleName = moduleName.toUpperCase();
             boolean moduleExists = this.permissionRepository.existsByModule(moduleName);
             if (!moduleExists)
-                throw new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND);
+                throw new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND);
         }
 
         Permission permission = this.permissionMapper.createPermissionRequestToPermission(createPermissionRequest);
@@ -94,7 +94,7 @@ public class PermissionServiceImp implements PermissionService {
     @Override
     public PermissionResponse getPermissionById(String permissionId) {
         return this.permissionMapper.permissionToResponse(this.permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND)));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_NOT_FOUND)));
     }
 
     @Override
@@ -115,7 +115,7 @@ public class PermissionServiceImp implements PermissionService {
 
     @Override
     public PermissionResponse updatePermissionById(String permissionId, UpdatePermissionRequest updatePermissionRequest) {
-        Permission currentPermission = this.permissionRepository.findById(permissionId).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+        Permission currentPermission = this.permissionRepository.findById(permissionId).orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_NOT_FOUND));
 
         String newHttpMethod = updatePermissionRequest.getHttpMethod();
         if (newHttpMethod != null) {
@@ -133,7 +133,7 @@ public class PermissionServiceImp implements PermissionService {
         if (newModule != null) {
             newModule = newModule.toUpperCase();
             if (!this.permissionRepository.existsByModule(newModule))
-                throw new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND);
+                throw new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND);
             currentPermission.setModule(newModule);
         } else {
             currentPermission.setModule(null);
@@ -144,7 +144,7 @@ public class PermissionServiceImp implements PermissionService {
 
     @Override
     public void deletePermissionById(String permissionId) {
-        Permission currentPermission = this.permissionRepository.findById(permissionId).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+        Permission currentPermission = this.permissionRepository.findById(permissionId).orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_NOT_FOUND));
 
         currentPermission.getRoles().forEach(role -> role.getPermissions().remove(currentPermission));
         currentPermission.getRoles().clear();

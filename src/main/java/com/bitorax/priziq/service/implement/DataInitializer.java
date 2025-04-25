@@ -4,7 +4,7 @@ import com.bitorax.priziq.constant.RoleType;
 import com.bitorax.priziq.domain.Permission;
 import com.bitorax.priziq.domain.Role;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.repository.PermissionRepository;
 import com.bitorax.priziq.repository.RoleRepository;
@@ -110,6 +110,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve all user accounts with query parameters", "/api/v1/users", "GET", "USERS"),
                         new Permission("Update user account information (admin)", "/api/v1/users/{id}", "PATCH", "USERS"),
                         new Permission("Delete a user account", "/api/v1/users/{id}", "DELETE", "USERS"),
+                        new Permission("Delete roles from user", "/api/v1/users/{id}/roles", "DELETE", "USERS"),
 
                         // Module Roles
                         new Permission("Create a new role", "/api/v1/roles", "POST", "ROLES"),
@@ -159,30 +160,59 @@ public class DataInitializer implements ApplicationRunner {
         }
 
         private Map<RoleType, List<Permission>> getDefaultRoles() {
-                List<String> modules = List.of(
-                        "AUTH", "USERS", "ROLES", "PERMISSIONS", "FILES",
-                        "COLLECTIONS", "ACTIVITIES"
-                );
+                // Get all permissions of modules
+                List<Permission> moduleAuthAllPermissions = permissionRepository.findByModule("AUTH")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleUserAllPermissions = permissionRepository.findByModule("USERS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleRoleAllPermissions = permissionRepository.findByModule("ROLES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> modulePermissionAllPermissions = permissionRepository.findByModule("PERMISSIONS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleFileAllPermissions = permissionRepository.findByModule("FILES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleActivityAllPermissions = permissionRepository.findByModule("ACTIVITIES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
-                List<Permission> allPermissions = modules.stream()
-                        .map(module -> permissionRepository.findByModule(module).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND)))
-                        .flatMap(List::stream)
-                        .toList();
-
-                List<Permission> userSpecificPermissions = List.of(
+                // General permission for user login (USER, ADMIN)
+                List<Permission> commonAuthenticatedPermissions = List.of(
+                        findPermissionOrThrow("/api/v1/auth/logout", "POST"),
+                        findPermissionOrThrow("/api/v1/auth/account", "GET"),
                         findPermissionOrThrow("/api/v1/users/update-profile", "PATCH"),
                         findPermissionOrThrow("/api/v1/users/update-password", "PUT"),
                         findPermissionOrThrow("/api/v1/users/update-email", "PUT"),
                         findPermissionOrThrow("/api/v1/users/verify-change-email", "POST"),
                         findPermissionOrThrow("/api/v1/users/{id}", "GET"),
-                        findPermissionOrThrow("/api/v1/users", "GET"),
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/single", "POST"),
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/multiple", "POST")
                 );
 
+                // Permission for ADMIN (entire system)
+                List<Permission> adminRolePermissions = combinePermissions(
+                        List.of(
+                                moduleAuthAllPermissions,
+                                moduleUserAllPermissions,
+                                moduleRoleAllPermissions,
+                                modulePermissionAllPermissions,
+                                moduleFileAllPermissions,
+                                moduleCollectionAllPermissions,
+                                moduleActivityAllPermissions
+                        )
+                );
+
+                // Permission for USER
+                List<Permission> userRolePermissions = combinePermissions(
+                        List.of(
+                                moduleAuthAllPermissions,
+                                commonAuthenticatedPermissions
+                        )
+                );
+
                 return Map.of(
-                        RoleType.ADMIN_ROLE, allPermissions,
-                        RoleType.USER_ROLE, combinePermissions(List.of(userSpecificPermissions))
+                        RoleType.ADMIN_ROLE, adminRolePermissions,
+                        RoleType.USER_ROLE, userRolePermissions
                 );
         }
 
@@ -195,7 +225,7 @@ public class DataInitializer implements ApplicationRunner {
 
         private Permission findPermissionOrThrow(String apiPath, String httpMethod) {
                 return permissionRepository.findByApiPathAndHttpMethod(apiPath, httpMethod)
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_NOT_FOUND));
         }
 
         private List<User> getDefaultUsers() {
@@ -211,7 +241,7 @@ public class DataInitializer implements ApplicationRunner {
 
         private User createUser(String email, String firstName, String lastName, RoleType roleType) {
                 Role role = roleRepository.findByName(roleType.getName())
-                        .orElseThrow(() -> new AppException(ErrorCode.ROLE_NAME_NOT_FOUND));
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NAME_NOT_FOUND));
 
                 return User.builder()
                         .email(email)

@@ -10,7 +10,7 @@ import com.bitorax.priziq.dto.response.collection.CollectionResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
 import com.bitorax.priziq.repository.ActivityRepository;
@@ -23,7 +23,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -47,7 +46,7 @@ public class CollectionServiceImp implements CollectionService {
     public CollectionResponse createCollection(CreateCollectionRequest createCollectionRequest){
         Collection collection = collectionMapper.createCollectionRequestToCollection(createCollectionRequest);
 
-        User creator = this.userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User creator = this.userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt()).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         collection.setCreator(creator);
 
         return collectionMapper.collectionToResponse(collectionRepository.save(collection));
@@ -55,7 +54,7 @@ public class CollectionServiceImp implements CollectionService {
 
     @Override
     public CollectionResponse getCollectionById(String collectionId){
-        return collectionMapper.collectionToResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND)));
+        return collectionMapper.collectionToResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
     }
 
     @Override
@@ -76,14 +75,14 @@ public class CollectionServiceImp implements CollectionService {
 
     @Override
     public CollectionResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
-        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND));
+        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
         this.collectionMapper.updateCollectionRequestToCollection(currentCollection, updateCollectionRequest);
         return this.collectionMapper.collectionToResponse(collectionRepository.save(currentCollection));
     }
 
     @Override
     public void deleteCollectionById(String collectionId){
-        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND));
+        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
         this.collectionRepository.delete(currentCollection);
     }
 
@@ -92,7 +91,7 @@ public class CollectionServiceImp implements CollectionService {
     public List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest) {
         // Get collection or throw if not found
         Collection currentCollection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> new AppException(ErrorCode.COLLECTION_NOT_FOUND, "Collection ID: " + collectionId + " not found"));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND, "Collection ID: " + collectionId + " not found"));
 
         // Get all activity IDs in this collection
         Set<String> currentActivityIds = currentCollection.getActivities().stream()
@@ -104,7 +103,7 @@ public class CollectionServiceImp implements CollectionService {
         // Validate all IDs belong to this collection
         for (String activityId : newOrderList) {
             if (!currentActivityIds.contains(activityId)) {
-                throw new AppException(
+                throw new ApplicationException(
                         ErrorCode.ACTIVITY_NOT_IN_COLLECTION,
                         "Activity ID: " + activityId + " does not belong to Collection ID: " + collectionId
                 );
@@ -114,7 +113,7 @@ public class CollectionServiceImp implements CollectionService {
         // Validate duplicated IDs in request
         Set<String> duplicates = findDuplicates(newOrderList);
         if (!duplicates.isEmpty()) {
-            throw new AppException(
+            throw new ApplicationException(
                     ErrorCode.DUPLICATE_ACTIVITY_ID,
                     "Duplicate activity IDs found: " + String.join(", ", duplicates)
             );
@@ -124,7 +123,7 @@ public class CollectionServiceImp implements CollectionService {
         Set<String> missing = new HashSet<>(currentActivityIds);
         newOrderList.forEach(missing::remove);
         if (!missing.isEmpty()) {
-            throw new AppException(
+            throw new ApplicationException(
                     ErrorCode.MISSING_ACTIVITY_ID,
                     "Missing activity IDs: " + String.join(", ", missing)
             );
@@ -144,7 +143,7 @@ public class CollectionServiceImp implements CollectionService {
             Activity activity = activityMap.get(activityId);
 
             if (activity == null) {
-                throw new AppException(
+                throw new ApplicationException(
                         ErrorCode.ACTIVITY_NOT_FOUND,
                         "Activity ID: " + activityId + " not found in database"
                 );

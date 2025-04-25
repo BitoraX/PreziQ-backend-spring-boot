@@ -1,6 +1,6 @@
 package com.bitorax.priziq.utils;
 
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
@@ -24,14 +24,14 @@ public class PhoneNumberUtils {
             Phonenumber.PhoneNumber parsedNumber = phoneUtil.parse(phoneNumber, region);
 
             if (!phoneUtil.isValidNumber(parsedNumber)) {
-                throw new AppException(ErrorCode.INVALID_PHONE_NUMBER);
+                throw new ApplicationException(ErrorCode.INVALID_PHONE_NUMBER);
             }
 
             return phoneUtil.format(parsedNumber, PhoneNumberUtil.PhoneNumberFormat.E164);
         } catch (NumberParseException e) {
-            throw new AppException(ErrorCode.PHONE_NUMBER_FORMAT_ERROR);
+            throw new ApplicationException(ErrorCode.PHONE_NUMBER_FORMAT_ERROR);
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.PHONE_NUMBER_NOT_SUPPORTED);
+            throw new ApplicationException(ErrorCode.PHONE_NUMBER_NOT_SUPPORTED);
         }
     }
 

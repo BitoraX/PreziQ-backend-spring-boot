@@ -4,7 +4,7 @@ import com.bitorax.priziq.constant.RoleType;
 import com.bitorax.priziq.constant.TokenType;
 import com.bitorax.priziq.dto.response.auth.AuthenticationResponse;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.UserMapper;
 import com.bitorax.priziq.repository.UserRepository;
@@ -59,7 +59,7 @@ public class SecurityUtils {
 
     public ResponseEntity<AuthenticationResponse> createAuthResponse(User currentUser) {
         if (Objects.isNull(currentUser))
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new ApplicationException(ErrorCode.USER_NOT_FOUND);
 
         // Add information about current user login to response and create access token
         AuthenticationResponse authResponse = AuthenticationResponse.builder()
@@ -87,10 +87,10 @@ public class SecurityUtils {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getName()))
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new ApplicationException(ErrorCode.UNAUTHENTICATED);
 
         String userId = authentication.getName();
-        return userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
     }
 
     public boolean isAdmin(User user) {
@@ -137,14 +137,14 @@ public class SecurityUtils {
 
     private SignedJWT verifyToken(String token, String keyType) throws JOSEException, ParseException {
         if (token == null || token.trim().isEmpty()) {
-            throw new AppException(ErrorCode.MISSING_TOKEN);
+            throw new ApplicationException(ErrorCode.MISSING_TOKEN);
         }
 
         SignedJWT signedJWT;
         try {
             signedJWT = SignedJWT.parse(token);
         } catch (ParseException e) {
-            throw new AppException(ErrorCode.INVALID_TOKEN);
+            throw new ApplicationException(ErrorCode.INVALID_TOKEN);
         }
 
         JWSVerifier verifier = new MACVerifier(
@@ -152,12 +152,12 @@ public class SecurityUtils {
                         .getBytes());
         boolean isVerified = signedJWT.verify(verifier);
         if (!isVerified) {
-            throw new AppException(ErrorCode.INVALID_TOKEN);
+            throw new ApplicationException(ErrorCode.INVALID_TOKEN);
         }
 
         Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
         if (expiryTime.before(new Date())) {
-            throw new AppException(ErrorCode.TOKEN_EXPIRED);
+            throw new ApplicationException(ErrorCode.TOKEN_EXPIRED);
         }
 
         return signedJWT;
@@ -173,7 +173,7 @@ public class SecurityUtils {
 
     public void updateUserRefreshToken(String refreshToken, String email) {
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         currentUser.setRefreshToken(refreshToken);
         userRepository.save(currentUser);
     }
@@ -193,6 +193,6 @@ public class SecurityUtils {
                 "priziq.user@gmail.com");
 
         if (protectedEmails.contains(email))
-            throw new AppException(ErrorCode.SYSTEM_EMAIL_CANNOT_BE_DELETED);
+            throw new ApplicationException(ErrorCode.SYSTEM_EMAIL_CANNOT_BE_DELETED);
     }
 }

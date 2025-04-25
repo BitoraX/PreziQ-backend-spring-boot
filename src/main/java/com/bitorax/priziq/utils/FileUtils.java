@@ -1,6 +1,6 @@
 package com.bitorax.priziq.utils;
 
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ public class FileUtils {
 
     public String normalizeFileName(String originalFilename) {
         if (originalFilename == null || originalFilename.isBlank())
-            throw new AppException(ErrorCode.INVALID_FILE_NAME);
+            throw new ApplicationException(ErrorCode.INVALID_FILE_NAME);
 
         String extension = "";
         int dotIndex = originalFilename.lastIndexOf(".");
@@ -59,11 +59,11 @@ public class FileUtils {
 
     public void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty())
-            throw new AppException(ErrorCode.FILE_NOT_FOUND);
+            throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
 
         String contentType = file.getContentType();
         if (!AWS_S3_FILE_ALLOWED_TYPES.contains(contentType)) {
-            throw new AppException(ErrorCode.FILE_TYPE_NOT_ALLOWED,
+            throw new ApplicationException(ErrorCode.FILE_TYPE_NOT_ALLOWED,
                     "Loại file không được phép. Chỉ chấp nhận các định dạng: "
                             + String.join(", ", AWS_S3_FILE_ALLOWED_TYPES));
         }
@@ -73,11 +73,11 @@ public class FileUtils {
 
     public void validateFileSize(long size) {
         if (size > AWS_S3_FILE_MAX_SIZE) {
-            throw new AppException(ErrorCode.FILE_TOO_LARGE, "Kích thước file quá lớn. Dung lượng tối đa được phép là "
+            throw new ApplicationException(ErrorCode.FILE_TOO_LARGE, "Kích thước file quá lớn. Dung lượng tối đa được phép là "
                     + (AWS_S3_FILE_MAX_SIZE / (1024 * 1024)) + " MB");
         }
         if (size < AWS_S3_FILE_MIN_SIZE) {
-            throw new AppException(ErrorCode.FILE_TOO_SMALL,
+            throw new ApplicationException(ErrorCode.FILE_TOO_SMALL,
                     "Kích thước file quá nhỏ. Dung lượng tối thiểu phải là " + (AWS_S3_FILE_MIN_SIZE / 1024) + " KB");
         }
     }
@@ -85,7 +85,7 @@ public class FileUtils {
     public void validateFilePath(String filePath) {
         String filePathRegex = "^[^/]+/.+\\.[a-zA-Z0-9]+/?$";
         if (filePath == null || !filePath.matches(filePathRegex))
-            throw new AppException(ErrorCode.INVALID_FILE_PATH);
+            throw new ApplicationException(ErrorCode.INVALID_FILE_PATH);
     }
 
     public boolean isFileExists(String filePath) {

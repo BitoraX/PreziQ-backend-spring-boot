@@ -4,66 +4,65 @@
     <meta charset="UTF-8" />
     <title>Xác thực tài khoản</title>
 </head>
-<body style="margin:0; padding:0; font-family: 'Trebuchet MS', Arial, Helvetica, sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0"
-       style="background: linear-gradient(to bottom, #71C9CE, #A6E3E9, #CBF1F5, #E3FDFD);">
+<body style="margin:0; padding:0; font-family: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F8F9FA;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8F9FA;">
     <tr>
-        <td align="center" style="padding: 2rem 0;">
-            <table width="600" cellpadding="0" cellspacing="0"
-                   style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+        <td align="center" style="background-color: #1A2526; padding: 20px 0; border-bottom: 3px solid transparent; border-image: linear-gradient(to right, #1A2526, transparent) 1;">
+            <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
                 <tr>
-                    <td align="center"
-                        style="font-size: 24px;
-                               color: #71C9CE;
-                               font-weight: bold;
-                               border-bottom: 2px solid #71C9CE;
-                               padding-bottom: 10px;">
+                    <td align="center">
+                        <!-- Empty header to create more space -->
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); max-width: 600px; width: 100%;">
+                <tr>
+                    <td align="center" style="font-size: 28px; color: #1A2526; font-weight: 700; padding-bottom: 20px;">
                         XÁC THỰC TÀI KHOẢN CỦA BẠN
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding-top: 20px; font-size: 16px; color: #333333;">
-                        <p>Chào <strong th:text="${name}"></strong>,</p>
-                        <p>
+                    <td style="font-size: 16px; color: #333333; line-height: 1.6; padding: 0 20px; font-weight: 400;">
+                        <p style="margin: 0 0 15px;">Chào <strong th:text="${name}"></strong>,</p>
+                        <p style="margin: 0 0 15px;">
                             Cảm ơn bạn đã sử dụng nền tảng học tập tương tác của chúng tôi.
                             Vui lòng nhấn vào nút dưới đây để xác thực tài khoản của bạn:
                         </p>
-                        <p style="text-align: center;">
-                            <a th:href="${verifyEmailUrl}"
-                               style="display: inline-block;
-                                      margin: 30px auto;
-                                      padding: 12px 24px;
-                                      background: linear-gradient(to right, #71C9CE, #A6E3E9);
-                                      color: #ffffff;
-                                      text-decoration: none;
-                                      border-radius: 5px;
-                                      font-size: 16px;
-                                      font-weight: bold;">
+                        <p style="text-align: center; margin: 30px 0;">
+                            <a th:href="${verifyEmailUrl}" style="display: inline-block; padding: 14px 30px; background-color: #2A5D9F; color: #FFFFFF !important; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#1E4A7A'" onmouseout="this.style.backgroundColor='#2A5D9F'">
                                 XÁC THỰC TÀI KHOẢN
                             </a>
                         </p>
-                        <p style="margin-bottom: 0;">
+                        <p style="margin: 0 0 15px;">
                             Nếu bạn không phải là người đang thực hiện, vui lòng bỏ qua email này.
                         </p>
                     </td>
                 </tr>
                 <tr>
-                    <td style="text-align: center; font-size: 14px; color: #666666; padding-top: 20px;">
+                    <td style="text-align: center; font-size: 14px; color: #6B7280; padding-top: 30px; font-weight: 300;">
                         Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ chúng tôi qua email
-                        <a href="mailto:priziq.support@gmail.com"
-                           style="color: #71C9CE; text-decoration: none;">
-                            priziq@support.gmail.com
+                        <a href="mailto:prezig.support@gmail.com" style="color: #2A5D9F; text-decoration: none;">
+                            sevina@support.gmail.com
                         </a>.
                     </td>
                 </tr>
                 <tr>
-                    <td style="text-align: center; font-size: 18px; color: #333333; padding-top: 20px; padding-bottom: 20px;">
-                        <p style="margin: 0; font-weight: bold; color: #71C9CE;">
+                    <td style="text-align: center; font-size: 16px; color: #333333; padding-top: 30px; font-weight: 400;">
+                        <p style="margin: 0; font-weight: 600; color: #2A5D9F;">
                             Đội ngũ hỗ trợ
                         </p>
                     </td>
                 </tr>
             </table>
+        </td>
+    </tr>
+    <tr>
+        <td align="center" style="padding: 20px 0; font-size: 12px; color: #6B7280; font-weight: 300;">
+            © 2025. All rights reserved.
         </td>
     </tr>
 </table>

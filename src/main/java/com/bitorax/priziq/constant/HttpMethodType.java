@@ -1,6 +1,6 @@
 package com.bitorax.priziq.constant;
 
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,6 +24,6 @@ public enum HttpMethodType {
     public static void validateHttpMethod(String method) {
         boolean isValid = Arrays.stream(values()).anyMatch(httpMethod -> httpMethod.name().equalsIgnoreCase(method));
         if (!isValid)
-            throw new AppException(ErrorCode.INVALID_HTTP_METHOD);
+            throw new ApplicationException(ErrorCode.INVALID_HTTP_METHOD);
     }
 }
