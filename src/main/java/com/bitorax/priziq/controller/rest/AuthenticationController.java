@@ -1,4 +1,4 @@
-package com.bitorax.priziq.controller;
+package com.bitorax.priziq.controller.rest;
 
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.request.auth.*;

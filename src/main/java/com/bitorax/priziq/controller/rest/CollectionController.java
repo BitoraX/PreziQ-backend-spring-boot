@@ -1,4 +1,4 @@
-package com.bitorax.priziq.controller;
+package com.bitorax.priziq.controller.rest;
 
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
