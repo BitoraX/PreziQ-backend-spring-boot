@@ -1,6 +1,6 @@
 package com.bitorax.priziq.constant;
 
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +22,7 @@ public enum PointType {
     public static void validatePointType(String type) {
         boolean isValid = Arrays.stream(values()).anyMatch(pointType -> pointType.name().equalsIgnoreCase(type));
         if (!isValid) {
-            throw new AppException(ErrorCode.INVALID_POINT_TYPE);
+            throw new ApplicationException(ErrorCode.INVALID_POINT_TYPE);
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.bitorax.priziq.constant;
 
 import com.bitorax.priziq.dto.response.common.ActivityTypeInfo;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,7 +29,7 @@ public enum ActivityType {
     public static void validateActivityType(String type) {
         boolean isValid = Arrays.stream(values()).anyMatch(activityType -> activityType.name().equalsIgnoreCase(type));
         if (!isValid) {
-            throw new AppException(ErrorCode.INVALID_ACTIVITY_TYPE);
+            throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
     }
 

@@ -2,7 +2,6 @@ package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.MetaInfo;
-import com.bitorax.priziq.exception.AppException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.exception.ErrorDetail;
 import com.fasterxml.jackson.databind.ObjectMapper;

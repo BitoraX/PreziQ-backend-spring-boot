@@ -4,7 +4,7 @@ import com.bitorax.priziq.constant.RoleType;
 import com.bitorax.priziq.domain.Permission;
 import com.bitorax.priziq.domain.Role;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.repository.PermissionRepository;
 import com.bitorax.priziq.repository.RoleRepository;
@@ -165,7 +165,7 @@ public class DataInitializer implements ApplicationRunner {
                 );
 
                 List<Permission> allPermissions = modules.stream()
-                        .map(module -> permissionRepository.findByModule(module).orElseThrow(() -> new AppException(ErrorCode.PERMISSION_MODULE_NOT_FOUND)))
+                        .map(module -> permissionRepository.findByModule(module).orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND)))
                         .flatMap(List::stream)
                         .toList();
 
@@ -195,7 +195,7 @@ public class DataInitializer implements ApplicationRunner {
 
         private Permission findPermissionOrThrow(String apiPath, String httpMethod) {
                 return permissionRepository.findByApiPathAndHttpMethod(apiPath, httpMethod)
-                        .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_NOT_FOUND));
         }
 
         private List<User> getDefaultUsers() {
@@ -211,7 +211,7 @@ public class DataInitializer implements ApplicationRunner {
 
         private User createUser(String email, String firstName, String lastName, RoleType roleType) {
                 Role role = roleRepository.findByName(roleType.getName())
-                        .orElseThrow(() -> new AppException(ErrorCode.ROLE_NAME_NOT_FOUND));
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NAME_NOT_FOUND));
 
                 return User.builder()
                         .email(email)

@@ -9,7 +9,7 @@ import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.user.UserResponse;
 import com.bitorax.priziq.dto.response.user.UserSecureResponse;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.UserMapper;
 import com.bitorax.priziq.repository.RoleRepository;
@@ -21,7 +21,6 @@ import com.bitorax.priziq.utils.PhoneNumberUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -72,11 +71,11 @@ public class UserServiceImp implements UserService {
         User userAuthenticated = this.securityUtils.getAuthenticatedUser();
 
         if (!passwordEncoder.matches(updateUserPasswordRequest.getCurrentPassword(), userAuthenticated.getPassword()))
-            throw new AppException(ErrorCode.PASSWORD_MISMATCH);
+            throw new ApplicationException(ErrorCode.PASSWORD_MISMATCH);
         if (!updateUserPasswordRequest.getNewPassword().equals(updateUserPasswordRequest.getConfirmPassword()))
-            throw new AppException(ErrorCode.PASSWORD_AND_CONFIRM_MISMATCH);
+            throw new ApplicationException(ErrorCode.PASSWORD_AND_CONFIRM_MISMATCH);
         if (passwordEncoder.matches(updateUserPasswordRequest.getNewPassword(), userAuthenticated.getPassword()))
-            throw new AppException(ErrorCode.PASSWORD_SAME_AS_CURRENT);
+            throw new ApplicationException(ErrorCode.PASSWORD_SAME_AS_CURRENT);
 
         String hashPassword = this.passwordEncoder.encode(updateUserPasswordRequest.getNewPassword());
         userAuthenticated.setPassword(hashPassword);
@@ -90,9 +89,9 @@ public class UserServiceImp implements UserService {
 
         this.securityUtils.enforceProtectedEmailPolicy(userAuthenticated.getEmail()); // can't change system email
         if (userAuthenticated.getEmail().equals(newEmail))
-            throw new AppException(ErrorCode.NEW_EMAIL_SAME_BEFORE);
+            throw new ApplicationException(ErrorCode.NEW_EMAIL_SAME_BEFORE);
         if (this.userRepository.existsByEmail(newEmail))
-            throw new AppException(ErrorCode.EMAIL_EXISTED);
+            throw new ApplicationException(ErrorCode.EMAIL_EXISTED);
 
         // Set temporary new email to current user and send verify token to this email
         userAuthenticated.setEmail(newEmail);
@@ -132,7 +131,7 @@ public class UserServiceImp implements UserService {
 
     @Override
     public Object getUserById(String userId) {
-        User user = this.userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User user = this.userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         User userAuthenticated = this.securityUtils.getAuthenticatedUser();
 
         // Check role (if ADMIN response UserResponse, else response UserSecureResponse)
@@ -143,14 +142,14 @@ public class UserServiceImp implements UserService {
     @Override
     public UserResponse updateUserForAdmin(String userId, UpdateUserForAdminRequest updateUserForAdminRequest) {
         User currentUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         this.securityUtils.enforceProtectedEmailPolicy(currentUser.getEmail()); // can't change system email
 
         // Check phone number and email is valid
         String currentEmail = updateUserForAdminRequest.getEmail();
         if (currentEmail != null && !currentEmail.isEmpty()) {
             if (this.userRepository.existsByEmail(currentEmail))
-                throw new AppException(ErrorCode.EMAIL_EXISTED);
+                throw new ApplicationException(ErrorCode.EMAIL_EXISTED);
         }
 
         String currentPhoneNumber = updateUserForAdminRequest.getPhoneNumber();
@@ -158,7 +157,7 @@ public class UserServiceImp implements UserService {
             String formattedPhoneNumber = this.phoneNumberUtils.formatPhoneNumberToE164(currentPhoneNumber,
                     RegionType.VIETNAM.getAlpha2Code());
             if (this.userRepository.existsByPhoneNumber(formattedPhoneNumber))
-                throw new AppException(ErrorCode.PHONE_NUMBER_EXISTED);
+                throw new ApplicationException(ErrorCode.PHONE_NUMBER_EXISTED);
         }
 
         // Check avatar (delete old avatar) and status isVerified
@@ -168,7 +167,7 @@ public class UserServiceImp implements UserService {
 
         Boolean isVerifiedAccount = updateUserForAdminRequest.getIsVerified();
         if (currentUser.getIsVerified().equals(isVerifiedAccount))
-            throw new AppException(ErrorCode.USER_SAME_IS_VERIFY);
+            throw new ApplicationException(ErrorCode.USER_SAME_IS_VERIFY);
 
         this.userMapper.updateUserForAdminRequestToUser(currentUser, updateUserForAdminRequest);
 
@@ -178,7 +177,7 @@ public class UserServiceImp implements UserService {
         if (roleIds != null && !roleIds.isEmpty()) {
             Set<String> uniqueRoleIds = new HashSet<>(roleIds);
             if (uniqueRoleIds.size() < roleIds.size())
-                throw new AppException(ErrorCode.DUPLICATE_ROLE_IDS);
+                throw new ApplicationException(ErrorCode.DUPLICATE_ROLE_IDS);
 
             List<Role> newRoles = this.validateRolesExist(roleIds);
             this.validateUserDoesNotAlreadyHaveRoles(currentUser, newRoles);
@@ -192,7 +191,7 @@ public class UserServiceImp implements UserService {
     @Override
     public void deleteUserById(String userId) {
         User currentUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         this.securityUtils.enforceProtectedEmailPolicy(currentUser.getEmail());
 
         // Delete user account if not system account
@@ -212,7 +211,7 @@ public class UserServiceImp implements UserService {
 
         if (!duplicateRoles.isEmpty()) {
             String errorMessage = "Người dùng đã có vai trò với ID: " + duplicateRoles;
-            throw new AppException(ErrorCode.ROLE_ALREADY_ASSIGNED, errorMessage);
+            throw new ApplicationException(ErrorCode.ROLE_ALREADY_ASSIGNED, errorMessage);
         }
     }
 
@@ -229,7 +228,7 @@ public class UserServiceImp implements UserService {
 
         if (!nonExistentIds.isEmpty()) {
             String customErrorMessage = "Vai trò với ID: " + nonExistentIds + " không tồn tại trên hệ thống";
-            throw new AppException(ErrorCode.ROLE_NOT_FOUND, customErrorMessage);
+            throw new ApplicationException(ErrorCode.ROLE_NOT_FOUND, customErrorMessage);
         }
 
         return existingRoles;

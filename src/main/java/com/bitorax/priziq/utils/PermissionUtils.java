@@ -2,7 +2,7 @@ package com.bitorax.priziq.utils;
 
 import com.bitorax.priziq.domain.Permission;
 import com.bitorax.priziq.domain.Role;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.repository.PermissionRepository;
 import lombok.AccessLevel;
@@ -36,7 +36,7 @@ public class PermissionUtils {
 
         if (!nonExistentIds.isEmpty()) {
             String customErrorMessage = "Quyền hạn với ID: " + nonExistentIds + " không tồn tại trên hệ thống";
-            throw new AppException(ErrorCode.PERMISSION_NOT_FOUND, customErrorMessage);
+            throw new ApplicationException(ErrorCode.PERMISSION_NOT_FOUND, customErrorMessage);
         }
 
         return existingPermissions;
@@ -45,7 +45,7 @@ public class PermissionUtils {
     public void checkDuplicatePermissionIds(List<String> permissionIds) {
         Set<String> uniquePermissionIds = new HashSet<>(permissionIds);
         if (uniquePermissionIds.size() < permissionIds.size())
-            throw new AppException(ErrorCode.DUPLICATE_PERMISSION_IDS);
+            throw new ApplicationException(ErrorCode.DUPLICATE_PERMISSION_IDS);
     }
 
     public Set<String> getPermissionIdsFromRole(Role role) {
@@ -62,27 +62,27 @@ public class PermissionUtils {
                     conflictingPermissions.stream()
                             .map(permission -> permission.getPermissionId() + " (Module: " + permission.getModule() + ")")
                             .collect(Collectors.joining(", "));
-            throw new AppException(ErrorCode.PERMISSION_ALREADY_IN_ANOTHER_MODULE, errorMessage);
+            throw new ApplicationException(ErrorCode.PERMISSION_ALREADY_IN_ANOTHER_MODULE, errorMessage);
         }
     }
 
     public void validateUniquePermissionOnCreate(String name, String apiPath, String httpMethod) {
         if (name != null && this.permissionRepository.existsByName(name)) {
-            throw new AppException(ErrorCode.PERMISSION_NAME_EXISTED);
+            throw new ApplicationException(ErrorCode.PERMISSION_NAME_EXISTED);
         }
         if (apiPath != null && httpMethod != null
                 && this.permissionRepository.existsByApiPathAndHttpMethod(apiPath, httpMethod)) {
-            throw new AppException(ErrorCode.PERMISSION_PATH_AND_METHOD_EXISTED);
+            throw new ApplicationException(ErrorCode.PERMISSION_PATH_AND_METHOD_EXISTED);
         }
     }
 
     public void validateUniquePermissionOnUpdate(String permissionId, String name, String apiPath, String httpMethod) {
         if (name != null && this.permissionRepository.existsByNameAndPermissionIdNot(name, permissionId)) {
-            throw new AppException(ErrorCode.PERMISSION_NAME_EXISTED);
+            throw new ApplicationException(ErrorCode.PERMISSION_NAME_EXISTED);
         }
         if (apiPath != null && httpMethod != null
                 && this.permissionRepository.existsByApiPathAndHttpMethodAndPermissionIdNot(apiPath, httpMethod, permissionId)) {
-            throw new AppException(ErrorCode.PERMISSION_PATH_AND_METHOD_EXISTED);
+            throw new ApplicationException(ErrorCode.PERMISSION_PATH_AND_METHOD_EXISTED);
         }
     }
 }

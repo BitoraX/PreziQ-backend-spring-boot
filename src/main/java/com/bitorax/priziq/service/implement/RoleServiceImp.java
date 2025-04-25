@@ -9,7 +9,7 @@ import com.bitorax.priziq.dto.request.role.UpdateRoleRequest;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.role.RoleResponse;
-import com.bitorax.priziq.exception.AppException;
+import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.RoleMapper;
 import com.bitorax.priziq.repository.RoleRepository;
@@ -41,7 +41,7 @@ public class RoleServiceImp implements RoleService {
     public RoleResponse createRole(CreateRoleRequest createRoleRequest) {
         String roleName = createRoleRequest.getName().toUpperCase();
         if (this.roleRepository.existsByName(roleName))
-            throw new AppException(ErrorCode.ROLE_NAME_EXISTED);
+            throw new ApplicationException(ErrorCode.ROLE_NAME_EXISTED);
 
         Role role = this.roleMapper.createRoleRequestToRole(createRoleRequest);
         role.setName(roleName);
@@ -60,7 +60,7 @@ public class RoleServiceImp implements RoleService {
     @Override
     public RoleResponse getRoleById(String roleId) {
         return this.roleMapper.roleToResponse(
-                this.roleRepository.findById(roleId).orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)));
+                this.roleRepository.findById(roleId).orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NOT_FOUND)));
     }
 
     @Override
@@ -82,15 +82,15 @@ public class RoleServiceImp implements RoleService {
     @Override
     public RoleResponse updateRoleById(String roleId, UpdateRoleRequest updateRoleRequest) {
         Role currentRole = this.roleRepository.findById(roleId)
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NOT_FOUND));
 
         String roleName = updateRoleRequest.getName();
         if (roleName != null && !roleName.equals(currentRole.getName()) && this.roleRepository.existsByName(roleName))
-            throw new AppException(ErrorCode.ROLE_NAME_EXISTED);
+            throw new ApplicationException(ErrorCode.ROLE_NAME_EXISTED);
 
         Boolean roleIsActive = updateRoleRequest.getActive();
         if (currentRole.getActive().equals(roleIsActive))
-            throw new AppException(ErrorCode.ROLE_SAME_IS_ACTIVE);
+            throw new ApplicationException(ErrorCode.ROLE_SAME_IS_ACTIVE);
 
         this.roleMapper.updateRoleRequestToRole(currentRole, updateRoleRequest);
 
@@ -105,7 +105,7 @@ public class RoleServiceImp implements RoleService {
                     .collect(Collectors.toSet());
 
             if (!duplicatePermissionIds.isEmpty())
-                throw new AppException(ErrorCode.PERMISSION_ALREADY_EXISTS_IN_ROLE, "Vai trò " + currentRole.getName()
+                throw new ApplicationException(ErrorCode.PERMISSION_ALREADY_EXISTS_IN_ROLE, "Vai trò " + currentRole.getName()
                         + " đã có quyền hạn với ID: " + duplicatePermissionIds + ". Vui lòng nhập lại");
 
             List<Permission> providedPermissions = this.permissionUtils.validatePermissionsExist(permissionIds);
@@ -119,7 +119,7 @@ public class RoleServiceImp implements RoleService {
     public void deletePermissionFromRole(String roleId,
             DeletePermissionFromRoleRequest deletePermissionFromRoleRequest) {
         Role currentRole = this.roleRepository.findById(roleId)
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NOT_FOUND));
 
         List<String> permissionIds = deletePermissionFromRoleRequest.getPermissionIds();
 
@@ -132,7 +132,7 @@ public class RoleServiceImp implements RoleService {
                 .collect(Collectors.toSet());
 
         if (!nonExistentInRole.isEmpty())
-            throw new AppException(ErrorCode.PERMISSION_NOT_IN_ROLE,
+            throw new ApplicationException(ErrorCode.PERMISSION_NOT_IN_ROLE,
                     "Quyền hạn với ID: " + nonExistentInRole + " không có trong vai trò " + currentRole.getName());
 
         currentRole.getPermissions().removeIf(permission -> permissionIds.contains(permission.getPermissionId()));
@@ -142,12 +142,12 @@ public class RoleServiceImp implements RoleService {
     @Override
     public void deleteRoleById(String roleId) {
         Role currentRole = this.roleRepository.findById(roleId)
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ROLE_NOT_FOUND));
 
         // If system role, you can't delete
         List<String> protectedRoles = RoleType.getAllRoleNames();
         if (protectedRoles.contains(currentRole.getName()))
-            throw new AppException(ErrorCode.SYSTEM_ROLE_CANNOT_BE_DELETED);
+            throw new ApplicationException(ErrorCode.SYSTEM_ROLE_CANNOT_BE_DELETED);
 
         currentRole.getUsers().forEach(user -> user.getRoles().remove(currentRole));
         currentRole.getPermissions().clear(); // owner side (@JoinTable)
