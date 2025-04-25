@@ -104,4 +104,13 @@ public class UserController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @DeleteMapping("/{id}/roles")
+    ApiResponse<Void> deleteRoleFromUser(@PathVariable("id") String userId, @RequestBody DeleteRoleFromUserRequest deleteRoleFromUserRequest, HttpServletRequest servletRequest) {
+        userService.deleteRoleFromUser(userId, deleteRoleFromUserRequest);
+        return ApiResponse.<Void>builder()
+                .message("Xóa vai trò khỏi người dùng thành công")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
 }

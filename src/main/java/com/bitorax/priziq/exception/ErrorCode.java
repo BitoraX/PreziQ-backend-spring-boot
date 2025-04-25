@@ -75,6 +75,8 @@ public enum ErrorCode {
     PERMISSION_ALREADY_EXISTS_IN_ROLE(1306, HttpStatus.BAD_REQUEST, "The current role already has these permissions"),
     ROLE_ALREADY_ASSIGNED(1307, HttpStatus.BAD_REQUEST, "The user already has this role and cannot be assigned it again"),
     ROLE_SAME_IS_ACTIVE(1308, HttpStatus.BAD_REQUEST, "The current role is already active"),
+    ROLE_IDS_NOT_BLANK(1309, HttpStatus.BAD_REQUEST, "Danh sách ID các vai trò không được để trống, vui lòng bổ sung thêm"),
+    ROLE_NOT_IN_USER(1310, HttpStatus.BAD_REQUEST, "Người dùng hiện tại không có vai trò này"),
 
     // Module permission errors
     PERMISSION_NAME_NOT_BLANK(1401, HttpStatus.BAD_REQUEST, "Permission name must not be blank"),

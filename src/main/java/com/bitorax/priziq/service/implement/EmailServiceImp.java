@@ -35,9 +35,15 @@ public class EmailServiceImp implements EmailService {
     protected String FRONTEND_BASEURL;
 
     @Override
-    public void sendVerifyEmail(User user) {
+    public void sendVerifyActiveAccountEmail(User user) {
         sendEmail("verify-email", "Xác thực tài khoản của bạn", user, "verifyEmailUrl",
-                FRONTEND_BASEURL + "/auth/verify-email");
+                FRONTEND_BASEURL + "/auth/verify-active-account");
+    }
+
+    @Override
+    public void sendVerifyChangeEmail(User user) {
+        sendEmail("verify-email", "Xác thực tài khoản của bạn", user, "verifyEmailUrl",
+                FRONTEND_BASEURL + "/auth/verify-change-email");
     }
 
     @Override
@@ -47,27 +53,27 @@ public class EmailServiceImp implements EmailService {
     }
 
     private void sendEmail(String templateName, String subject, User user, String actionUrlVariable, String actionUrl) {
-        String token = this.securityUtils.generateAccessToken(user);
+        String token = securityUtils.generateAccessToken(user);
 
         // Set variables for the email template
         Context context = new Context();
         String fullActionUrl = actionUrl + "?token=" + token;
         context.setVariable(actionUrlVariable, fullActionUrl);
         context.setVariable("name", user.getFirstName() + " " + user.getLastName());
-        String content = this.templateEngine.process(templateName, context);
+        String content = templateEngine.process(templateName, context);
 
-        this.sendEmailSync(user.getEmail(), subject, content, false, true);
+        sendEmailSync(user.getEmail(), subject, content, false, true);
     }
 
     private void sendEmailSync(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
         // Prepare message using a Spring helper
-        MimeMessage mimeMessage = this.javaMailSender.createMimeMessage();
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         try {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name());
             message.setTo(to);
             message.setSubject(subject);
             message.setText(content, isHtml);
-            this.javaMailSender.send(mimeMessage);
+            javaMailSender.send(mimeMessage);
         } catch (MailException | MessagingException e) {
             System.out.println(ErrorCode.SEND_EMAIL_ERROR.getMessage() + e);
         }

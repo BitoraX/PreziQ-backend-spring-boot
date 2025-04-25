@@ -68,7 +68,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
         user.setRoles(roles);
 
         this.userRepository.save(user);
-        this.emailService.sendVerifyEmail(user);
+        this.emailService.sendVerifyActiveAccountEmail(user);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         if (currentUser.getIsVerified())
             throw new ApplicationException(ErrorCode.NOT_VERIFIED_ACCOUNT_TWICE);
-        this.emailService.sendVerifyEmail(currentUser);
+        this.emailService.sendVerifyActiveAccountEmail(currentUser);
     }
 
     @Override

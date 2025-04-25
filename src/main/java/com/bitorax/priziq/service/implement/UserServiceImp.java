@@ -12,12 +12,12 @@ import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.UserMapper;
-import com.bitorax.priziq.repository.RoleRepository;
 import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.EmailService;
 import com.bitorax.priziq.service.S3FileStorageService;
 import com.bitorax.priziq.service.UserService;
 import com.bitorax.priziq.utils.PhoneNumberUtils;
+import com.bitorax.priziq.utils.RoleUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
@@ -43,27 +43,19 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImp implements UserService {
     UserRepository userRepository;
-    RoleRepository roleRepository;
     EmailService emailService;
     S3FileStorageService s3FileStorageService;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
     SecurityUtils securityUtils;
     PhoneNumberUtils phoneNumberUtils;
+    RoleUtils roleUtils;
 
     @Override
     public UserSecureResponse updateUserProfile(UpdateUserProfileRequest updateUserProfileRequest) {
-        User userAuthenticated = this.securityUtils.getAuthenticatedUser();
-
-        // String currentAvatarUrl = userAuthenticated.getAvatar();
-        // String updateAvatarUrl = updateUserProfileRequest.getAvatar();
-        // if (updateAvatarUrl != null && !Objects.equals(currentAvatarUrl,
-        // updateAvatarUrl)) {
-        // this.s3FileStorageService.deleteOldSingleImageIfPresent(currentAvatarUrl);
-        // }
-
-        this.userMapper.updateUserProfileRequestToUser(userAuthenticated, updateUserProfileRequest);
-        return this.userMapper.userToSecureResponse(this.userRepository.save(userAuthenticated));
+        User userAuthenticated = securityUtils.getAuthenticatedUser();
+        userMapper.updateUserProfileRequestToUser(userAuthenticated, updateUserProfileRequest);
+        return userMapper.userToSecureResponse(userRepository.save(userAuthenticated));
     }
 
     @Override
@@ -84,18 +76,18 @@ public class UserServiceImp implements UserService {
 
     @Override
     public void updateUserEmail(UpdateUserEmailRequest updateUserEmailRequest) {
-        User userAuthenticated = this.securityUtils.getAuthenticatedUser();
+        User userAuthenticated = securityUtils.getAuthenticatedUser();
         String newEmail = updateUserEmailRequest.getNewEmail();
 
-        this.securityUtils.enforceProtectedEmailPolicy(userAuthenticated.getEmail()); // can't change system email
+        securityUtils.enforceProtectedEmailPolicy(userAuthenticated.getEmail()); // can't change system email
         if (userAuthenticated.getEmail().equals(newEmail))
             throw new ApplicationException(ErrorCode.NEW_EMAIL_SAME_BEFORE);
-        if (this.userRepository.existsByEmail(newEmail))
+        if (userRepository.existsByEmail(newEmail))
             throw new ApplicationException(ErrorCode.EMAIL_EXISTED);
 
         // Set temporary new email to current user and send verify token to this email
         userAuthenticated.setEmail(newEmail);
-        this.emailService.sendVerifyEmail(userAuthenticated);
+        emailService.sendVerifyChangeEmail(userAuthenticated);
     }
 
     @Override
@@ -141,35 +133,34 @@ public class UserServiceImp implements UserService {
 
     @Override
     public UserResponse updateUserForAdmin(String userId, UpdateUserForAdminRequest updateUserForAdminRequest) {
-        User currentUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
-        this.securityUtils.enforceProtectedEmailPolicy(currentUser.getEmail()); // can't change system email
+        User currentUser = userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+        securityUtils.enforceProtectedEmailPolicy(currentUser.getEmail()); // can't change system email
 
         // Check phone number and email is valid
         String currentEmail = updateUserForAdminRequest.getEmail();
         if (currentEmail != null && !currentEmail.isEmpty()) {
-            if (this.userRepository.existsByEmail(currentEmail))
+            if (userRepository.existsByEmail(currentEmail))
                 throw new ApplicationException(ErrorCode.EMAIL_EXISTED);
         }
 
         String currentPhoneNumber = updateUserForAdminRequest.getPhoneNumber();
         if (currentPhoneNumber != null && !currentPhoneNumber.isEmpty()) {
-            String formattedPhoneNumber = this.phoneNumberUtils.formatPhoneNumberToE164(currentPhoneNumber,
+            String formattedPhoneNumber = phoneNumberUtils.formatPhoneNumberToE164(currentPhoneNumber,
                     RegionType.VIETNAM.getAlpha2Code());
-            if (this.userRepository.existsByPhoneNumber(formattedPhoneNumber))
+            if (userRepository.existsByPhoneNumber(formattedPhoneNumber))
                 throw new ApplicationException(ErrorCode.PHONE_NUMBER_EXISTED);
         }
 
         // Check avatar (delete old avatar) and status isVerified
         String currentAvatar = updateUserForAdminRequest.getAvatar();
         if (currentAvatar != null)
-            this.s3FileStorageService.deleteOldSingleImageIfPresent(currentUser.getAvatar());
+            s3FileStorageService.deleteOldSingleImageIfPresent(currentUser.getAvatar());
 
         Boolean isVerifiedAccount = updateUserForAdminRequest.getIsVerified();
         if (currentUser.getIsVerified().equals(isVerifiedAccount))
             throw new ApplicationException(ErrorCode.USER_SAME_IS_VERIFY);
 
-        this.userMapper.updateUserForAdminRequestToUser(currentUser, updateUserForAdminRequest);
+        userMapper.updateUserForAdminRequestToUser(currentUser, updateUserForAdminRequest);
 
         // Get roleIds and map List<Role> to User entity
         List<String> roleIds = updateUserForAdminRequest.getRoleIds();
@@ -179,58 +170,47 @@ public class UserServiceImp implements UserService {
             if (uniqueRoleIds.size() < roleIds.size())
                 throw new ApplicationException(ErrorCode.DUPLICATE_ROLE_IDS);
 
-            List<Role> newRoles = this.validateRolesExist(roleIds);
-            this.validateUserDoesNotAlreadyHaveRoles(currentUser, newRoles);
+            List<Role> newRoles = roleUtils.validateRolesExist(roleIds);
+            roleUtils.validateUserDoesNotAlreadyHaveRoles(currentUser, newRoles);
 
             currentUser.getRoles().addAll(newRoles);
         }
 
-        return this.userMapper.userToResponse(this.userRepository.save(currentUser));
+        return userMapper.userToResponse(userRepository.save(currentUser));
     }
 
     @Override
     public void deleteUserById(String userId) {
-        User currentUser = this.userRepository.findById(userId)
+        User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
-        this.securityUtils.enforceProtectedEmailPolicy(currentUser.getEmail());
+        securityUtils.enforceProtectedEmailPolicy(currentUser.getEmail());
 
         // Delete user account if not system account
         currentUser.getRoles().clear(); // JPA create DELETE query (role_users)
-        this.userRepository.delete(currentUser);
+        userRepository.delete(currentUser);
     }
 
-    private void validateUserDoesNotAlreadyHaveRoles(User user, List<Role> newRoles) {
-        Set<String> currentRoleIds = user.getRoles().stream()
-                .map(Role::getRoleId)
+    @Override
+    public void deleteRoleFromUser(String userId, DeleteRoleFromUserRequest deleteRoleFromUserRequest) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        List<String> roleIds = deleteRoleFromUserRequest.getRoleIds();
+
+        roleUtils.checkDuplicateRoleIds(roleIds);
+        roleUtils.validateRolesExist(roleIds);
+
+        Set<String> existingRoleIdsInUser = roleUtils.getRoleIdsFromUser(currentUser);
+        Set<String> nonExistentInUser = roleIds.stream()
+                .filter(id -> !existingRoleIdsInUser.contains(id))
                 .collect(Collectors.toSet());
 
-        Set<String> duplicateRoles = newRoles.stream()
-                .map(Role::getRoleId)
-                .filter(currentRoleIds::contains)
-                .collect(Collectors.toSet());
-
-        if (!duplicateRoles.isEmpty()) {
-            String errorMessage = "Người dùng đã có vai trò với ID: " + duplicateRoles;
-            throw new ApplicationException(ErrorCode.ROLE_ALREADY_ASSIGNED, errorMessage);
-        }
-    }
-
-    private List<Role> validateRolesExist(List<String> providedIds) {
-        List<Role> existingRoles = this.roleRepository.findAllById(providedIds);
-
-        Set<String> existingIds = existingRoles.stream()
-                .map(Role::getRoleId)
-                .collect(Collectors.toSet());
-
-        Set<String> nonExistentIds = providedIds.stream()
-                .filter(id -> !existingIds.contains(id))
-                .collect(Collectors.toSet());
-
-        if (!nonExistentIds.isEmpty()) {
-            String customErrorMessage = "Vai trò với ID: " + nonExistentIds + " không tồn tại trên hệ thống";
-            throw new ApplicationException(ErrorCode.ROLE_NOT_FOUND, customErrorMessage);
+        if (!nonExistentInUser.isEmpty()) {
+            throw new ApplicationException(ErrorCode.ROLE_NOT_IN_USER,
+                    "Vai trò với ID: " + nonExistentInUser + " không có trong người dùng " + currentUser.getEmail());
         }
 
-        return existingRoles;
+        currentUser.getRoles().removeIf(role -> roleIds.contains(role.getRoleId()));
+        userRepository.save(currentUser);
     }
 }

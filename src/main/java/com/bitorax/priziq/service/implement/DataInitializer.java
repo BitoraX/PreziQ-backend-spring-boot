@@ -110,6 +110,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve all user accounts with query parameters", "/api/v1/users", "GET", "USERS"),
                         new Permission("Update user account information (admin)", "/api/v1/users/{id}", "PATCH", "USERS"),
                         new Permission("Delete a user account", "/api/v1/users/{id}", "DELETE", "USERS"),
+                        new Permission("Delete roles from user", "/api/v1/users/{id}/roles", "DELETE", "USERS"),
 
                         // Module Roles
                         new Permission("Create a new role", "/api/v1/roles", "POST", "ROLES"),
