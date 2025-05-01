@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class EmailServiceImp implements EmailService {
+public class EmailServiceImpl implements EmailService {
     JavaMailSender javaMailSender;
     SpringTemplateEngine templateEngine;
     SecurityUtils securityUtils;

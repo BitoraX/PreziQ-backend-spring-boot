@@ -42,7 +42,7 @@ import java.util.Set;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ActivityServiceImp implements ActivityService {
+public class ActivityServiceImpl implements ActivityService {
     ActivityRepository activityRepository;
     CollectionRepository collectionRepository;
     QuizRepository quizRepository;

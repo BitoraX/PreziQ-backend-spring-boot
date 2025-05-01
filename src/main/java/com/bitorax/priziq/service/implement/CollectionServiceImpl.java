@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class CollectionServiceImp implements CollectionService {
+public class CollectionServiceImpl implements CollectionService {
     CollectionRepository collectionRepository;
     ActivityRepository activityRepository;
     UserRepository userRepository;
