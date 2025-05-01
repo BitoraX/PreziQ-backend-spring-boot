@@ -32,8 +32,8 @@ public class SessionParticipantController {
                 .build();
     }
 
-    @PatchMapping("/{id}")
-    public ApiResponse<SessionParticipantResponse> updateSessionParticipantById(@PathVariable("id") String sessionParticipantId, @RequestBody @Valid UpdateSessionParticipantRequest updateSessionParticipantRequest, HttpServletRequest servletRequest) {
+    @PatchMapping("/{sessionParticipantId}")
+    public ApiResponse<SessionParticipantResponse> updateSessionParticipantById(@PathVariable String sessionParticipantId, @RequestBody @Valid UpdateSessionParticipantRequest updateSessionParticipantRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<SessionParticipantResponse>builder()
                 .message("Session participant updated successfully")
                 .data(sessionParticipantService.updateSessionParticipantById(sessionParticipantId, updateSessionParticipantRequest))

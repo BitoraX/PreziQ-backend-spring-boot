@@ -146,7 +146,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS"),
                         new Permission("Activities reorder", "/api/v1/collections/{id}/activities/reorder", "PUT", "COLLECTIONS"),
 
-                        // Module Activity
+                        // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
                         new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES"),
                         new Permission("Update quiz for activity", "/api/v1/activities/{activityId}/quiz", "PUT", "ACTIVITIES"),
@@ -157,11 +157,12 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "PUT", "ACTIVITIES"),
                         new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
 
-                        // Module Session
+                        // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
                         new Permission("Update session information", "/api/v1/sessions/{sessionId}", "PATCH", "SESSIONS"),
-                        new Permission("Create a new session participant", "/api/v1/sessions", "POST", "SESSION PARTICIPANTS"),
-                        new Permission("Update session participant information", "/api/v1/sessions/{sessionId}", "PATCH", "SESSION PARTICIPANTS")
+                        new Permission("Create a new session participant", "/api/v1/session-participants", "POST", "SESSION PARTICIPANTS"),
+                        new Permission("Update session participant information", "/api/v1/session-participants/{sessionParticipantId}", "PATCH", "SESSION PARTICIPANTS"),
+                        new Permission("Create a new activity submission", "/api/v1/activity-submissions", "POST", "ACTIVITY SUBMISSIONS")
                 );
         }
 

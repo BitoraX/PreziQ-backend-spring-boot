@@ -151,14 +151,15 @@ public enum ErrorCode {
     INVALID_QUIZ_BUTTONS_ANSWERS(1722, HttpStatus.BAD_REQUEST, "QUIZ_BUTTONS must have exactly one correct answer"),
     INVALID_QUIZ_CHECKBOXES_ANSWERS(1723, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least one correct answer"),
     INVALID_QUIZ_REORDER_ANSWERS(1724, HttpStatus.BAD_REQUEST, "QUIZ_REORDER must have at least one answer in correct order"),
-    QUIZ_NOT_FOUND(1725, HttpStatus.BAD_REQUEST, "Quiz not found"),
+    QUIZ_NOT_FOUND(1725, HttpStatus.NOT_FOUND, "Quiz not found"),
     INVALID_QUIZ_TYPE(1726, HttpStatus.BAD_REQUEST,"Invalid quiz type provided"),
     INVALID_QUIZ_BUTTONS_ANSWERS_COUNT(1727, HttpStatus.BAD_REQUEST, "QUIZ_BUTTONS must have at least 2 answers"),
     INVALID_QUIZ_CHECKBOXES_ANSWERS_COUNT(1728, HttpStatus.BAD_REQUEST, "QUIZ_CHECKBOXES must have at least 2 answers"),
     ACTIVITY_TYPE_UNCHANGED(1729, HttpStatus.BAD_REQUEST, "Activity type unchanged"),
+    QUIZ_ANSWER_NOT_FOUND(1730, HttpStatus.NOT_FOUND, "Quiz answer not found"),
 
     // Slide-related errors
-    SLIDE_NOT_FOUND(1730, HttpStatus.BAD_REQUEST, "Slide not found"),
+    SLIDE_NOT_FOUND(1730, HttpStatus.NOT_FOUND, "Slide not found"),
     SLIDE_ELEMENT_NOT_FOUND(1731, HttpStatus.BAD_REQUEST, "Slide element not found"),
     SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE(1732, HttpStatus.BAD_REQUEST, "Slide element does not belong to the slide"),
     SLIDE_ELEMENT_TYPE_REQUIRED(1733, HttpStatus.BAD_REQUEST, "Slide element type is required"),
@@ -178,10 +179,15 @@ public enum ErrorCode {
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),
-    SESSION_NOT_FOUND(1802, HttpStatus.BAD_REQUEST, "Session not found"),
+    SESSION_NOT_FOUND(1802, HttpStatus.NOT_FOUND, "Session not found"),
+    SESSION_ID_REQUIRED(1803, HttpStatus.BAD_REQUEST, "Session ID is required"),
 
     // Module session participant errors
-    SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.BAD_REQUEST, "Session participant not found"),
+    SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.NOT_FOUND, "Session participant not found"),
+
+    // Module activity submission errors
+    ANSWER_CONTENT_REQUIRED(2001, HttpStatus.BAD_REQUEST, "Answer content is required"),
+    ACTIVITY_SUBMISSION_NOT_FOUND(2002, HttpStatus.NOT_FOUND, "Activity submission not found"),
 
     ;
 

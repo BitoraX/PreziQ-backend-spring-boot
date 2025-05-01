@@ -1,0 +1,129 @@
+package com.bitorax.priziq.service.implement;
+
+import com.bitorax.priziq.constant.ActivityType;
+import com.bitorax.priziq.domain.User;
+import com.bitorax.priziq.domain.activity.Activity;
+import com.bitorax.priziq.domain.activity.quiz.Quiz;
+import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
+import com.bitorax.priziq.domain.session.ActivitySubmission;
+import com.bitorax.priziq.domain.session.Session;
+import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
+import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
+import com.bitorax.priziq.exception.ApplicationException;
+import com.bitorax.priziq.exception.ErrorCode;
+import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
+import com.bitorax.priziq.repository.ActivityRepository;
+import com.bitorax.priziq.repository.ActivitySubmissionRepository;
+import com.bitorax.priziq.repository.SessionRepository;
+import com.bitorax.priziq.repository.UserRepository;
+import com.bitorax.priziq.service.ActivitySubmissionService;
+import jakarta.transaction.Transactional;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class ActivitySubmissionServiceImpl implements ActivitySubmissionService {
+    ActivitySubmissionRepository activitySubmissionRepository;
+    SessionRepository sessionRepository;
+    ActivityRepository activityRepository;
+    UserRepository userRepository;
+    ActivitySubmissionMapper activitySubmissionMapper;
+
+    @Override
+    @Transactional
+    public ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest request) {
+        // Validate entities
+        Session session = sessionRepository.findById(request.getSessionId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        Activity activity = activityRepository.findById(request.getActivityId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Check if activity is a quiz
+        Quiz quiz = activity.getQuiz();
+        if (quiz == null) {
+            throw new ApplicationException(ErrorCode.ACTIVITY_NOT_QUIZ_TYPE);
+        }
+
+        // Determine isCorrect and score based on activityType
+        boolean isCorrect;
+        int score;
+        ActivityType activityType = activity.getActivityType();
+
+        switch (activityType) {
+            case QUIZ_BUTTONS:
+            case QUIZ_TRUE_OR_FALSE:
+                // Expect answerContent to be a single quizAnswerId
+                QuizAnswer selectedAnswer = quiz.getQuizAnswers().stream()
+                        .filter(a -> a.getQuizAnswerId().equals(request.getAnswerContent()))
+                        .findFirst()
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_ANSWER_NOT_FOUND));
+                isCorrect = selectedAnswer.getIsCorrect();
+                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                break;
+
+            case QUIZ_CHECKBOXES:
+                // Expect answerContent to be comma-separated quizAnswerIds
+                List<String> selectedIds = Arrays.asList(request.getAnswerContent().split(","));
+                List<QuizAnswer> correctAnswers = quiz.getQuizAnswers().stream()
+                        .filter(QuizAnswer::getIsCorrect)
+                        .toList();
+                // Check if selected answers match exactly with correct answers
+                isCorrect = selectedIds.size() == correctAnswers.size() &&
+                        selectedIds.stream().allMatch(id -> correctAnswers.stream()
+                                .anyMatch(a -> a.getQuizAnswerId().equals(id)));
+                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                break;
+
+            case QUIZ_TYPE_ANSWER:
+                // Compare answerContent with correct answerText (case-insensitive)
+                isCorrect = quiz.getQuizAnswers().stream()
+                        .filter(QuizAnswer::getIsCorrect)
+                        .anyMatch(a -> a.getAnswerText().equalsIgnoreCase(request.getAnswerContent()));
+                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                break;
+
+            case QUIZ_REORDER:
+                // Expect answerContent to be comma-separated quizAnswerIds in user-defined order
+                List<String> userOrderIds = Arrays.asList(request.getAnswerContent().split(","));
+                List<QuizAnswer> sortedAnswers = quiz.getQuizAnswers().stream()
+                        .sorted(Comparator.comparingInt(QuizAnswer::getOrderIndex))
+                        .toList();
+                // Check if user order matches correct order
+                isCorrect = userOrderIds.size() == sortedAnswers.size() &&
+                        userOrderIds.stream()
+                                .map(id -> sortedAnswers.get(userOrderIds.indexOf(id)).getQuizAnswerId())
+                                .toList()
+                                .equals(userOrderIds);
+                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                break;
+
+            default:
+                throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
+        }
+
+        // Create and save ActivitySubmission
+        ActivitySubmission submission = ActivitySubmission.builder()
+                .session(session)
+                .user(user)
+                .activity(activity)
+                .answerContent(request.getAnswerContent())
+                .isCorrect(isCorrect)
+                .score(score)
+                .build();
+
+        ActivitySubmission savedSubmission = activitySubmissionRepository.save(submission);
+        return activitySubmissionMapper.activitySubmissionToResponse(savedSubmission);
+    }
+}
