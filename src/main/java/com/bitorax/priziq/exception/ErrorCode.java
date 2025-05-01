@@ -65,6 +65,7 @@ public enum ErrorCode {
     NEW_EMAIL_SAME_BEFORE(1207, HttpStatus.BAD_REQUEST, "The new email address is the same as the current one, please use a different email address"),
     NEW_PHONE_NUMBER_SAME_BEFORE(1208, HttpStatus.BAD_REQUEST, "The new phone number is the same as the current one, please use a different phone number"),
     USER_SAME_IS_VERIFY(1209, HttpStatus.BAD_REQUEST, "The user is already verified"),
+    USER_ID_REQUIRED(1210, HttpStatus.BAD_REQUEST, "User ID is required"),
 
     // Module role errors
     ROLE_NAME_NOT_FOUND(1301, HttpStatus.NOT_FOUND, "Role name not found in the system"),
@@ -178,6 +179,9 @@ public enum ErrorCode {
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),
     SESSION_NOT_FOUND(1802, HttpStatus.BAD_REQUEST, "Session not found"),
+
+    // Module session participant errors
+    SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.BAD_REQUEST, "Session participant not found"),
 
     ;
 

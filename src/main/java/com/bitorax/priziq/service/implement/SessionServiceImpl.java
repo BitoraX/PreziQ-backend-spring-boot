@@ -67,7 +67,6 @@ public class SessionServiceImpl implements SessionService {
     @Transactional
     public SessionResponse updateSessionById(String sessionId, UpdateSessionRequest updateSessionRequest) {
         Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-
         sessionMapper.updateSessionFromRequest(updateSessionRequest, session);
         return sessionMapper.sessionToResponse(sessionRepository.save(session));
     }
