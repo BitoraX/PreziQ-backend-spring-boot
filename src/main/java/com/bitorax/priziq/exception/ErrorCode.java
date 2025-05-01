@@ -176,7 +176,8 @@ public enum ErrorCode {
     SAME_ACTIVITY_TYPE(1746, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
 
     // Module session errors
-    UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code");
+    UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),
+    SESSION_NOT_FOUND(1802, HttpStatus.BAD_REQUEST, "Session not found"),
 
     ;
 

@@ -158,7 +158,8 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
 
                         // Module Session
-                        new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS")
+                        new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
+                        new Permission("Update session information", "/api/v1/sessions/{sessionId}", "PATCH", "SESSIONS")
                 );
         }
 
