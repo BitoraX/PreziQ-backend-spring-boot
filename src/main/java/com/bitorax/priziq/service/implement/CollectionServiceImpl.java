@@ -6,7 +6,7 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
-import com.bitorax.priziq.dto.response.collection.CollectionResponse;
+import com.bitorax.priziq.dto.response.collection.CollectionDetailResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
@@ -43,18 +43,18 @@ public class CollectionServiceImpl implements CollectionService {
     CollectionMapper collectionMapper;
 
     @Override
-    public CollectionResponse createCollection(CreateCollectionRequest createCollectionRequest){
+    public CollectionDetailResponse createCollection(CreateCollectionRequest createCollectionRequest){
         Collection collection = collectionMapper.createCollectionRequestToCollection(createCollectionRequest);
 
         User creator = this.userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt()).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         collection.setCreator(creator);
 
-        return collectionMapper.collectionToResponse(collectionRepository.save(collection));
+        return collectionMapper.collectionToDetailResponse(collectionRepository.save(collection));
     }
 
     @Override
-    public CollectionResponse getCollectionById(String collectionId){
-        return collectionMapper.collectionToResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
+    public CollectionDetailResponse getCollectionById(String collectionId){
+        return collectionMapper.collectionToDetailResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
     }
 
     @Override
@@ -69,15 +69,15 @@ public class CollectionServiceImpl implements CollectionService {
                         .hasNext(collectionPage.hasNext())
                         .hasPrevious(collectionPage.hasPrevious())
                         .build())
-                .content(this.collectionMapper.collectionsToCollectionResponseList(collectionPage.getContent()))
+                .content(this.collectionMapper.collectionsToCollectionDetailResponseList(collectionPage.getContent()))
                 .build();
     }
 
     @Override
-    public CollectionResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
+    public CollectionDetailResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
         this.collectionMapper.updateCollectionRequestToCollection(currentCollection, updateCollectionRequest);
-        return this.collectionMapper.collectionToResponse(collectionRepository.save(currentCollection));
+        return this.collectionMapper.collectionToDetailResponse(collectionRepository.save(currentCollection));
     }
 
     @Override

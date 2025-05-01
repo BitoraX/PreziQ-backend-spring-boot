@@ -173,7 +173,10 @@ public enum ErrorCode {
     ENTRY_ANIMATION_DELAY_NON_NEGATIVE(1743, HttpStatus.BAD_REQUEST, "Entry animation delay must be non-negative"),
     EXIT_ANIMATION_DURATION_NON_NEGATIVE(1744, HttpStatus.BAD_REQUEST, "Exit animation duration must be non-negative"),
     EXIT_ANIMATION_DELAY_NON_NEGATIVE(1745, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative"),
-    SAME_ACTIVITY_TYPE(1746, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different");
+    SAME_ACTIVITY_TYPE(1746, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
+
+    // Module session errors
+    UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code");
 
     ;
 

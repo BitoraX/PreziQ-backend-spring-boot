@@ -155,7 +155,10 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update a slide", "/api/v1/slides/{slideId}", "PUT", "ACTIVITIES"),
                         new Permission("Add a slide element", "/api/v1/slides/{slideId}/elements", "POST", "ACTIVITIES"),
                         new Permission("Update a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "PUT", "ACTIVITIES"),
-                        new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES")
+                        new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
+
+                        // Module Session
+                        new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS")
                 );
         }
 
@@ -174,6 +177,8 @@ public class DataInitializer implements ApplicationRunner {
                 List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
                         .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
                 List<Permission> moduleActivityAllPermissions = permissionRepository.findByModule("ACTIVITIES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleSessionAllPermissions = permissionRepository.findByModule("SESSIONS")
                         .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
                 // General permission for user login (USER, ADMIN)
@@ -198,7 +203,8 @@ public class DataInitializer implements ApplicationRunner {
                                 modulePermissionAllPermissions,
                                 moduleFileAllPermissions,
                                 moduleCollectionAllPermissions,
-                                moduleActivityAllPermissions
+                                moduleActivityAllPermissions,
+                                moduleSessionAllPermissions
                         )
                 );
 
