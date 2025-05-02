@@ -51,8 +51,8 @@ public class WebSocketExceptionHandler {
         }
         String message = ex.getCustomMessage() != null ? ex.getCustomMessage() : ex.getErrorCode().getMessage();
         ApiResponse<?> response = buildErrorResponse(ex.getErrorCode(), Optional.of(message), null);
-        log.info("Sending error to /user/{}/queue/errors", clientSessionId);
-        messagingTemplate.convertAndSendToUser(clientSessionId, "/queue/errors", response);
+        log.info("Sending error to /user/{}/private/errors", clientSessionId);
+        messagingTemplate.convertAndSendToUser(clientSessionId, "/private/errors", response);
     }
 
     @MessageExceptionHandler(MethodArgumentNotValidException.class)
@@ -86,7 +86,7 @@ public class WebSocketExceptionHandler {
         ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errors);
         messagingTemplate.convertAndSendToUser(
                 clientSessionId,
-                "/queue/errors",
+                "/private/errors",
                 response
         );
     }
@@ -101,7 +101,7 @@ public class WebSocketExceptionHandler {
         ApiResponse<?> response = buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.empty(), null);
         messagingTemplate.convertAndSendToUser(
                 clientSessionId,
-                "/queue/errors",
+                "/private/errors",
                 response
         );
     }
