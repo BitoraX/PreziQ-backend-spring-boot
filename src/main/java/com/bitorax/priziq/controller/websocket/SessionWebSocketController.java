@@ -5,12 +5,14 @@ import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.SessionParticipantService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -25,15 +27,14 @@ public class SessionWebSocketController {
     SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/session/join")
-    public void handleJoinSession(@Payload CreateSessionParticipantRequest request) {
+    public void handleJoinSession(@Valid @Payload CreateSessionParticipantRequest request, SimpMessageHeaderAccessor headerAccessor) {
         List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request);
 
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        String sessionCode = responses.getFirst().getSession().getSessionCode();
-        String destination = "/topic/session/" + sessionCode + "/participants";
+        String destination = "/topic/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, responses);
     }
 }
