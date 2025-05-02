@@ -28,13 +28,12 @@ public class SessionWebSocketController {
 
     @MessageMapping("/session/join")
     public void handleJoinSession(@Valid @Payload CreateSessionParticipantRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        log.info("Session attributes in handleJoinSession: {}", headerAccessor.getSessionAttributes());
         List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request);
-
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
-
-        String destination = "/topic/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
+        String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, responses);
     }
 }
