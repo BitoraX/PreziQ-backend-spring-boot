@@ -4,8 +4,10 @@ import com.bitorax.priziq.dto.request.session.session_participant.CreateSessionP
 import com.bitorax.priziq.dto.request.session.session_participant.UpdateSessionParticipantRequest;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 
+import java.util.List;
+
 public interface SessionParticipantService {
-    SessionParticipantResponse joinSession(CreateSessionParticipantRequest request);
+    List<SessionParticipantResponse> joinSession(CreateSessionParticipantRequest request);
 
     SessionParticipantResponse updateSessionParticipantById(String sessionParticipantId, UpdateSessionParticipantRequest request);
 }

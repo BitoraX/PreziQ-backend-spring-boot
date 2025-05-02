@@ -5,13 +5,9 @@ import com.bitorax.priziq.dto.request.session.session_participant.UpdateSessionP
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import org.mapstruct.*;
 
-import java.util.List;
-
 @Mapper(componentModel = "spring")
 public interface SessionParticipantMapper {
     SessionParticipantResponse sessionParticipantToResponse(SessionParticipant sessionParticipant);
-
-    List<SessionParticipantResponse> sessionParticipantsToResponseList(List<SessionParticipant> sessionParticipants);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateSessionParticipantFromRequest(UpdateSessionParticipantRequest updateSessionParticipantRequest, @MappingTarget SessionParticipant sessionParticipant);

@@ -7,9 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface SessionParticipantRepository extends JpaRepository<SessionParticipant, String>, JpaSpecificationExecutor<SessionParticipant> {
     boolean existsBySessionAndUser(Session session, User user);
 
     boolean existsBySessionAndGuestName(Session session, String guestName);
+
+    List<SessionParticipant> findBySession_SessionCode(String sessionCode);
 }

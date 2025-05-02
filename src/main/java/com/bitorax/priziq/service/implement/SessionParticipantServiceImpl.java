@@ -20,6 +20,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -32,8 +35,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public SessionParticipantResponse joinSession(CreateSessionParticipantRequest request) {
-        // Find session by sessionCode and validate is active = true
+    public List<SessionParticipantResponse> joinSession(CreateSessionParticipantRequest request) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -41,7 +43,6 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
             throw new ApplicationException(ErrorCode.SESSION_NOT_ACTIVE);
         }
 
-        // Check request is user or guest
         User user = null;
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId())
@@ -51,14 +52,33 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         String guestName = request.getGuestName();
         String guestAvatar = request.getGuestAvatar();
 
-        // Check if the player has joined
-        boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndUser(session, user)
-                || (guestName != null && sessionParticipantRepository.existsBySessionAndGuestName(session, guestName));
-        if (alreadyJoined) {
-            throw new ApplicationException(ErrorCode.PARTICIPANT_ALREADY_JOINED);
+        if (guestName != null) {
+            guestName = guestName.trim();
+            if (guestName.isEmpty()) {
+                throw new ApplicationException(ErrorCode.INVALID_GUEST_NAME);
+            }
         }
 
-        // Create session participant
+        if (user != null) {
+            boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndUser(session, user);
+            if (alreadyJoined) {
+                throw new ApplicationException(
+                        ErrorCode.PARTICIPANT_ALREADY_JOINED,
+                        "User with ID " + request.getUserId() + " has already joined the session"
+                );
+            }
+        } else if (guestName != null) {
+            boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndGuestName(session, guestName);
+            if (alreadyJoined) {
+                throw new ApplicationException(
+                        ErrorCode.PARTICIPANT_ALREADY_JOINED,
+                        "Guest with name '" + guestName + "' has already joined this session. Please choose a different name."
+                );
+            }
+        } else {
+            throw new ApplicationException(ErrorCode.USER_OR_GUEST_REQUIRED);
+        }
+
         SessionParticipant sessionParticipant = SessionParticipant.builder()
                 .session(session)
                 .user(user)
@@ -68,15 +88,19 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .realtimeRanking(0)
                 .build();
 
-        SessionParticipant savedParticipant = sessionParticipantRepository.save(sessionParticipant);
-        return sessionParticipantMapper.sessionParticipantToResponse(savedParticipant);
+        sessionParticipantRepository.save(sessionParticipant);
+
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(session.getSessionCode());
+        return participants.stream()
+                .map(sessionParticipantMapper::sessionParticipantToResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public SessionParticipantResponse updateSessionParticipantById(String sessionParticipantId, UpdateSessionParticipantRequest updateSessionParticipantRequest) {
-        SessionParticipant currentSessionParticipant = sessionParticipantRepository.findById(sessionParticipantId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
+        SessionParticipant currentSessionParticipant = sessionParticipantRepository
+                .findById(sessionParticipantId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
         sessionParticipantMapper.updateSessionParticipantFromRequest(updateSessionParticipantRequest, currentSessionParticipant);
 

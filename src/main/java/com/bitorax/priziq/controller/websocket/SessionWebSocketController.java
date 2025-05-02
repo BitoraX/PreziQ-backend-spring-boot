@@ -10,8 +10,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,16 +25,15 @@ public class SessionWebSocketController {
     SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/session/join")
-    public SessionParticipantResponse handleJoinSession(CreateSessionParticipantRequest request) {
-        SessionParticipantResponse response = sessionParticipantService.joinSession(request);
+    public void handleJoinSession(@Payload CreateSessionParticipantRequest request) {
+        List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request);
 
-        if (response.getSession() == null) {
+        if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        String destination = "/topic/session/" + response.getSession().getSessionId() + "/participants";
-        messagingTemplate.convertAndSend(destination, response);
-
-        return response;
+        String sessionCode = responses.getFirst().getSession().getSessionCode();
+        String destination = "/topic/session/" + sessionCode + "/participants";
+        messagingTemplate.convertAndSend(destination, responses);
     }
 }

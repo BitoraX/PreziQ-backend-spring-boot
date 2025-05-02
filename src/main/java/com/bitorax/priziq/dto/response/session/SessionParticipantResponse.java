@@ -20,6 +20,9 @@ public class SessionParticipantResponse extends AuditResponse {
     SessionResponse session;
     UserSecureResponse user;
 
+    String guestName;
+    String guestAvatar;
+
     Integer realtimeScore;
     Integer realtimeRanking;
 }
