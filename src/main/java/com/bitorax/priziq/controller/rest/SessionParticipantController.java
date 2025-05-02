@@ -1,6 +1,5 @@
 package com.bitorax.priziq.controller.rest;
 
-import com.bitorax.priziq.dto.request.session.session_participant.CreateSessionParticipantRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.UpdateSessionParticipantRequest;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
@@ -23,20 +22,11 @@ import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 public class SessionParticipantController {
     SessionParticipantService sessionParticipantService;
 
-    @PostMapping
-    public ApiResponse<SessionParticipantResponse> createSessionParticipant(@RequestBody @Valid CreateSessionParticipantRequest createSessionParticipantRequest, HttpServletRequest servletRequest) {
-        return ApiResponse.<SessionParticipantResponse>builder()
-                .message("Session participant created successfully")
-                .data(sessionParticipantService.createSessionParticipant(createSessionParticipantRequest))
-                .meta(buildMetaInfo(servletRequest))
-                .build();
-    }
-
     @PatchMapping("/{sessionParticipantId}")
-    public ApiResponse<SessionParticipantResponse> updateSessionParticipantById(@PathVariable String sessionParticipantId, @RequestBody @Valid UpdateSessionParticipantRequest updateSessionParticipantRequest, HttpServletRequest servletRequest) {
+    public ApiResponse<SessionParticipantResponse> updateSessionParticipantById(@PathVariable String sessionParticipantId, @RequestBody @Valid UpdateSessionParticipantRequest request, HttpServletRequest servletRequest) {
         return ApiResponse.<SessionParticipantResponse>builder()
                 .message("Session participant updated successfully")
-                .data(sessionParticipantService.updateSessionParticipantById(sessionParticipantId, updateSessionParticipantRequest))
+                .data(sessionParticipantService.updateSessionParticipantById(sessionParticipantId, request))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

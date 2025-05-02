@@ -181,9 +181,15 @@ public enum ErrorCode {
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),
     SESSION_NOT_FOUND(1802, HttpStatus.NOT_FOUND, "Session not found"),
     SESSION_ID_REQUIRED(1803, HttpStatus.BAD_REQUEST, "Session ID is required"),
+    SESSION_CODE_REQUIRED(1804, HttpStatus.BAD_REQUEST, "Session code is required"),
+    SESSION_NOT_ACTIVE(1805, HttpStatus.BAD_REQUEST, "The session is not active"),
+    INVALID_SESSION_ID(1806, HttpStatus.BAD_REQUEST, "Invalid session ID"),
 
     // Module session participant errors
     SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.NOT_FOUND, "Session participant not found"),
+    INVALID_GUEST_NAME(1902, HttpStatus.BAD_REQUEST, "Invalid guest name"),
+    PARTICIPANT_ALREADY_JOINED(1903, HttpStatus.BAD_REQUEST, "The participant has already joined"),
+    USER_OR_GUEST_REQUIRED(1904, HttpStatus.BAD_REQUEST, "Either userId or guestName must be provided"),
 
     // Module activity submission errors
     ANSWER_CONTENT_REQUIRED(2001, HttpStatus.BAD_REQUEST, "Answer content is required"),

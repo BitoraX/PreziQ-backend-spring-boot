@@ -20,8 +20,10 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionResponse extends AuditResponse {
     String sessionId;
+
     CollectionSummaryResponse collection;
     UserSecureResponse hostUser;
+
     String sessionCode;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")

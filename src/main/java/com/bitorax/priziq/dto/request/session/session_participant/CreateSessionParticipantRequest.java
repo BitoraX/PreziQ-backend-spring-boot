@@ -1,5 +1,6 @@
 package com.bitorax.priziq.dto.request.session.session_participant;
 
+import com.bitorax.priziq.validation.annotation.UserOrGuestValid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -9,10 +10,13 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@UserOrGuestValid
 public class CreateSessionParticipantRequest {
-    @NotBlank(message = "SESSION_ID_REQUIRED")
-    String sessionId;
+    @NotBlank(message = "SESSION_CODE_REQUIRED")
+    String sessionCode;
 
-    @NotBlank(message = "USER_ID_REQUIRED")
-    String userId;
+    String userId; // user already has an account
+
+    String guestName; // user has no previous account
+    String guestAvatar;
 }

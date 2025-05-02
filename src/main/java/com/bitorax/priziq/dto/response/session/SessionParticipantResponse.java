@@ -16,8 +16,10 @@ import lombok.experimental.SuperBuilder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionParticipantResponse extends AuditResponse {
     String sessionParticipantId;
-    String sessionId;
+
+    SessionResponse session;
     UserSecureResponse user;
+
     Integer realtimeScore;
     Integer realtimeRanking;
 }

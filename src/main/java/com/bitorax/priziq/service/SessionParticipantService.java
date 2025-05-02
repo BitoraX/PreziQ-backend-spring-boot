@@ -5,7 +5,7 @@ import com.bitorax.priziq.dto.request.session.session_participant.UpdateSessionP
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 
 public interface SessionParticipantService {
-    SessionParticipantResponse createSessionParticipant(CreateSessionParticipantRequest createSessionParticipantRequest);
+    SessionParticipantResponse joinSession(CreateSessionParticipantRequest request);
 
-    SessionParticipantResponse updateSessionParticipantById(String sessionParticipantId, UpdateSessionParticipantRequest updateSessionParticipantRequest);
+    SessionParticipantResponse updateSessionParticipantById(String sessionParticipantId, UpdateSessionParticipantRequest request);
 }

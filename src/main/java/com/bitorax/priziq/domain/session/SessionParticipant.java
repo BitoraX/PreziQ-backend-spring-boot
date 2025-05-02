@@ -24,8 +24,14 @@ public class SessionParticipant extends BaseEntity {
     Session session;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     User user;
+
+    @Column
+    String guestName;
+
+    @Column
+    String guestAvatar;
 
     @Column(nullable = false)
     @Builder.Default
