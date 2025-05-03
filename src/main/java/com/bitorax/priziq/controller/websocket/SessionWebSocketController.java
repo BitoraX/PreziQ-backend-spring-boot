@@ -4,9 +4,7 @@ import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
-import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
-import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
-import com.bitorax.priziq.dto.response.session.SessionResponse;
+import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.ActivitySubmissionService;
@@ -91,12 +89,21 @@ public class SessionWebSocketController {
         messagingTemplate.convertAndSend(destination, responses);
     }
 
-    @MessageMapping("/session/end")
-    public void handleEndSession(@Valid @Payload EndSessionRequest request){
-        SessionResponse response = sessionService.endSession(request);
+    @MessageMapping("/session/complete")
+    public void handleEndSession(@Valid @Payload EndSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
 
-        // Broadcast updated participants list
-        String destination = "/public/session/" + response.getSessionCode() + "/participants";
-        messagingTemplate.convertAndSend(destination, response);
+        // End session
+        SessionSummaryResponse endSessionResponse = sessionService.endSession(request);
+        String endDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/end";
+        messagingTemplate.convertAndSend(endDestination, endSessionResponse);
+
+        // Calculate summary information
+        List<EndSessionSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
+        String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
+        messagingTemplate.convertAndSend(summaryDestination, summaries);
     }
 }

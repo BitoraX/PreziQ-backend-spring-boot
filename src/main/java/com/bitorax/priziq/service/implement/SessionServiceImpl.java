@@ -1,14 +1,21 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.domain.Collection;
+import com.bitorax.priziq.domain.User;
+import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
+import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
+import com.bitorax.priziq.dto.response.session.EndSessionSummaryResponse;
 import com.bitorax.priziq.dto.response.session.SessionResponse;
+import com.bitorax.priziq.dto.response.session.SessionSummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.SessionMapper;
+import com.bitorax.priziq.repository.ActivitySubmissionRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
+import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.repository.SessionRepository;
 import com.bitorax.priziq.service.SessionService;
 import com.bitorax.priziq.utils.SecurityUtils;
@@ -23,6 +30,9 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -31,6 +41,8 @@ import java.time.Instant;
 public class SessionServiceImpl implements SessionService {
     SessionRepository sessionRepository;
     CollectionRepository collectionRepository;
+    SessionParticipantRepository sessionParticipantRepository;
+    ActivitySubmissionRepository activitySubmissionRepository;
     SecurityUtils securityUtils;
     SessionMapper sessionMapper;
 
@@ -63,9 +75,16 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public SessionResponse endSession(EndSessionRequest endSessionRequest){
+    @Transactional
+    public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest) {
         Session currentSession = sessionRepository.findById(endSessionRequest.getSessionId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Only the host can end the session
+        User currentUser = securityUtils.getAuthenticatedUser();
+        if (!currentSession.getHostUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_END_SESSION);
+        }
 
         if (!currentSession.getIsActive()) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);
@@ -74,7 +93,51 @@ public class SessionServiceImpl implements SessionService {
         currentSession.setEndTime(Instant.now());
         currentSession.setIsActive(false);
 
-        return sessionMapper.sessionToResponse(currentSession);
+        return sessionMapper.sessionToSummaryResponse(sessionRepository.save(currentSession));
+    }
+
+    @Override
+    @Transactional
+    public List<EndSessionSummaryResponse> calculateSessionSummary(String sessionId) {
+        Session currentSession = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        SessionResponse sessionResponse = sessionMapper.sessionToResponse(currentSession);
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+        List<EndSessionSummaryResponse> summaries = new ArrayList<>();
+
+        for (SessionParticipant participant : participants) {
+            List<ActivitySubmission> submissions = activitySubmissionRepository
+                    .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
+                            sessionId, null, null);
+
+            int finalScore = submissions.stream()
+                    .mapToInt(ActivitySubmission::getResponseScore)
+                    .sum();
+            int finalCorrectCount = (int) submissions.stream()
+                    .filter(ActivitySubmission::getIsCorrect)
+                    .count();
+            int finalIncorrectCount = submissions.size() - finalCorrectCount;
+
+            EndSessionSummaryResponse summary = EndSessionSummaryResponse.builder()
+                    .session(sessionResponse)
+                    .displayName(participant.getDisplayName())
+                    .displayAvatar(participant.getDisplayAvatar())
+                    .finalScore(finalScore)
+                    .finalCorrectCount(finalCorrectCount)
+                    .finalIncorrectCount(finalIncorrectCount)
+                    .build();
+
+            summaries.add(summary);
+        }
+
+        // Sắp xếp và gán xếp hạng
+        summaries.sort(Comparator.comparingInt(EndSessionSummaryResponse::getFinalScore).reversed());
+        for (int i = 0; i < summaries.size(); i++) {
+            summaries.get(i).setFinalRanking(i + 1);
+        }
+
+        return summaries;
     }
 
     private String generateUniqueSessionCode() {
