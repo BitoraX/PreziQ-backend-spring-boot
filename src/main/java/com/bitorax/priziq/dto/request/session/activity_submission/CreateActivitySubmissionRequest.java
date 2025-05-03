@@ -16,9 +16,6 @@ public class CreateActivitySubmissionRequest {
     @NotBlank(message = "ACTIVITY_ID_REQUIRED")
     String activityId;
 
-    @NotBlank(message = "USER_ID_REQUIRED")
-    String userId;
-
     @NotBlank(message = "ANSWER_CONTENT_REQUIRED")
     String answerContent;
 }

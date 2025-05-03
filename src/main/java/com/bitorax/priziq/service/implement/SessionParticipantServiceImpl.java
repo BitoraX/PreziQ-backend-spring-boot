@@ -20,7 +20,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -100,5 +102,41 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
     @Override
     public List<SessionParticipantResponse> findParticipantsBySessionCode(String sessionCode){
         return sessionParticipantMapper.sessionParticipantsToResponseList(sessionParticipantRepository.findBySession_SessionCode(sessionCode));
+    }
+
+    @Override
+    @Transactional
+    public List<SessionParticipantResponse> updateRealtimeScoreAndRanking(String sessionId, String websocketSessionId, int responseScore) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Find SessionParticipant by sessionId and websocketSessionId
+        SessionParticipant participant = sessionParticipantRepository
+                .findBySessionAndWebsocketSessionId(session, websocketSessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
+
+        // Update realtimeScore
+        participant.setRealtimeScore(participant.getRealtimeScore() + responseScore);
+
+        // Save the updated participant
+        sessionParticipantRepository.save(participant);
+
+        // Get all participants in the session and update rankings
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+        // Sort by realtimeScore (descending) and assign rankings
+        List<SessionParticipant> sortedParticipants = participants.stream()
+                .sorted(Comparator.comparingInt(SessionParticipant::getRealtimeScore).reversed())
+                .collect(Collectors.toList());
+
+        // Update realtimeRanking
+        for (int i = 0; i < sortedParticipants.size(); i++) {
+            sortedParticipants.get(i).setRealtimeRanking(i + 1);
+        }
+
+        // Save all participants with updated rankings
+        sessionParticipantRepository.saveAll(sortedParticipants);
+
+        // Return updated participant list
+        return sessionParticipantMapper.sessionParticipantsToResponseList(participants);
     }
 }

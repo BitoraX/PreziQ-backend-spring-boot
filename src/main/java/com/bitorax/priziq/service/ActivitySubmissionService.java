@@ -4,5 +4,5 @@ import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivity
 import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
 
 public interface ActivitySubmissionService {
-    ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest createActivitySubmissionRequest);
+    ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest createActivitySubmissionRequest, String websocketSessionId);
 }

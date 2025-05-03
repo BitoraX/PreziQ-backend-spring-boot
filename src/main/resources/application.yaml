@@ -54,7 +54,8 @@ priziq:
         base-password: ${ACCOUNT_BASE_PASSWORD:base_pass}
     allowed-init: ${ALLOWED_INIT:true}
     submission:
-        base-score: ${SUBMISSION_BASE_SCORE:10}
+        base-score: ${SUBMISSION_BASE_SCORE:30}
+        time-decrement: ${SUBMISSION_TIME_DECREMENT:1}
 
 jwt:
     access-signer-key: ${JWT_ACCESS_SIGNER_KEY}

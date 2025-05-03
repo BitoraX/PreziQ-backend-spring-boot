@@ -40,9 +40,6 @@ public class User extends BaseEntity {
     List<Session> sessions;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    List<ActivitySubmission> activitySubmissions;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     List<UserAchievement> userAchievements;
 
     @Column(unique = true)

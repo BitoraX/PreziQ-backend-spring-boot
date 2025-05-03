@@ -13,6 +13,8 @@ import java.util.Optional;
 public interface SessionParticipantRepository extends JpaRepository<SessionParticipant, String>, JpaSpecificationExecutor<SessionParticipant> {
     List<SessionParticipant> findBySession_SessionCode(String sessionCode);
 
+    List<SessionParticipant> findBySession_SessionId(String sessionId);
+
     Optional<SessionParticipant> findBySessionAndWebsocketSessionId(Session session, String websocketSessionId);
 
     Optional<SessionParticipant> findByWebsocketSessionId(String websocketSessionId);

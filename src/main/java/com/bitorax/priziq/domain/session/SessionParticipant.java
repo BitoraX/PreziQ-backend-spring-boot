@@ -2,9 +2,12 @@ package com.bitorax.priziq.domain.session;
 
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.User;
+import com.bitorax.priziq.domain.archivement.UserAchievement;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,6 +29,9 @@ public class SessionParticipant extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_id")
     User user;
+
+    @OneToMany(mappedBy = "sessionParticipant")
+    List<ActivitySubmission> activitySubmissions;
 
     @Column
     String websocketSessionId;

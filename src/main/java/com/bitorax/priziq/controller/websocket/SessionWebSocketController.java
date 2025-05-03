@@ -1,10 +1,13 @@
 package com.bitorax.priziq.controller.websocket;
 
+import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
+import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
+import com.bitorax.priziq.service.ActivitySubmissionService;
 import com.bitorax.priziq.service.SessionParticipantService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -25,6 +28,7 @@ import java.util.List;
 @Slf4j
 public class SessionWebSocketController {
     SessionParticipantService sessionParticipantService;
+    ActivitySubmissionService activitySubmissionService;
     SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/session/join")
@@ -54,6 +58,32 @@ public class SessionWebSocketController {
         }
 
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
+        messagingTemplate.convertAndSend(destination, responses);
+    }
+
+    @MessageMapping("/session/submit")
+    public void handleSubmitActivity(@Valid @Payload CreateActivitySubmissionRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
+
+        // Create ActivitySubmission and get responseScore
+        ActivitySubmissionResponse submissionResponse = activitySubmissionService.createActivitySubmission(request, websocketSessionId);
+
+        // Update realtimeScore and realtimeRanking
+        List<SessionParticipantResponse> responses = sessionParticipantService.updateRealtimeScoreAndRanking(
+                request.getSessionId(),
+                websocketSessionId,
+                submissionResponse.getResponseScore()
+        );
+
+        if (responses.isEmpty()) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
+        }
+
+        // Broadcast updated participants list
+        String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, responses);
     }
 }

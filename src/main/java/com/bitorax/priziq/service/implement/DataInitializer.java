@@ -160,8 +160,6 @@ public class DataInitializer implements ApplicationRunner {
                         // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
                         new Permission("Update session information", "/api/v1/sessions/{sessionId}", "PATCH", "SESSIONS"),
-                        new Permission("Update session participant information", "/api/v1/session-participants/{sessionParticipantId}", "PATCH", "SESSION PARTICIPANTS"),
-                        new Permission("Create a new activity submission", "/api/v1/activity-submissions", "POST", "ACTIVITY SUBMISSIONS")
                 );
         }
 

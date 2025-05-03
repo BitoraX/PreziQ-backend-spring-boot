@@ -8,15 +8,13 @@ import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
+import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
-import com.bitorax.priziq.repository.ActivityRepository;
-import com.bitorax.priziq.repository.ActivitySubmissionRepository;
-import com.bitorax.priziq.repository.SessionRepository;
-import com.bitorax.priziq.repository.UserRepository;
+import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.ActivitySubmissionService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -39,23 +37,28 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
     ActivitySubmissionRepository activitySubmissionRepository;
     SessionRepository sessionRepository;
     ActivityRepository activityRepository;
-    UserRepository userRepository;
+    SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionMapper activitySubmissionMapper;
 
     @NonFinal
     @Value("${priziq.submission.base-score}")
     Integer baseScore;
 
+    @NonFinal
+    @Value("${priziq.submission.time-decrement}")
+    Integer timeDecrement;
+
     @Override
     @Transactional
-    public ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest request) {
+    public ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest request, String websocketSessionId) {
         // Validate entities
         Session session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
         Activity activity = activityRepository.findById(request.getActivityId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+        SessionParticipant sessionParticipant = sessionParticipantRepository
+                .findBySessionAndWebsocketSessionId(session, websocketSessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
         // Check if activity is a quiz
         Quiz quiz = activity.getQuiz();
@@ -134,10 +137,9 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 break;
         }
 
-        // Create and save ActivitySubmission
+        // Create and save ActivitySubmission to get createdAt
         ActivitySubmission submission = ActivitySubmission.builder()
-                .session(session)
-                .user(user)
+                .sessionParticipant(sessionParticipant)
                 .activity(activity)
                 .answerContent(request.getAnswerContent())
                 .isCorrect(isCorrect)
@@ -145,6 +147,28 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 .build();
 
         ActivitySubmission savedSubmission = activitySubmissionRepository.save(submission);
+
+        // Adjust score based on response time if correct and not NO_POINTS
+        if (isCorrect && pointType != PointType.NO_POINTS) {
+            // Find all correct submissions for this activity in this session
+            List<ActivitySubmission> correctSubmissions = activitySubmissionRepository
+                    .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
+                            request.getSessionId(), request.getActivityId(), true);
+
+            // Sort by createdAt (earliest first)
+            correctSubmissions.sort(Comparator.comparing(ActivitySubmission::getCreatedAt));
+
+            // Find the index of the current submission
+            int rank = correctSubmissions.indexOf(savedSubmission);
+
+            // Adjust score: fastest gets full score, others get decremented
+            responseScore = Math.max(0, responseScore - (rank * timeDecrement));
+
+            // Update submission with new score
+            savedSubmission.setResponseScore(responseScore);
+            savedSubmission = activitySubmissionRepository.save(savedSubmission);
+        }
+
         return activitySubmissionMapper.activitySubmissionToResponse(savedSubmission);
     }
 }

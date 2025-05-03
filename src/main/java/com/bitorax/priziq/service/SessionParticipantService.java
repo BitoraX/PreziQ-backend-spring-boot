@@ -12,4 +12,6 @@ public interface SessionParticipantService {
     List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request, String clientSessionId);
 
     List<SessionParticipantResponse> findParticipantsBySessionCode(String sessionCode);
+
+    List<SessionParticipantResponse> updateRealtimeScoreAndRanking(String sessionId, String websocketSessionId, int responseScore);
 }

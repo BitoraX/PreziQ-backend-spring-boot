@@ -1,7 +1,6 @@
 package com.bitorax.priziq.domain.session;
 
 import com.bitorax.priziq.domain.BaseEntity;
-import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,12 +20,8 @@ public class ActivitySubmission extends BaseEntity {
     String activitySubmissionId;
 
     @ManyToOne
-    @JoinColumn(name = "session_id", nullable = false)
-    Session session;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    User user;
+    @JoinColumn(name = "session_participant_id", nullable = false)
+    SessionParticipant sessionParticipant;
 
     @ManyToOne
     @JoinColumn(name = "activity_id", nullable = false)
