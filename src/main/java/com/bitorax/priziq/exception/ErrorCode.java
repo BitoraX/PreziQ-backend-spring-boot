@@ -187,7 +187,7 @@ public enum ErrorCode {
 
     // Module session participant errors
     SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.NOT_FOUND, "Session participant not found"),
-    INVALID_GUEST_NAME(1902, HttpStatus.BAD_REQUEST, "Invalid guest name"),
+    INVALID_DISPLAY_NAME(1902, HttpStatus.BAD_REQUEST, "Invalid guest name"),
     PARTICIPANT_ALREADY_JOINED(1903, HttpStatus.BAD_REQUEST, "The participant has already joined"),
     USER_OR_GUEST_REQUIRED(1904, HttpStatus.BAD_REQUEST, "Either userId or guestName must be provided"),
     CLIENT_SESSION_ID_NOT_FOUND(1905, HttpStatus.NOT_FOUND, "Client session id not found"),

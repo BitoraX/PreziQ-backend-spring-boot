@@ -36,11 +36,7 @@ public class SessionWebSocketController {
 
         List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
 
-        if (responses.isEmpty()) {
-            throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
-        }
-
-        String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
+        String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, responses);
     }
 

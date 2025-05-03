@@ -31,10 +31,10 @@ public class SessionParticipant extends BaseEntity {
     String clientSessionId;
 
     @Column
-    String guestName;
+    String displayName;
 
     @Column(columnDefinition = "TEXT")
-    String guestAvatar;
+    String displayAvatar;
 
     @Column(nullable = false)
     @Builder.Default

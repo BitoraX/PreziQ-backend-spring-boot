@@ -44,40 +44,35 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         }
 
         User user = null;
+        String displayName = request.getDisplayName();
+        String displayAvatar = request.getDisplayAvatar();
+
+        // Handle logged-in user
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
-        }
-
-        String guestName = request.getGuestName();
-        String guestAvatar = request.getGuestAvatar();
-
-        if (guestName != null) {
-            guestName = guestName.trim();
-            if (guestName.isEmpty()) {
-                throw new ApplicationException(ErrorCode.INVALID_GUEST_NAME);
+            // If displayName is not provided, use default from firstName + lastName
+            if (displayName == null || displayName.trim().isEmpty()) {
+                displayName = (user.getFirstName() + " " + user.getLastName()).trim();
+            }
+            // If displayAvatar is not provided, use default from user.avatar
+            if (displayAvatar == null || displayAvatar.trim().isEmpty()) {
+                displayAvatar = user.getAvatar();
             }
         }
 
-        if (user != null) {
-            boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndUser(session, user);
-            if (alreadyJoined) {
-                throw new ApplicationException(ErrorCode.PARTICIPANT_ALREADY_JOINED);
+        // Handle guest
+        if (user == null) {
+            if (displayName == null || displayName.trim().isEmpty()) {
+                throw new ApplicationException(ErrorCode.INVALID_DISPLAY_NAME);
             }
-        } else if (guestName != null) {
-            boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndGuestName(session, guestName);
-            if (alreadyJoined) {
-                throw new ApplicationException(ErrorCode.PARTICIPANT_ALREADY_JOINED);
-            }
-        } else {
-            throw new ApplicationException(ErrorCode.USER_OR_GUEST_REQUIRED);
         }
 
         SessionParticipant sessionParticipant = SessionParticipant.builder()
                 .session(session)
                 .user(user)
-                .guestName(user == null ? guestName : null)
-                .guestAvatar(user == null ? guestAvatar : null)
+                .displayName(displayName)
+                .displayAvatar(displayAvatar)
                 .clientSessionId(clientSessionId)
                 .realtimeScore(0)
                 .realtimeRanking(0)
@@ -85,10 +80,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         sessionParticipantRepository.save(sessionParticipant);
 
-        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(session.getSessionCode());
-        return participants.stream()
-                .map(sessionParticipantMapper::sessionParticipantToResponse)
-                .collect(Collectors.toList());
+        return findParticipantsBySessionCode(session.getSessionCode());
     }
 
     @Override
@@ -103,10 +95,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         sessionParticipantRepository.delete(participant);
 
-        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(session.getSessionCode());
-        return participants.stream()
-                .map(sessionParticipantMapper::sessionParticipantToResponse)
-                .collect(Collectors.toList());
+        return findParticipantsBySessionCode(session.getSessionCode());
     }
 
     @Override
