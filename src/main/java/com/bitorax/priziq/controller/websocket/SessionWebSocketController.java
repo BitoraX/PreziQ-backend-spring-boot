@@ -37,10 +37,10 @@ public class SessionWebSocketController {
     ActivitySubmissionService activitySubmissionService;
     SimpMessagingTemplate messagingTemplate;
 
-    // Utility method to create ApiResponse
-    private <T> ApiResponse<T> createApiResponse(String message, T data, SimpMessageHeaderAccessor headerAccessor) {
+    // Utility method to create ApiResponse with sessionCode for message formatting
+    private <T> ApiResponse<T> createApiResponse(String message, T data, String sessionCode, SimpMessageHeaderAccessor headerAccessor) {
         return ApiResponse.<T>builder()
-                .message(message)
+                .message(String.format(message, sessionCode))
                 .data(data)
                 .meta(buildWebSocketMetaInfo(headerAccessor))
                 .build();
@@ -56,7 +56,8 @@ public class SessionWebSocketController {
         List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
 
         ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
-                "Session joined successfully", responses, headerAccessor);
+                "A participant successfully joined session with code: %s",
+                        responses, request.getSessionCode(), headerAccessor);
 
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, apiResponse);
@@ -76,7 +77,8 @@ public class SessionWebSocketController {
         }
 
         ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
-                "Session left successfully", responses, headerAccessor);
+                "A participant successfully left session with code: %s",
+                        responses, request.getSessionCode(), headerAccessor);
 
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, apiResponse);
@@ -92,7 +94,8 @@ public class SessionWebSocketController {
         List<SessionParticipantResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
 
         ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
-                "Participants retrieved successfully", participants, headerAccessor);
+                "List of participants retrieved for session with code: %s",
+                        participants, request.getSessionCode(), headerAccessor);
 
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, apiResponse);
@@ -120,7 +123,8 @@ public class SessionWebSocketController {
         }
 
         ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
-                "Activity submitted successfully", responses, headerAccessor);
+                "Activity submission processed and scores updated for session with code: %s",
+                        responses, responses.getFirst().getSession().getSessionCode(), headerAccessor);
 
         // Broadcast updated participants list
         String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
@@ -138,7 +142,8 @@ public class SessionWebSocketController {
         SessionSummaryResponse endSessionResponse = sessionService.endSession(request);
 
         ApiResponse<SessionSummaryResponse> endApiResponse = createApiResponse(
-                "Session ended successfully", endSessionResponse, headerAccessor);
+                "Session with code: %s has been successfully ended",
+                        endSessionResponse, endSessionResponse.getSessionCode(), headerAccessor);
 
         String endDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/end";
         messagingTemplate.convertAndSend(endDestination, endApiResponse);
@@ -147,7 +152,8 @@ public class SessionWebSocketController {
         List<EndSessionSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
 
         ApiResponse<List<EndSessionSummaryResponse>> summaryApiResponse = createApiResponse(
-                "Session summary generated successfully", summaries, headerAccessor);
+                "Final summary generated for session with code: %s",
+                        summaries, endSessionResponse.getSessionCode(), headerAccessor);
 
         String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
         messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
