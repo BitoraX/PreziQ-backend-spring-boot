@@ -3,6 +3,7 @@ package com.bitorax.priziq.service.implement;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
+import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
@@ -81,7 +82,9 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         sessionParticipantRepository.save(sessionParticipant);
 
-        return findParticipantsBySessionCode(session.getSessionCode());
+        return findParticipantsBySessionCode(GetParticipantsRequest.builder()
+                .sessionCode(session.getSessionCode())
+                .build());
     }
 
     @Override
@@ -96,12 +99,14 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         sessionParticipantRepository.delete(participant);
 
-        return findParticipantsBySessionCode(session.getSessionCode());
+        return findParticipantsBySessionCode(GetParticipantsRequest.builder()
+                .sessionCode(session.getSessionCode())
+                .build());
     }
 
     @Override
-    public List<SessionParticipantResponse> findParticipantsBySessionCode(String sessionCode){
-        return sessionParticipantMapper.sessionParticipantsToResponseList(sessionParticipantRepository.findBySession_SessionCode(sessionCode));
+    public List<SessionParticipantResponse> findParticipantsBySessionCode(GetParticipantsRequest request){
+        return sessionParticipantMapper.sessionParticipantsToResponseList(sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode()));
     }
 
     @Override

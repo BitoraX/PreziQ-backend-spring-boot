@@ -131,7 +131,7 @@ public class SessionServiceImpl implements SessionService {
             summaries.add(summary);
         }
 
-        // Sắp xếp và gán xếp hạng
+        // Sort and assign ratings
         summaries.sort(Comparator.comparingInt(EndSessionSummaryResponse::getFinalScore).reversed());
         for (int i = 0; i < summaries.size(); i++) {
             summaries.get(i).setFinalRanking(i + 1);

@@ -2,8 +2,10 @@ package com.bitorax.priziq.controller.websocket;
 
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
+import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
+import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -23,6 +25,8 @@ import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
+import static com.bitorax.priziq.utils.MetaUtils.buildWebSocketMetaInfo;
+
 @Controller
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -33,6 +37,15 @@ public class SessionWebSocketController {
     ActivitySubmissionService activitySubmissionService;
     SimpMessagingTemplate messagingTemplate;
 
+    // Utility method to create ApiResponse
+    private <T> ApiResponse<T> createApiResponse(String message, T data, SimpMessageHeaderAccessor headerAccessor) {
+        return ApiResponse.<T>builder()
+                .message(message)
+                .data(data)
+                .meta(buildWebSocketMetaInfo(headerAccessor))
+                .build();
+    }
+
     @MessageMapping("/session/join")
     public void handleJoinSession(@Valid @Payload JoinSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
         String clientSessionId = headerAccessor.getSessionId();
@@ -42,8 +55,11 @@ public class SessionWebSocketController {
 
         List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
 
+        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+                "Session joined successfully", responses, headerAccessor);
+
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
-        messagingTemplate.convertAndSend(destination, responses);
+        messagingTemplate.convertAndSend(destination, apiResponse);
     }
 
     @MessageMapping("/session/leave")
@@ -59,8 +75,27 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
+        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+                "Session left successfully", responses, headerAccessor);
+
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
-        messagingTemplate.convertAndSend(destination, responses);
+        messagingTemplate.convertAndSend(destination, apiResponse);
+    }
+
+    @MessageMapping("/session/participants")
+    public void handleGetParticipants(@Valid @Payload GetParticipantsRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
+
+        List<SessionParticipantResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
+
+        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+                "Participants retrieved successfully", participants, headerAccessor);
+
+        String destination = "/public/session/" + request.getSessionCode() + "/participants";
+        messagingTemplate.convertAndSend(destination, apiResponse);
     }
 
     @MessageMapping("/session/submit")
@@ -84,9 +119,12 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
+        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+                "Activity submitted successfully", responses, headerAccessor);
+
         // Broadcast updated participants list
         String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
-        messagingTemplate.convertAndSend(destination, responses);
+        messagingTemplate.convertAndSend(destination, apiResponse);
     }
 
     @MessageMapping("/session/complete")
@@ -98,12 +136,20 @@ public class SessionWebSocketController {
 
         // End session
         SessionSummaryResponse endSessionResponse = sessionService.endSession(request);
+
+        ApiResponse<SessionSummaryResponse> endApiResponse = createApiResponse(
+                "Session ended successfully", endSessionResponse, headerAccessor);
+
         String endDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/end";
-        messagingTemplate.convertAndSend(endDestination, endSessionResponse);
+        messagingTemplate.convertAndSend(endDestination, endApiResponse);
 
         // Calculate summary information
         List<EndSessionSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
+
+        ApiResponse<List<EndSessionSummaryResponse>> summaryApiResponse = createApiResponse(
+                "Session summary generated successfully", summaries, headerAccessor);
+
         String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
-        messagingTemplate.convertAndSend(summaryDestination, summaries);
+        messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
     }
 }
