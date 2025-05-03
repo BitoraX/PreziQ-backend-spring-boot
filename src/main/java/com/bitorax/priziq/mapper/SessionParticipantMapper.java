@@ -1,6 +1,7 @@
 package com.bitorax.priziq.mapper;
 
 import com.bitorax.priziq.domain.session.SessionParticipant;
+import com.bitorax.priziq.dto.response.session.SessionParticipantDetailResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import org.mapstruct.*;
 
@@ -11,4 +12,6 @@ public interface SessionParticipantMapper {
     SessionParticipantResponse sessionParticipantToResponse(SessionParticipant sessionParticipant);
 
     List<SessionParticipantResponse> sessionParticipantsToResponseList(List<SessionParticipant> sessionParticipants);
+
+    List<SessionParticipantDetailResponse> sessionParticipantsToDetailResponseList(List<SessionParticipant> sessionParticipants);
 }

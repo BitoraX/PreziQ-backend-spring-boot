@@ -2,6 +2,7 @@ package com.bitorax.priziq.controller.rest;
 
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
+import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
 import com.bitorax.priziq.dto.response.session.SessionResponse;
 import com.bitorax.priziq.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +28,15 @@ public class SessionController {
         return ApiResponse.<SessionResponse>builder()
                 .message("Session created successfully")
                 .data(sessionService.createSession(createSessionRequest))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/{sessionId}/history")
+    ApiResponse<SessionHistoryResponse> getSessionHistory(@PathVariable("sessionId") String sessionId, HttpServletRequest servletRequest) {
+        return ApiResponse.<SessionHistoryResponse>builder()
+                .message("Session history retrieved successfully")
+                .data(sessionService.getSessionHistory(sessionId))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

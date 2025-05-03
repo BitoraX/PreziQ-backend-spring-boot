@@ -3,6 +3,7 @@ package com.bitorax.priziq.service;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.response.session.EndSessionSummaryResponse;
+import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
 import com.bitorax.priziq.dto.response.session.SessionResponse;
 import com.bitorax.priziq.dto.response.session.SessionSummaryResponse;
 
@@ -14,4 +15,6 @@ public interface SessionService {
     SessionSummaryResponse endSession(EndSessionRequest endSessionRequest);
 
     List<EndSessionSummaryResponse> calculateSessionSummary(String sessionId);
+
+    SessionHistoryResponse getSessionHistory(String sessionId);
 }

@@ -7,12 +7,12 @@ import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
-import com.bitorax.priziq.dto.response.session.EndSessionSummaryResponse;
-import com.bitorax.priziq.dto.response.session.SessionResponse;
-import com.bitorax.priziq.dto.response.session.SessionSummaryResponse;
+import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
+import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
+import com.bitorax.priziq.mapper.SessionParticipantMapper;
 import com.bitorax.priziq.repository.ActivitySubmissionRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -43,8 +44,10 @@ public class SessionServiceImpl implements SessionService {
     CollectionRepository collectionRepository;
     SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionRepository activitySubmissionRepository;
-    SecurityUtils securityUtils;
     SessionMapper sessionMapper;
+    SessionParticipantMapper sessionParticipantMapper;
+    ActivitySubmissionMapper activitySubmissionMapper;
+    SecurityUtils securityUtils;
 
     @NonFinal
     @Value("${session.code.characters}")
@@ -138,6 +141,21 @@ public class SessionServiceImpl implements SessionService {
         }
 
         return summaries;
+    }
+
+    @Override
+    public SessionHistoryResponse getSessionHistory(String sessionId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Retrieve all participants associated with the session
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+        List<SessionParticipantDetailResponse> participantResponses = sessionParticipantMapper.sessionParticipantsToDetailResponseList(participants);
+
+        return SessionHistoryResponse.builder()
+                .session(sessionMapper.sessionToResponse(session))
+                .participants(participantResponses)
+                .build();
     }
 
     private String generateUniqueSessionCode() {
