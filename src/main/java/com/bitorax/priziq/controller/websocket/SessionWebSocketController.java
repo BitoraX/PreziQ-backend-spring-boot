@@ -1,14 +1,17 @@
 package com.bitorax.priziq.controller.websocket;
 
+import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
+import com.bitorax.priziq.dto.response.session.SessionResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.ActivitySubmissionService;
 import com.bitorax.priziq.service.SessionParticipantService;
+import com.bitorax.priziq.service.SessionService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import java.util.List;
 @Slf4j
 public class SessionWebSocketController {
     SessionParticipantService sessionParticipantService;
+    SessionService sessionService;
     ActivitySubmissionService activitySubmissionService;
     SimpMessagingTemplate messagingTemplate;
 
@@ -85,5 +89,14 @@ public class SessionWebSocketController {
         // Broadcast updated participants list
         String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, responses);
+    }
+
+    @MessageMapping("/session/end")
+    public void handleEndSession(@Valid @Payload EndSessionRequest request){
+        SessionResponse response = sessionService.endSession(request);
+
+        // Broadcast updated participants list
+        String destination = "/public/session/" + response.getSessionCode() + "/participants";
+        messagingTemplate.convertAndSend(destination, response);
     }
 }

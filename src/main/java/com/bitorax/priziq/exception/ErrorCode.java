@@ -184,6 +184,7 @@ public enum ErrorCode {
     SESSION_CODE_REQUIRED(1804, HttpStatus.BAD_REQUEST, "Session code is required"),
     SESSION_NOT_ACTIVE(1805, HttpStatus.BAD_REQUEST, "The session is not active"),
     INVALID_SESSION_ID(1806, HttpStatus.BAD_REQUEST, "Invalid session ID"),
+    SESSION_ALREADY_ENDED(1807, HttpStatus.BAD_REQUEST, "The session has already ended"),
 
     // Module session participant errors
     SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.NOT_FOUND, "Session participant not found"),
