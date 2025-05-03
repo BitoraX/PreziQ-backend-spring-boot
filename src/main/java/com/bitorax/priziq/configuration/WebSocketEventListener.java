@@ -3,7 +3,9 @@ package com.bitorax.priziq.configuration;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.service.SessionParticipantService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,10 +20,11 @@ import java.util.Objects;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class WebSocketEventListener {
-    private final SimpMessagingTemplate messagingTemplate;
-    private final SessionParticipantService sessionParticipantService;
-    private final SessionParticipantRepository sessionParticipantRepository;
+    SimpMessagingTemplate messagingTemplate;
+    SessionParticipantService sessionParticipantService;
+    SessionParticipantRepository sessionParticipantRepository;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {

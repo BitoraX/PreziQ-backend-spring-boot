@@ -39,5 +39,5 @@ public class ActivitySubmission extends BaseEntity {
     Boolean isCorrect;
 
     @Column(nullable = false)
-    Integer score;
+    Integer responseScore;
 }

@@ -1,6 +1,7 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.constant.ActivityType;
+import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
@@ -21,7 +22,9 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -38,6 +41,10 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
     ActivityRepository activityRepository;
     UserRepository userRepository;
     ActivitySubmissionMapper activitySubmissionMapper;
+
+    @NonFinal
+    @Value("${priziq.submission.base-score}")
+    Integer baseScore;
 
     @Override
     @Transactional
@@ -58,7 +65,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
         // Determine isCorrect and score based on activityType
         boolean isCorrect;
-        int score;
+        int responseScore;
         ActivityType activityType = activity.getActivityType();
 
         switch (activityType) {
@@ -70,7 +77,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                         .findFirst()
                         .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_ANSWER_NOT_FOUND));
                 isCorrect = selectedAnswer.getIsCorrect();
-                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                responseScore = isCorrect ? baseScore : 0; // Use baseScore from environment
                 break;
 
             case QUIZ_CHECKBOXES:
@@ -83,7 +90,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 isCorrect = selectedIds.size() == correctAnswers.size() &&
                         selectedIds.stream().allMatch(id -> correctAnswers.stream()
                                 .anyMatch(a -> a.getQuizAnswerId().equals(id)));
-                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                responseScore = isCorrect ? baseScore : 0; // Use baseScore from environment
                 break;
 
             case QUIZ_TYPE_ANSWER:
@@ -91,7 +98,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 isCorrect = quiz.getQuizAnswers().stream()
                         .filter(QuizAnswer::getIsCorrect)
                         .anyMatch(a -> a.getAnswerText().equalsIgnoreCase(request.getAnswerContent()));
-                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                responseScore = isCorrect ? baseScore : 0; // Use baseScore from environment
                 break;
 
             case QUIZ_REORDER:
@@ -106,11 +113,25 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                                 .map(id -> sortedAnswers.get(userOrderIds.indexOf(id)).getQuizAnswerId())
                                 .toList()
                                 .equals(userOrderIds);
-                score = isCorrect ? 10 : 0; // Example: 10 points for correct answer
+                responseScore = isCorrect ? baseScore : 0; // Use baseScore from environment
                 break;
 
             default:
                 throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
+        }
+
+        // Adjust score based on PointType
+        PointType pointType = quiz.getPointType();
+        switch (pointType) {
+            case NO_POINTS:
+                responseScore = 0;
+                break;
+            case STANDARD:
+                // Keep base score
+                break;
+            case DOUBLE_POINTS:
+                responseScore = responseScore * 2; // Double the base score
+                break;
         }
 
         // Create and save ActivitySubmission
@@ -120,7 +141,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 .activity(activity)
                 .answerContent(request.getAnswerContent())
                 .isCorrect(isCorrect)
-                .score(score)
+                .responseScore(responseScore)
                 .build();
 
         ActivitySubmission savedSubmission = activitySubmissionRepository.save(submission);
