@@ -44,22 +44,22 @@ public class WebSocketExceptionHandler {
             log.warn("Session attributes are null, cannot send error message");
             return;
         }
-        String clientSessionId = (String) sessionAttributes.get("clientSessionId");
-        if (clientSessionId == null) {
-            log.warn("clientSessionId is null, cannot send error message");
+        String websocketSessionId = (String) sessionAttributes.get("websocketSessionId");
+        if (websocketSessionId == null) {
+            log.warn("websocketSessionId is null, cannot send error message");
             return;
         }
         String message = ex.getCustomMessage() != null ? ex.getCustomMessage() : ex.getErrorCode().getMessage();
         ApiResponse<?> response = buildErrorResponse(ex.getErrorCode(), Optional.of(message), null);
-        log.info("Sending error to /client/{}/private/errors", clientSessionId);
-        messagingTemplate.convertAndSendToUser(clientSessionId, "/private/errors", response);
+        log.info("Sending error to /client/{}/private/errors", websocketSessionId);
+        messagingTemplate.convertAndSendToUser(websocketSessionId, "/private/errors", response);
     }
 
     @MessageExceptionHandler(MethodArgumentNotValidException.class)
     public void handleValidationException(MethodArgumentNotValidException ex, SimpMessageHeaderAccessor headerAccessor) {
         log.error("WebSocket ValidationException: {}", ex.getMessage(), ex);
-        String clientSessionId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("clientSessionId");
-        if (clientSessionId == null) {
+        String websocketSessionId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("websocketSessionId");
+        if (websocketSessionId == null) {
             return;
         }
         List<ErrorDetail> errors = ex.getBindingResult().getAllErrors().stream()
@@ -85,7 +85,7 @@ public class WebSocketExceptionHandler {
                 .toList();
         ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errors);
         messagingTemplate.convertAndSendToUser(
-                clientSessionId,
+                websocketSessionId,
                 "/private/errors",
                 response
         );
@@ -94,13 +94,13 @@ public class WebSocketExceptionHandler {
     @MessageExceptionHandler(Exception.class)
     public void handleGenericException(Exception ex, SimpMessageHeaderAccessor headerAccessor) {
         log.error("WebSocket Unexpected error: {}", ex.getMessage(), ex);
-        String clientSessionId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("clientSessionId");
-        if (clientSessionId == null) {
+        String websocketSessionId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("websocketSessionId");
+        if (websocketSessionId == null) {
             return;
         }
         ApiResponse<?> response = buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.empty(), null);
         messagingTemplate.convertAndSendToUser(
-                clientSessionId,
+                websocketSessionId,
                 "/private/errors",
                 response
         );

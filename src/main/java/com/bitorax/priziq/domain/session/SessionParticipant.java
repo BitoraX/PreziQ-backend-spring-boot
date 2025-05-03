@@ -28,7 +28,7 @@ public class SessionParticipant extends BaseEntity {
     User user;
 
     @Column
-    String clientSessionId;
+    String websocketSessionId;
 
     @Column
     String displayName;

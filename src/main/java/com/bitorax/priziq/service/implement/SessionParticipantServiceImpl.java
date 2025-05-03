@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -35,7 +34,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> joinSession(JoinSessionRequest request, String clientSessionId) {
+    public List<SessionParticipantResponse> joinSession(JoinSessionRequest request, String websocketSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -73,7 +72,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .user(user)
                 .displayName(displayName)
                 .displayAvatar(displayAvatar)
-                .clientSessionId(clientSessionId)
+                .websocketSessionId(websocketSessionId)
                 .realtimeScore(0)
                 .realtimeRanking(0)
                 .build();
@@ -85,12 +84,12 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request, String clientSessionId) {
+    public List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request, String websocketSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         SessionParticipant participant = sessionParticipantRepository
-                .findBySessionAndClientSessionId(session, clientSessionId)
+                .findBySessionAndWebsocketSessionId(session, websocketSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
         sessionParticipantRepository.delete(participant);

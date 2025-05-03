@@ -26,31 +26,31 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
-        String clientSessionId = headerAccessor.getSessionId();
+        String websocketSessionId = headerAccessor.getSessionId();
 
-        // Save clientSessionId to sessionAttributes
-        Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("clientSessionId", clientSessionId);
+        // Save websocketSessionId to sessionAttributes
+        Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("websocketSessionId", websocketSessionId);
 
-        if (clientSessionId != null) {
-            log.info("Client connected with clientSessionId: {}", clientSessionId);
+        if (websocketSessionId != null) {
+            log.info("Client connected with websocketSessionId: {}", websocketSessionId);
         } else {
-            log.warn("clientSessionId is null on connect");
+            log.warn("websocketSessionId is null on connect");
         }
     }
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
-        String clientSessionId = headerAccessor.getSessionId();
-        if (clientSessionId == null) {
-            log.warn("clientSessionId is null on disconnect");
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
+            log.warn("websocketSessionId is null on disconnect");
             return;
         }
 
-        log.info("Client disconnected with clientSessionId: {}", clientSessionId);
+        log.info("Client disconnected with websocketSessionId: {}", websocketSessionId);
 
-        // Find and remove SessionParticipant by clientSessionId
-        sessionParticipantRepository.findByClientSessionId(clientSessionId)
+        // Find and remove SessionParticipant by websocketSessionId
+        sessionParticipantRepository.findByWebsocketSessionId(websocketSessionId)
                 .ifPresent(participant -> {
                     String sessionCode = participant.getSession().getSessionCode();
                     sessionParticipantRepository.delete(participant);

@@ -9,6 +9,6 @@ public class UserOrGuestValidator implements ConstraintValidator<UserOrGuestVali
     @Override
     public boolean isValid(JoinSessionRequest request, ConstraintValidatorContext context) {
         return (request.getUserId() != null && !request.getUserId().trim().isEmpty())
-                || (request.getGuestName() != null && !request.getGuestName().trim().isEmpty());
+                || (request.getDisplayName() != null && !request.getDisplayName().trim().isEmpty());
     }
 }
