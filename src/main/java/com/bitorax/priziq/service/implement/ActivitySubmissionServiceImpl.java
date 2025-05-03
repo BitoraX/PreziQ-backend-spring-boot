@@ -2,7 +2,6 @@ package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.constant.PointType;
-import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;

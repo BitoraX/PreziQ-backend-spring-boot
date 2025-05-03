@@ -1,10 +1,8 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.domain.Collection;
-import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
-import com.bitorax.priziq.dto.request.session.UpdateSessionRequest;
 import com.bitorax.priziq.dto.response.session.SessionResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -60,14 +58,6 @@ public class SessionServiceImpl implements SessionService {
                 .isActive(true)
                 .build();
 
-        return sessionMapper.sessionToResponse(sessionRepository.save(session));
-    }
-
-    @Override
-    @Transactional
-    public SessionResponse updateSessionById(String sessionId, UpdateSessionRequest updateSessionRequest) {
-        Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-        sessionMapper.updateSessionFromRequest(updateSessionRequest, session);
         return sessionMapper.sessionToResponse(sessionRepository.save(session));
     }
 
