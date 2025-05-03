@@ -17,6 +17,8 @@ public interface CollectionService {
 
     CollectionDetailResponse getCollectionById(String collectionId);
 
+    PaginationResponse getMyCollections(Specification<Collection> spec, Pageable pageable);
+
     PaginationResponse getAllCollectionWithQuery(Specification<Collection> spec, Pageable pageable);
 
     CollectionDetailResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest);

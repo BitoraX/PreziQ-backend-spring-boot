@@ -145,6 +145,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve all collections with query parameters", "/api/v1/collections", "GET", "COLLECTIONS"),
                         new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS"),
                         new Permission("Activities reorder", "/api/v1/collections/{id}/activities/reorder", "PUT", "COLLECTIONS"),
+                        new Permission("Retrieve my collections with query parameters", "/api/v1/collections/me", "GET", "COLLECTIONS"),
 
                         // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),

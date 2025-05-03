@@ -60,6 +60,15 @@ public class CollectionController {
                 .build();
     }
 
+    @GetMapping("/me")
+    ApiResponse<PaginationResponse> getMyCollections(@Filter Specification<Collection> spec, Pageable pageable, HttpServletRequest servletRequest) {
+        return ApiResponse.<PaginationResponse>builder()
+                .message("My collections retrieved successfully")
+                .data(collectionService.getMyCollections(spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
     @GetMapping
     ApiResponse<PaginationResponse> getAllCollectionWithQuery(@Filter Specification<Collection> spec, Pageable pageable, HttpServletRequest servletRequest) {
         return ApiResponse.<PaginationResponse>builder()

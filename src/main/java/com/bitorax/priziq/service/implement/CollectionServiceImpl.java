@@ -58,6 +58,21 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    public PaginationResponse getMyCollections(Specification<Collection> spec, Pageable pageable) {
+        User creator = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Filter by creator and merge with client Specification if present
+        Specification<Collection> creatorSpec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("creator").get("userId"), creator.getUserId());
+
+        Specification<Collection> finalSpec = spec != null ? Specification.where(spec).and(creatorSpec) : creatorSpec;
+
+        return getAllCollectionWithQuery(finalSpec, pageable);
+    }
+
+
+    @Override
     public PaginationResponse getAllCollectionWithQuery(Specification<Collection> spec, Pageable pageable) {
         Page<Collection> collectionPage = this.collectionRepository.findAll(spec, pageable);
         return PaginationResponse.builder()

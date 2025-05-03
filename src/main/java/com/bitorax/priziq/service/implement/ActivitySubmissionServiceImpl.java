@@ -149,21 +149,16 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
         // Adjust score based on response time if correct and not NO_POINTS
         if (isCorrect && pointType != PointType.NO_POINTS) {
-            // Find all correct submissions for this activity in this session
             List<ActivitySubmission> correctSubmissions = activitySubmissionRepository
                     .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
                             request.getSessionId(), request.getActivityId(), true);
 
-            // Sort by createdAt (earliest first)
+            // Sort by createdAt (earliest first) and find the index of the current submission
             correctSubmissions.sort(Comparator.comparing(ActivitySubmission::getCreatedAt));
-
-            // Find the index of the current submission
             int rank = correctSubmissions.indexOf(savedSubmission);
 
-            // Adjust score: fastest gets full score, others get decremented
+            // Adjust score: fastest gets full score, others get decremented and update submission with new score
             responseScore = Math.max(0, responseScore - (rank * timeDecrement));
-
-            // Update submission with new score
             savedSubmission.setResponseScore(responseScore);
             savedSubmission = activitySubmissionRepository.save(savedSubmission);
         }
