@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @UserOrGuestValid
-public class CreateSessionParticipantRequest {
+public class JoinSessionRequest {
     @NotBlank(message = "SESSION_CODE_REQUIRED")
     String sessionCode;
 

@@ -1,6 +1,7 @@
 package com.bitorax.priziq.controller.websocket;
 
-import com.bitorax.priziq.dto.request.session.session_participant.CreateSessionParticipantRequest;
+import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
+import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -12,7 +13,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -27,7 +27,7 @@ public class SessionWebSocketController {
     SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/session/join")
-    public void handleJoinSession(@Valid @Payload CreateSessionParticipantRequest request, SimpMessageHeaderAccessor headerAccessor) {
+    public void handleJoinSession(@Valid @Payload JoinSessionRequest request) {
         List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request);
 
         if (responses.isEmpty()) {
@@ -35,6 +35,18 @@ public class SessionWebSocketController {
         }
 
         String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
+        messagingTemplate.convertAndSend(destination, responses);
+    }
+
+    @MessageMapping("/session/leave")
+    public void handleLeaveSession(@Valid @Payload LeaveSessionRequest request){
+        List<SessionParticipantResponse> responses = sessionParticipantService.leaveSession(request);
+
+        if (responses.isEmpty()) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
+        }
+
+        String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, responses);
     }
 }

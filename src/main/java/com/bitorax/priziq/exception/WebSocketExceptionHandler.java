@@ -51,7 +51,7 @@ public class WebSocketExceptionHandler {
         }
         String message = ex.getCustomMessage() != null ? ex.getCustomMessage() : ex.getErrorCode().getMessage();
         ApiResponse<?> response = buildErrorResponse(ex.getErrorCode(), Optional.of(message), null);
-        log.info("Sending error to /user/{}/private/errors", clientSessionId);
+        log.info("Sending error to /client/{}/private/errors", clientSessionId);
         messagingTemplate.convertAndSendToUser(clientSessionId, "/private/errors", response);
     }
 

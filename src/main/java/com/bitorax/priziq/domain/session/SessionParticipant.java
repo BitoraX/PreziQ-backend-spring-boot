@@ -28,9 +28,12 @@ public class SessionParticipant extends BaseEntity {
     User user;
 
     @Column
-    String guestName;
+    String clientSessionId;
 
     @Column
+    String guestName;
+
+    @Column(columnDefinition = "TEXT")
     String guestAvatar;
 
     @Column(nullable = false)

@@ -3,7 +3,8 @@ package com.bitorax.priziq.service.implement;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
-import com.bitorax.priziq.dto.request.session.session_participant.CreateSessionParticipantRequest;
+import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
+import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.UpdateSessionParticipantRequest;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import com.bitorax.priziq.exception.ApplicationException;
@@ -35,7 +36,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> joinSession(CreateSessionParticipantRequest request) {
+    public List<SessionParticipantResponse> joinSession(JoinSessionRequest request) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -62,18 +63,12 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         if (user != null) {
             boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndUser(session, user);
             if (alreadyJoined) {
-                throw new ApplicationException(
-                        ErrorCode.PARTICIPANT_ALREADY_JOINED,
-                        "User with ID " + request.getUserId() + " has already joined the session"
-                );
+                throw new ApplicationException(ErrorCode.PARTICIPANT_ALREADY_JOINED);
             }
         } else if (guestName != null) {
             boolean alreadyJoined = sessionParticipantRepository.existsBySessionAndGuestName(session, guestName);
             if (alreadyJoined) {
-                throw new ApplicationException(
-                        ErrorCode.PARTICIPANT_ALREADY_JOINED,
-                        "Guest with name '" + guestName + "' has already joined this session. Please choose a different name."
-                );
+                throw new ApplicationException(ErrorCode.PARTICIPANT_ALREADY_JOINED);
             }
         } else {
             throw new ApplicationException(ErrorCode.USER_OR_GUEST_REQUIRED);
@@ -98,12 +93,26 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public SessionParticipantResponse updateSessionParticipantById(String sessionParticipantId, UpdateSessionParticipantRequest updateSessionParticipantRequest) {
-        SessionParticipant currentSessionParticipant = sessionParticipantRepository
-                .findById(sessionParticipantId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
+    public List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request) {
+        Session session = sessionRepository.findBySessionCode(request.getSessionCode())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
-        sessionParticipantMapper.updateSessionParticipantFromRequest(updateSessionParticipantRequest, currentSessionParticipant);
+        SessionParticipant participant = sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode())
+                .stream()
+                .filter(p -> request.getClientSessionId().equals(p.getClientSessionId()))
+                .findFirst()
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
-        return sessionParticipantMapper.sessionParticipantToResponse(sessionParticipantRepository.save(currentSessionParticipant));
+        sessionParticipantRepository.delete(participant);
+
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(session.getSessionCode());
+        return participants.stream()
+                .map(sessionParticipantMapper::sessionParticipantToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<SessionParticipantResponse> findParticipantsBySessionCode(String sessionCode){
+        return sessionParticipantMapper.sessionParticipantsToResponseList(sessionParticipantRepository.findBySession_SessionCode(sessionCode));
     }
 }

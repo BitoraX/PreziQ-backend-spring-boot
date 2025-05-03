@@ -56,7 +56,9 @@ public class User extends BaseEntity {
     @Column(unique = true)
     String phoneNumber;
 
+    @Column(columnDefinition = "TEXT")
     String avatar;
+
     Instant birthDate;
     String gender;
     String nationality;
