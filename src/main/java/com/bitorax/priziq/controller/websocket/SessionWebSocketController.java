@@ -13,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -27,8 +28,13 @@ public class SessionWebSocketController {
     SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/session/join")
-    public void handleJoinSession(@Valid @Payload JoinSessionRequest request) {
-        List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request);
+    public void handleJoinSession(@Valid @Payload JoinSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String clientSessionId = headerAccessor.getSessionId();
+        if (clientSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
+
+        List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
 
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
@@ -39,8 +45,13 @@ public class SessionWebSocketController {
     }
 
     @MessageMapping("/session/leave")
-    public void handleLeaveSession(@Valid @Payload LeaveSessionRequest request){
-        List<SessionParticipantResponse> responses = sessionParticipantService.leaveSession(request);
+    public void handleLeaveSession(@Valid @Payload LeaveSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String clientSessionId = headerAccessor.getSessionId();
+        if (clientSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
+
+        List<SessionParticipantResponse> responses = sessionParticipantService.leaveSession(request, clientSessionId);
 
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);

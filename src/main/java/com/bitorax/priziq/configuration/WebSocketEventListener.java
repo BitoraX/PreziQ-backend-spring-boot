@@ -31,9 +31,11 @@ public class WebSocketEventListener {
         // Save clientSessionId to sessionAttributes
         Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("clientSessionId", clientSessionId);
 
-        assert clientSessionId != null;
-        messagingTemplate.convertAndSendToUser(clientSessionId, "/private/sessionId", clientSessionId);
-        log.info("Client connected with clientSessionId: {}", clientSessionId);
+        if (clientSessionId != null) {
+            log.info("Client connected with clientSessionId: {}", clientSessionId);
+        } else {
+            log.warn("clientSessionId is null on connect");
+        }
     }
 
     @EventListener
@@ -48,9 +50,7 @@ public class WebSocketEventListener {
         log.info("Client disconnected with clientSessionId: {}", clientSessionId);
 
         // Find and remove SessionParticipant by clientSessionId
-        sessionParticipantRepository.findAll().stream()
-                .filter(p -> clientSessionId.equals(p.getClientSessionId()))
-                .findFirst()
+        sessionParticipantRepository.findByClientSessionId(clientSessionId)
                 .ifPresent(participant -> {
                     String sessionCode = participant.getSession().getSessionCode();
                     sessionParticipantRepository.delete(participant);

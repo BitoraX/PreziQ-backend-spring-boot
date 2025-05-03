@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SessionParticipantRepository extends JpaRepository<SessionParticipant, String>, JpaSpecificationExecutor<SessionParticipant> {
@@ -16,4 +17,8 @@ public interface SessionParticipantRepository extends JpaRepository<SessionParti
     boolean existsBySessionAndGuestName(Session session, String guestName);
 
     List<SessionParticipant> findBySession_SessionCode(String sessionCode);
+
+    Optional<SessionParticipant> findBySessionAndClientSessionId(Session session, String clientSessionId);
+
+    Optional<SessionParticipant> findByClientSessionId(String clientSessionId);
 }

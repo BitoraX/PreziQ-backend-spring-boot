@@ -7,9 +7,9 @@ import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import java.util.List;
 
 public interface SessionParticipantService {
-    List<SessionParticipantResponse> joinSession(JoinSessionRequest request);
+    List<SessionParticipantResponse> joinSession(JoinSessionRequest request, String clientSessionId);
 
-    List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request);
+    List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request, String clientSessionId);
 
     List<SessionParticipantResponse> findParticipantsBySessionCode(String sessionCode);
 }

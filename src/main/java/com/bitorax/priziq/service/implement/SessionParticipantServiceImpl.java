@@ -5,7 +5,6 @@ import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
-import com.bitorax.priziq.dto.request.session.session_participant.UpdateSessionParticipantRequest;
 import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -36,7 +35,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> joinSession(JoinSessionRequest request) {
+    public List<SessionParticipantResponse> joinSession(JoinSessionRequest request, String clientSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -79,6 +78,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .user(user)
                 .guestName(user == null ? guestName : null)
                 .guestAvatar(user == null ? guestAvatar : null)
+                .clientSessionId(clientSessionId)
                 .realtimeScore(0)
                 .realtimeRanking(0)
                 .build();
@@ -93,14 +93,12 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request) {
+    public List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request, String clientSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
-        SessionParticipant participant = sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode())
-                .stream()
-                .filter(p -> request.getClientSessionId().equals(p.getClientSessionId()))
-                .findFirst()
+        SessionParticipant participant = sessionParticipantRepository
+                .findBySessionAndClientSessionId(session, clientSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
         sessionParticipantRepository.delete(participant);

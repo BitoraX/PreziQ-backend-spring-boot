@@ -190,6 +190,7 @@ public enum ErrorCode {
     INVALID_GUEST_NAME(1902, HttpStatus.BAD_REQUEST, "Invalid guest name"),
     PARTICIPANT_ALREADY_JOINED(1903, HttpStatus.BAD_REQUEST, "The participant has already joined"),
     USER_OR_GUEST_REQUIRED(1904, HttpStatus.BAD_REQUEST, "Either userId or guestName must be provided"),
+    CLIENT_SESSION_ID_NOT_FOUND(1905, HttpStatus.NOT_FOUND, "Client session id not found"),
 
     // Module activity submission errors
     ANSWER_CONTENT_REQUIRED(2001, HttpStatus.BAD_REQUEST, "Answer content is required"),

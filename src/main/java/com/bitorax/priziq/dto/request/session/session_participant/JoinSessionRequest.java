@@ -17,6 +17,6 @@ public class JoinSessionRequest {
 
     String userId; // user already has an account
 
-    String guestName; // user has no previous account
+    String guestName;
     String guestAvatar;
 }
