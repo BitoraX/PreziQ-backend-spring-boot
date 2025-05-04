@@ -1,6 +1,5 @@
 package com.bitorax.priziq.controller.websocket;
 
-import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
@@ -8,6 +7,7 @@ import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivity
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
+import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.*;
@@ -16,7 +16,6 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.ActivitySubmissionService;
 import com.bitorax.priziq.service.SessionParticipantService;
 import com.bitorax.priziq.service.SessionService;
-import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +28,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.bitorax.priziq.utils.MetaUtils.buildWebSocketMetaInfo;
 
@@ -181,7 +182,8 @@ public class SessionWebSocketController {
         }
 
         // End session
-        SessionSummaryResponse endSessionResponse = sessionService.endSession(request, websocketSessionId);
+        SessionEndResultResponse endSessionResult = sessionService.endSession(request, websocketSessionId);
+        SessionSummaryResponse endSessionResponse = endSessionResult.getSessionSummary();
 
         ApiResponse<SessionSummaryResponse> endApiResponse = createApiResponse(
                 "Session with code: %s has been successfully ended",
@@ -191,13 +193,29 @@ public class SessionWebSocketController {
         messagingTemplate.convertAndSend(endDestination, endApiResponse);
 
         // Calculate summary information
-        List<EndSessionSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
+        List<SessionEndSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
 
-        ApiResponse<List<EndSessionSummaryResponse>> summaryApiResponse = createApiResponse(
+        ApiResponse<List<SessionEndSummaryResponse>> summaryApiResponse = createApiResponse(
                 "Final summary generated for session with code: %s",
                         summaries, endSessionResponse.getSessionCode(), headerAccessor);
 
         String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
         messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
+
+        // Group achievement updates by userId and send as a list
+        List<AchievementUpdateResponse> achievementUpdates = endSessionResult.getAchievementUpdates();
+        if (achievementUpdates != null && !achievementUpdates.isEmpty()) {
+            Map<String, List<AchievementUpdateResponse>> updatesByUser = achievementUpdates.stream()
+                    .collect(Collectors.groupingBy(AchievementUpdateResponse::getUserId));
+
+            // Send list of updates to each user
+            updatesByUser.forEach((userId, updates) -> {
+                ApiResponse<List<AchievementUpdateResponse>> achievementApiResponse = createApiResponse(
+                        "Achievement updates for user in session with code: %s",
+                        updates, endSessionResponse.getSessionCode(), headerAccessor);
+
+                messagingTemplate.convertAndSendToUser(userId, "/private/achievement", achievementApiResponse);
+            });
+        }
     }
 }

@@ -66,6 +66,8 @@ public enum ErrorCode {
     NEW_PHONE_NUMBER_SAME_BEFORE(1208, HttpStatus.BAD_REQUEST, "The new phone number is the same as the current one, please use a different phone number"),
     USER_SAME_IS_VERIFY(1209, HttpStatus.BAD_REQUEST, "The user is already verified"),
     USER_ID_REQUIRED(1210, HttpStatus.BAD_REQUEST, "User ID is required"),
+    TOTAL_POINTS_REQUIRED(1211, HttpStatus.BAD_REQUEST, "Total points are required"),
+    TOTAL_POINTS_POSITIVE(1212, HttpStatus.BAD_REQUEST, "Total points must be positive"),
 
     // Module role errors
     ROLE_NAME_NOT_FOUND(1301, HttpStatus.NOT_FOUND, "Role name not found in the system"),

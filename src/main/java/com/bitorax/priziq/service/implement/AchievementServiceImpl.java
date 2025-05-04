@@ -1,17 +1,22 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.domain.Achievement;
+import com.bitorax.priziq.domain.User;
+import com.bitorax.priziq.dto.request.achievement.AssignAchievementToUserRequest;
 import com.bitorax.priziq.dto.request.achievement.CreateAchievementRequest;
 import com.bitorax.priziq.dto.request.achievement.UpdateAchievementRequest;
 import com.bitorax.priziq.dto.response.achievement.AchievementDetailResponse;
 import com.bitorax.priziq.dto.response.achievement.AchievementSummaryResponse;
+import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.AchievementMapper;
 import com.bitorax.priziq.repository.AchievementRepository;
+import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.AchievementService;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,12 +26,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AchievementServiceImpl implements AchievementService {
     AchievementRepository achievementRepository;
+    UserRepository userRepository;
     AchievementMapper achievementMapper;
 
     @Override
@@ -82,6 +91,36 @@ public class AchievementServiceImpl implements AchievementService {
         Achievement currentAchievement = achievementRepository
                 .findById(achievementId).orElseThrow(() -> new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND));
         achievementRepository.delete(currentAchievement);
+    }
+
+    @Override
+    @Transactional
+    public AchievementUpdateResponse assignAchievementsToUser(AssignAchievementToUserRequest request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Find achievements that the user qualifies for and filter out achievements the user already has
+        List<Achievement> eligibleAchievements = achievementRepository
+                .findByRequiredPointsLessThanEqual(request.getTotalPoints());
+
+        List<Achievement> newAchievements = eligibleAchievements.stream()
+                .filter(achievement -> !user.getAchievements().contains(achievement))
+                .toList();
+
+        // Assign new achievements to the user
+        if (!newAchievements.isEmpty()) {
+            List<Achievement> updatedAchievements = new ArrayList<>(user.getAchievements());
+            updatedAchievements.addAll(newAchievements);
+            user.setAchievements(updatedAchievements);
+            userRepository.save(user);
+        }
+
+        // Return response with new achievements and total points
+        return AchievementUpdateResponse.builder()
+                .userId(request.getUserId())
+                .totalPoints(user.getTotalPoints())
+                .newAchievements(achievementMapper.achievementsToSummaryResponseList(newAchievements))
+                .build();
     }
 
     private String validateAndNormalizeAchievementName(String name, String excludeAchievementId) {
