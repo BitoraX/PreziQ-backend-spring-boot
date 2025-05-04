@@ -2,11 +2,13 @@ package com.bitorax.priziq.controller.websocket;
 
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
+import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
+import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
@@ -150,6 +152,24 @@ public class SessionWebSocketController {
 
         // Broadcast updated participants list
         String destination = "/public/session/" + sessionCode + "/participants";
+        messagingTemplate.convertAndSend(destination, apiResponse);
+    }
+
+    @MessageMapping("/session/nextActivity")
+    public void handleNextActivity(@Valid @Payload NextActivityRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
+
+        ActivitySummaryResponse activityResponse = sessionService.nextActivity(request, websocketSessionId);
+
+        String sessionCode = sessionService.findSessionCodeBySessionId(request.getSessionId());
+        ApiResponse<ActivitySummaryResponse> apiResponse = createApiResponse(
+                activityResponse != null ? "Moved to next activity in session with code %s" : "No more activities in session with code %s",
+                activityResponse, sessionCode, headerAccessor);
+
+        String destination = "/public/session/" + sessionCode + "/nextActivity";
         messagingTemplate.convertAndSend(destination, apiResponse);
     }
 
