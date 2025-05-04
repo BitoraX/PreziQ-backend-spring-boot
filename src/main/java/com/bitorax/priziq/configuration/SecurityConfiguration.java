@@ -44,6 +44,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
@@ -54,10 +55,6 @@ public class SecurityConfiguration {
                         .authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable);
-        // .exceptionHandling(exceptions -> exceptions
-        // .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
-        // .accessDeniedHandler(new BearerTokenAccessDeniedHandler()));
-
         return httpSecurity.build();
     }
 
