@@ -6,7 +6,7 @@ import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
-import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
+import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.SessionParticipantMapper;
@@ -37,7 +37,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> joinSession(JoinSessionRequest request, String websocketSessionId) {
+    public List<SessionParticipantSummaryResponse> joinSession(JoinSessionRequest request, String websocketSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -89,7 +89,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> leaveSession(LeaveSessionRequest request, String websocketSessionId) {
+    public List<SessionParticipantSummaryResponse> leaveSession(LeaveSessionRequest request, String websocketSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -105,13 +105,13 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
     }
 
     @Override
-    public List<SessionParticipantResponse> findParticipantsBySessionCode(GetParticipantsRequest request){
-        return sessionParticipantMapper.sessionParticipantsToResponseList(sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode()));
+    public List<SessionParticipantSummaryResponse> findParticipantsBySessionCode(GetParticipantsRequest request){
+        return sessionParticipantMapper.sessionParticipantsToSummaryResponseList(sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode()));
     }
 
     @Override
     @Transactional
-    public List<SessionParticipantResponse> updateRealtimeScoreAndRanking(String sessionId, String websocketSessionId, int responseScore) {
+    public List<SessionParticipantSummaryResponse> updateRealtimeScoreAndRanking(String sessionId, String websocketSessionId, int responseScore) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -142,6 +142,6 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         sessionParticipantRepository.saveAll(sortedParticipants);
 
         // Return updated participant list
-        return sessionParticipantMapper.sessionParticipantsToResponseList(participants);
+        return sessionParticipantMapper.sessionParticipantsToSummaryResponseList(participants);
     }
 }

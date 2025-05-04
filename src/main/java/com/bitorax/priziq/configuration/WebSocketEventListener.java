@@ -1,7 +1,7 @@
 package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
-import com.bitorax.priziq.dto.response.session.SessionParticipantResponse;
+import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.service.SessionParticipantService;
 import lombok.AccessLevel;
@@ -60,7 +60,7 @@ public class WebSocketEventListener {
                     sessionParticipantRepository.delete(participant);
 
                     // Broadcast updated participants list
-                    List<SessionParticipantResponse> responses = sessionParticipantService
+                    List<SessionParticipantSummaryResponse> responses = sessionParticipantService
                             .findParticipantsBySessionCode(
                                     GetParticipantsRequest.builder()
                                     .sessionCode(sessionCode)

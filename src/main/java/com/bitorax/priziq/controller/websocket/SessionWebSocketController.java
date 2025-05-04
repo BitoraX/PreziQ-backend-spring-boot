@@ -53,9 +53,9 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
 
-        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+        ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "A participant successfully joined session with code: %s",
                         responses, request.getSessionCode(), headerAccessor);
 
@@ -70,13 +70,13 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantResponse> responses = sessionParticipantService.leaveSession(request, clientSessionId);
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.leaveSession(request, clientSessionId);
 
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+        ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "A participant successfully left session with code: %s",
                         responses, request.getSessionCode(), headerAccessor);
 
@@ -91,9 +91,9 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
+        List<SessionParticipantSummaryResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
 
-        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+        ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "List of participants retrieved for session with code: %s",
                         participants, request.getSessionCode(), headerAccessor);
 
@@ -109,10 +109,10 @@ public class SessionWebSocketController {
         }
 
         // Create ActivitySubmission and get responseScore
-        ActivitySubmissionResponse submissionResponse = activitySubmissionService.createActivitySubmission(request, websocketSessionId);
+        ActivitySubmissionSummaryResponse submissionResponse = activitySubmissionService.createActivitySubmission(request, websocketSessionId);
 
         // Update realtimeScore and realtimeRanking
-        List<SessionParticipantResponse> responses = sessionParticipantService.updateRealtimeScoreAndRanking(
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.updateRealtimeScoreAndRanking(
                 request.getSessionId(),
                 websocketSessionId,
                 submissionResponse.getResponseScore()
@@ -122,12 +122,13 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        ApiResponse<List<SessionParticipantResponse>> apiResponse = createApiResponse(
+        String sessionCode = sessionService.findSessionCodeBySessionId(request.getSessionId());
+        ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "Activity submission processed and scores updated for session with code: %s",
-                        responses, responses.getFirst().getSession().getSessionCode(), headerAccessor);
+                        responses, sessionCode, headerAccessor);
 
         // Broadcast updated participants list
-        String destination = "/public/session/" + responses.getFirst().getSession().getSessionCode() + "/participants";
+        String destination = "/public/session/" + sessionCode + "/participants";
         messagingTemplate.convertAndSend(destination, apiResponse);
     }
 

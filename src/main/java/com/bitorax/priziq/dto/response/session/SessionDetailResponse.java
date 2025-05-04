@@ -18,7 +18,7 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SessionResponse extends AuditResponse {
+public class SessionDetailResponse extends AuditResponse {
     String sessionId;
 
     CollectionSummaryResponse collection;

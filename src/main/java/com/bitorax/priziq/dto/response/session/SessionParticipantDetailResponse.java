@@ -1,12 +1,11 @@
 package com.bitorax.priziq.dto.response.session;
 
 import com.bitorax.priziq.dto.response.common.AuditResponse;
+import com.bitorax.priziq.dto.response.user.UserSecureResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -17,9 +16,13 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionParticipantDetailResponse extends AuditResponse {
     String sessionParticipantId;
+
+    SessionSummaryResponse session;
+    UserSecureResponse user;
+
     String displayName;
     String displayAvatar;
+
     Integer realtimeScore;
     Integer realtimeRanking;
-    List<ActivitySubmissionResponse> submissions;
 }

@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ActivitySubmissionResponse extends AuditResponse {
+public class ActivitySubmissionSummaryResponse extends AuditResponse {
     String activitySubmissionId;
     String answerContent;
     Boolean isCorrect;

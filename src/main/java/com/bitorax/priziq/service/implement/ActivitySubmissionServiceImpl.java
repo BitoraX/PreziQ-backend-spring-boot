@@ -9,7 +9,7 @@ import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
-import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
+import com.bitorax.priziq.dto.response.session.ActivitySubmissionSummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
@@ -49,7 +49,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
     @Override
     @Transactional
-    public ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest request, String websocketSessionId) {
+    public ActivitySubmissionSummaryResponse createActivitySubmission(CreateActivitySubmissionRequest request, String websocketSessionId) {
         // Validate entities
         Session session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
@@ -163,6 +163,6 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
             savedSubmission = activitySubmissionRepository.save(savedSubmission);
         }
 
-        return activitySubmissionMapper.activitySubmissionToResponse(savedSubmission);
+        return activitySubmissionMapper.activitySubmissionToSummaryResponse(savedSubmission);
     }
 }

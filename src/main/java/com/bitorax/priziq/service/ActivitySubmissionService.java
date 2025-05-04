@@ -1,8 +1,8 @@
 package com.bitorax.priziq.service;
 
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
-import com.bitorax.priziq.dto.response.session.ActivitySubmissionResponse;
+import com.bitorax.priziq.dto.response.session.ActivitySubmissionSummaryResponse;
 
 public interface ActivitySubmissionService {
-    ActivitySubmissionResponse createActivitySubmission(CreateActivitySubmissionRequest createActivitySubmissionRequest, String websocketSessionId);
+    ActivitySubmissionSummaryResponse createActivitySubmission(CreateActivitySubmissionRequest createActivitySubmissionRequest, String websocketSessionId);
 }

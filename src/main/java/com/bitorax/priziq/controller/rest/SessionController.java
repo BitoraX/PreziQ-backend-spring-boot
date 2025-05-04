@@ -3,7 +3,7 @@ package com.bitorax.priziq.controller.rest;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
-import com.bitorax.priziq.dto.response.session.SessionResponse;
+import com.bitorax.priziq.dto.response.session.SessionDetailResponse;
 import com.bitorax.priziq.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,8 +24,8 @@ public class SessionController {
     SessionService sessionService;
 
     @PostMapping
-    public ApiResponse<SessionResponse> createSession(@RequestBody @Valid CreateSessionRequest createSessionRequest, HttpServletRequest servletRequest) {
-        return ApiResponse.<SessionResponse>builder()
+    public ApiResponse<SessionDetailResponse> createSession(@RequestBody @Valid CreateSessionRequest createSessionRequest, HttpServletRequest servletRequest) {
+        return ApiResponse.<SessionDetailResponse>builder()
                 .message("Session created successfully")
                 .data(sessionService.createSession(createSessionRequest))
                 .meta(buildMetaInfo(servletRequest))

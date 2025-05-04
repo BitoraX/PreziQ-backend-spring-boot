@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface ActivitySubmissionRepository extends JpaRepository<ActivitySubmission, String>, JpaSpecificationExecutor<ActivitySubmission> {
     List<ActivitySubmission> findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(String sessionId, String activityId, Boolean isCorrect);
+
+    List<ActivitySubmission> findBySessionParticipant_SessionParticipantId(String participantId);
 }

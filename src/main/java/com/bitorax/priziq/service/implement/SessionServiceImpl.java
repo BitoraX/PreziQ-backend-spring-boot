@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,7 +64,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionResponse createSession(CreateSessionRequest createSessionRequest){
+    public SessionDetailResponse createSession(CreateSessionRequest createSessionRequest){
         Collection currentCollection = collectionRepository.findById(createSessionRequest.getCollectionId()).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         Session session = Session.builder()
@@ -74,7 +75,7 @@ public class SessionServiceImpl implements SessionService {
                 .isActive(true)
                 .build();
 
-        return sessionMapper.sessionToResponse(sessionRepository.save(session));
+        return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
     }
 
     @Override
@@ -100,12 +101,58 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
+    public SessionHistoryResponse getSessionHistory(String sessionId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Retrieve all participants associated with the session
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+
+        List<EndSessionSummaryResponse> summaries = calculateSessionSummary(sessionId);
+        List<SessionParticipantHistoryResponse> participantHistoryResponses = new ArrayList<>();
+
+        for (int i = 0; i < participants.size(); i++) {
+            SessionParticipant participant = participants.get(i);
+            EndSessionSummaryResponse summary = summaries.get(i);
+
+            List<ActivitySubmission> submissions = activitySubmissionRepository
+                    .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
+
+            List<ActivitySubmissionSummaryResponse> submissionResponses = submissions.stream()
+                    .map(submission -> ActivitySubmissionSummaryResponse.builder()
+                            .activitySubmissionId(submission.getActivitySubmissionId())
+                            .answerContent(submission.getAnswerContent())
+                            .isCorrect(submission.getIsCorrect())
+                            .responseScore(submission.getResponseScore())
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Create SessionParticipantHistoryResponse
+            SessionParticipantHistoryResponse participantResponse = SessionParticipantHistoryResponse.builder()
+                    .sessionParticipantId(participant.getSessionParticipantId())
+                    .activitySubmissions(submissionResponses)
+                    .displayName(summary.getDisplayName())
+                    .displayAvatar(summary.getDisplayAvatar())
+                    .finalScore(summary.getFinalScore())
+                    .finalRanking(summary.getFinalRanking())
+                    .finalCorrectCount(summary.getFinalCorrectCount())
+                    .finalIncorrectCount(summary.getFinalIncorrectCount())
+                    .build();
+
+            participantHistoryResponses.add(participantResponse);
+        }
+
+        return SessionHistoryResponse.builder()
+                .session(sessionMapper.sessionToDetailResponse(session))
+                .participantHistoryResponses(participantHistoryResponses)
+                .build();
+    }
+
+    @Override
     public List<EndSessionSummaryResponse> calculateSessionSummary(String sessionId) {
         Session currentSession = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
-        SessionResponse sessionResponse = sessionMapper.sessionToResponse(currentSession);
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
         List<EndSessionSummaryResponse> summaries = new ArrayList<>();
 
@@ -123,7 +170,6 @@ public class SessionServiceImpl implements SessionService {
             int finalIncorrectCount = submissions.size() - finalCorrectCount;
 
             EndSessionSummaryResponse summary = EndSessionSummaryResponse.builder()
-                    .session(sessionResponse)
                     .displayName(participant.getDisplayName())
                     .displayAvatar(participant.getDisplayAvatar())
                     .finalScore(finalScore)
@@ -144,18 +190,8 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public SessionHistoryResponse getSessionHistory(String sessionId) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-
-        // Retrieve all participants associated with the session
-        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
-        List<SessionParticipantDetailResponse> participantResponses = sessionParticipantMapper.sessionParticipantsToDetailResponseList(participants);
-
-        return SessionHistoryResponse.builder()
-                .session(sessionMapper.sessionToResponse(session))
-                .participants(participantResponses)
-                .build();
+    public String findSessionCodeBySessionId(String sessionId){
+        return sessionRepository.findSessionCodeBySessionId(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
     }
 
     private String generateUniqueSessionCode() {
