@@ -182,10 +182,12 @@ public enum ErrorCode {
     SESSION_NOT_FOUND(1802, HttpStatus.NOT_FOUND, "Session not found"),
     SESSION_ID_REQUIRED(1803, HttpStatus.BAD_REQUEST, "Session ID is required"),
     SESSION_CODE_REQUIRED(1804, HttpStatus.BAD_REQUEST, "Session code is required"),
-    SESSION_NOT_ACTIVE(1805, HttpStatus.BAD_REQUEST, "The session is not active"),
-    INVALID_SESSION_ID(1806, HttpStatus.BAD_REQUEST, "Invalid session ID"),
-    SESSION_ALREADY_ENDED(1807, HttpStatus.BAD_REQUEST, "The session has already ended"),
-    ONLY_HOST_USER_ALLOWED(1808, HttpStatus.UNAUTHORIZED, "Only the host user can allow the session"),
+    INVALID_SESSION_ID(1805, HttpStatus.BAD_REQUEST, "Invalid session ID"),
+    SESSION_ALREADY_ENDED(1806, HttpStatus.BAD_REQUEST, "The session has already ended"),
+    ONLY_HOST_USER_ALLOWED(1807, HttpStatus.UNAUTHORIZED, "Only the host user can allow the session"),
+    INVALID_SESSION_STATUS(1808, HttpStatus.BAD_REQUEST, "Invalid session status. Only the following types are supported: PENDING, STARTED, ENDED"),
+    SESSION_NOT_PENDING(1809, HttpStatus.BAD_REQUEST,"Session must be in PENDING status to start"),
+    SESSION_NOT_STARTED(1810, HttpStatus.BAD_REQUEST,"Session must be in STARTED status to proceed to next activity"),
 
     // Module session participant errors
     SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.NOT_FOUND, "Session participant not found"),

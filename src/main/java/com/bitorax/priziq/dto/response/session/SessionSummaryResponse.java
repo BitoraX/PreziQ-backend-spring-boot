@@ -25,5 +25,5 @@ public class SessionSummaryResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     Instant endTime;
 
-    Boolean isActive;
+    String sessionStatus;
 }

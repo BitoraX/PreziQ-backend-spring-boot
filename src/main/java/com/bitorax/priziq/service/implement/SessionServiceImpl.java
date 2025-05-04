@@ -1,5 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.SessionStatus;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
@@ -74,7 +75,7 @@ public class SessionServiceImpl implements SessionService {
                 .hostUser(securityUtils.getAuthenticatedUser())
                 .sessionCode(generateUniqueSessionCode())
                 .startTime(Instant.now())
-                .isActive(true)
+                .sessionStatus(SessionStatus.PENDING)
                 .build();
 
         return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
@@ -83,8 +84,15 @@ public class SessionServiceImpl implements SessionService {
     @Override
     @Transactional
     public SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId) {
-        Session session = getActiveSessionById(request.getSessionId());
+        Session session = getSessionById(request.getSessionId());
         validateHostUser(session);
+
+        if (session.getSessionStatus() != SessionStatus.PENDING) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_PENDING);
+        }
+
+        session.setSessionStatus(SessionStatus.STARTED);
+        sessionRepository.save(session);
 
         return sessionMapper.sessionToSummaryResponse(session);
     }
@@ -92,8 +100,12 @@ public class SessionServiceImpl implements SessionService {
     @Override
     @Transactional
     public ActivitySummaryResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
-        Session session = getActiveSessionById(request.getSessionId());
+        Session session = getSessionById(request.getSessionId());
         validateHostUser(session);
+
+        if (session.getSessionStatus() != SessionStatus.STARTED) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_STARTED);
+        }
 
         // Find the next activity
         List<Activity> activities = session.getCollection().getActivities().stream()
@@ -121,17 +133,15 @@ public class SessionServiceImpl implements SessionService {
     @Override
     @Transactional
     public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId) {
-        Session currentSession = sessionRepository.findById(endSessionRequest.getSessionId())
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-
+        Session currentSession = getSessionById(endSessionRequest.getSessionId());
         validateHostUser(currentSession);
 
-        if (!currentSession.getIsActive()) {
+        if (currentSession.getSessionStatus() == SessionStatus.ENDED) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);
         }
 
         currentSession.setEndTime(Instant.now());
-        currentSession.setIsActive(false);
+        currentSession.setSessionStatus(SessionStatus.ENDED);
 
         return sessionMapper.sessionToSummaryResponse(sessionRepository.save(currentSession));
     }
@@ -231,6 +241,18 @@ public class SessionServiceImpl implements SessionService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
     }
 
+    private Session getSessionById(String sessionId) {
+        return sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    }
+
+    private void validateHostUser(Session session) {
+        User currentUser = securityUtils.getAuthenticatedUser();
+        if (!session.getHostUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_ALLOWED);
+        }
+    }
+
     private String generateUniqueSessionCode() {
         SecureRandom random = new SecureRandom();
         StringBuilder codeBuilder = new StringBuilder(SESSION_CODE_LENGTH);
@@ -253,23 +275,5 @@ public class SessionServiceImpl implements SessionService {
 
         // Throw exception if no unique code is found after max attempts
         throw new ApplicationException(ErrorCode.UNABLE_TO_GENERATE_SESSION_CODE);
-    }
-
-    private Session getActiveSessionById(String sessionId) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-
-        if (!session.getIsActive()) {
-            throw new ApplicationException(ErrorCode.SESSION_NOT_ACTIVE);
-        }
-
-        return session;
-    }
-
-    private void validateHostUser(Session session) {
-        User currentUser = securityUtils.getAuthenticatedUser();
-        if (!session.getHostUser().getUserId().equals(currentUser.getUserId())) {
-            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_ALLOWED);
-        }
     }
 }
