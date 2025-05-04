@@ -15,7 +15,8 @@ import com.bitorax.priziq.dto.request.activity.quiz.*;
 import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
-import com.bitorax.priziq.dto.response.activity.ActivityResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
+import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
@@ -54,7 +55,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional
-    public ActivityResponse createActivity(CreateActivityRequest createActivityRequest) {
+    public ActivitySummaryResponse createActivity(CreateActivityRequest createActivityRequest) {
         Collection currentCollection = collectionRepository
                 .findById(createActivityRequest.getCollectionId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
@@ -83,7 +84,7 @@ public class ActivityServiceImpl implements ActivityService {
             savedActivity.setSlide(slide);
         }
 
-        return activityMapper.activityToResponse(savedActivity);
+        return activityMapper.activityToSummaryResponse(savedActivity);
     }
 
     @Override
@@ -157,6 +158,131 @@ public class ActivityServiceImpl implements ActivityService {
         Quiz updatedQuiz = quizRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_NOT_FOUND));
         updatedQuiz.getQuizAnswers().size(); // Ensure lazy-loaded quizAnswers are fetched
         return activityMapper.quizToResponse(updatedQuiz);
+    }
+
+    @Override
+    @Transactional
+    public void deleteActivity(String activityId) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        if (activity.getActivityType().name().startsWith("QUIZ_")) {
+            quizRepository.findById(activityId).ifPresent(quizRepository::delete);
+        } else if (activity.getActivityType() == ActivityType.INFO_SLIDE) {
+            slideRepository.findById(activityId).ifPresent(slideRepository::delete);
+        }
+
+        activityRepository.delete(activity);
+    }
+
+    @Override
+    @Transactional
+    public SlideResponse updateSlide(String slideId, UpdateSlideRequest updateSlideRequest) {
+        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
+
+        activityMapper.updateSlideFromRequest(updateSlideRequest, slide);
+        slideRepository.save(slide);
+        Slide updatedSlide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
+        updatedSlide.getSlideElements().size(); // Fetch lazy-loaded slideElements
+        return activityMapper.slideToResponse(updatedSlide);
+    }
+
+    @Override
+    @Transactional
+    public SlideElementResponse addSlideElement(String slideId, CreateSlideElementRequest createSlideElementRequest) {
+        Slide slide = getSlideById(slideId);
+
+        SlideElementType.validateSlideElementType(createSlideElementRequest.getSlideElementType());
+        SlideElement slideElement = activityMapper.createSlideElementRequestToSlideElement(createSlideElementRequest);
+        slideElement.setSlide(slide);
+        slideElementRepository.save(slideElement);
+        return activityMapper.slideElementToResponse(slideElement);
+    }
+
+    @Override
+    @Transactional
+    public SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest) {
+        Slide slide = getSlideById(slideId);
+        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
+
+        if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
+            throw new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
+        }
+
+        SlideElementType.validateSlideElementType(updateSlideElementRequest.getSlideElementType());
+        activityMapper.updateSlideElementFromRequest(updateSlideElementRequest, slideElement);
+        slideElementRepository.save(slideElement);
+        return activityMapper.slideElementToResponse(slideElement);
+    }
+
+    @Override
+    @Transactional
+    public void deleteSlideElement(String slideId, String elementId) {
+        Slide slide = getSlideById(slideId);
+        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
+
+        if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
+            throw new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
+        }
+
+        slideElementRepository.delete(slideElement);
+    }
+
+    private Slide getSlideById(String slideId) {
+        return slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public ActivitySummaryResponse updateActivity(String activityId, UpdateActivityRequest request) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        // Initialize related data to prevent lazy loading issues
+        if (activity.getQuiz() != null) {
+            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
+        }
+        if (activity.getSlide() != null) {
+            Hibernate.initialize(activity.getSlide());
+        }
+
+        ActivityType oldType = activity.getActivityType();
+
+        // Update fields from request but keep orderIndex
+        Integer originalOrderIndex = activity.getOrderIndex();
+        activityMapper.updateActivityFromRequest(request, activity);
+        activity.setOrderIndex(originalOrderIndex);
+
+        StringBuilder conversionWarning = new StringBuilder();
+
+        // Handle activityType change if provided
+        if (request.getActivityType() != null) {
+            ActivityType newType;
+            try {
+                newType = ActivityType.valueOf(request.getActivityType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
+            }
+
+            if (newType.name().equals(oldType.name())) {
+                throw new ApplicationException(ErrorCode.SAME_ACTIVITY_TYPE);
+            }
+
+            handleTypeChange(activity, oldType, newType, conversionWarning);
+            activity.setActivityType(newType);
+        }
+
+        activityRepository.save(activity);
+
+        // Ensure response includes all related data
+        if (activity.getQuiz() != null) {
+            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
+        }
+        if (activity.getSlide() != null) {
+            Hibernate.initialize(activity.getSlide());
+        }
+
+        ActivitySummaryResponse response = activityMapper.activityToSummaryResponse(activity);
+        response.setConversionWarning(!conversionWarning.isEmpty() ? conversionWarning.toString() : null);
+        return response;
     }
 
     private void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
@@ -265,131 +391,6 @@ public class ActivityServiceImpl implements ActivityService {
             quiz.setQuizAnswers(new ArrayList<>());
         }
         quiz.getQuizAnswers().addAll(newAnswers);
-    }
-
-    @Override
-    @Transactional
-    public void deleteActivity(String activityId) {
-        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
-
-        if (activity.getActivityType().name().startsWith("QUIZ_")) {
-            quizRepository.findById(activityId).ifPresent(quizRepository::delete);
-        } else if (activity.getActivityType() == ActivityType.INFO_SLIDE) {
-            slideRepository.findById(activityId).ifPresent(slideRepository::delete);
-        }
-
-        activityRepository.delete(activity);
-    }
-
-    @Override
-    @Transactional
-    public SlideResponse updateSlide(String slideId, UpdateSlideRequest updateSlideRequest) {
-        Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
-
-        activityMapper.updateSlideFromRequest(updateSlideRequest, slide);
-        slideRepository.save(slide);
-        Slide updatedSlide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
-        updatedSlide.getSlideElements().size(); // Fetch lazy-loaded slideElements
-        return activityMapper.slideToResponse(updatedSlide);
-    }
-
-    @Override
-    @Transactional
-    public SlideElementResponse addSlideElement(String slideId, CreateSlideElementRequest createSlideElementRequest) {
-        Slide slide = getSlideById(slideId);
-
-        SlideElementType.validateSlideElementType(createSlideElementRequest.getSlideElementType());
-        SlideElement slideElement = activityMapper.createSlideElementRequestToSlideElement(createSlideElementRequest);
-        slideElement.setSlide(slide);
-        slideElementRepository.save(slideElement);
-        return activityMapper.slideElementToResponse(slideElement);
-    }
-
-    @Override
-    @Transactional
-    public SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest) {
-        Slide slide = getSlideById(slideId);
-        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
-
-        if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
-            throw new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
-        }
-
-        SlideElementType.validateSlideElementType(updateSlideElementRequest.getSlideElementType());
-        activityMapper.updateSlideElementFromRequest(updateSlideElementRequest, slideElement);
-        slideElementRepository.save(slideElement);
-        return activityMapper.slideElementToResponse(slideElement);
-    }
-
-    @Override
-    @Transactional
-    public void deleteSlideElement(String slideId, String elementId) {
-        Slide slide = getSlideById(slideId);
-        SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
-
-        if (!slideElement.getSlide().getSlideId().equals(slide.getSlideId())) {
-            throw new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE);
-        }
-
-        slideElementRepository.delete(slideElement);
-    }
-
-    private Slide getSlideById(String slideId) {
-        return slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
-    }
-
-    @Override
-    @Transactional
-    public ActivityResponse updateActivity(String activityId, UpdateActivityRequest request) {
-        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
-
-        // Initialize related data to prevent lazy loading issues
-        if (activity.getQuiz() != null) {
-            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
-        }
-        if (activity.getSlide() != null) {
-            Hibernate.initialize(activity.getSlide());
-        }
-
-        ActivityType oldType = activity.getActivityType();
-
-        // Update fields from request but keep orderIndex
-        Integer originalOrderIndex = activity.getOrderIndex();
-        activityMapper.updateActivityFromRequest(request, activity);
-        activity.setOrderIndex(originalOrderIndex);
-
-        StringBuilder conversionWarning = new StringBuilder();
-
-        // Handle activityType change if provided
-        if (request.getActivityType() != null) {
-            ActivityType newType;
-            try {
-                newType = ActivityType.valueOf(request.getActivityType().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
-            }
-
-            if (newType.name().equals(oldType.name())) {
-                throw new ApplicationException(ErrorCode.SAME_ACTIVITY_TYPE);
-            }
-
-            handleTypeChange(activity, oldType, newType, conversionWarning);
-            activity.setActivityType(newType);
-        }
-
-        activityRepository.save(activity);
-
-        // Ensure response includes all related data
-        if (activity.getQuiz() != null) {
-            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
-        }
-        if (activity.getSlide() != null) {
-            Hibernate.initialize(activity.getSlide());
-        }
-
-        ActivityResponse response = activityMapper.activityToResponse(activity);
-        response.setConversionWarning(!conversionWarning.isEmpty() ? conversionWarning.toString() : null);
-        return response;
     }
 
     private void handleTypeChange(Activity activity, ActivityType oldType, ActivityType newType, StringBuilder warning) {

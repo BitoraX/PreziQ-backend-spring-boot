@@ -7,7 +7,8 @@ import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
-import com.bitorax.priziq.dto.response.activity.ActivityResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
+import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
@@ -35,8 +36,8 @@ public class ActivityController {
     ActivityService activityService;
 
     @PostMapping("/activities")
-    ApiResponse<ActivityResponse> createActivity(@RequestBody @Valid CreateActivityRequest createActivityRequest, HttpServletRequest servletRequest){
-        return ApiResponse.<ActivityResponse>builder()
+    ApiResponse<ActivitySummaryResponse> createActivity(@RequestBody @Valid CreateActivityRequest createActivityRequest, HttpServletRequest servletRequest){
+        return ApiResponse.<ActivitySummaryResponse>builder()
                 .message("Activity created successfully")
                 .data(activityService.createActivity(createActivityRequest))
                 .meta(buildMetaInfo(servletRequest))
@@ -71,8 +72,8 @@ public class ActivityController {
     }
 
     @PutMapping("/activities/{activityId}")
-    ApiResponse<ActivityResponse> updateActivity(@PathVariable String activityId, @RequestBody @Valid UpdateActivityRequest updateActivityRequest, HttpServletRequest servletRequest) {
-        return ApiResponse.<ActivityResponse>builder()
+    ApiResponse<ActivitySummaryResponse> updateActivity(@PathVariable String activityId, @RequestBody @Valid UpdateActivityRequest updateActivityRequest, HttpServletRequest servletRequest) {
+        return ApiResponse.<ActivitySummaryResponse>builder()
                 .message("Activity updated successfully")
                 .data(activityService.updateActivity(activityId, updateActivityRequest))
                 .meta(buildMetaInfo(servletRequest))

@@ -1,9 +1,8 @@
 package com.bitorax.priziq.domain;
 
-import com.bitorax.priziq.domain.archivement.UserAchievement;
-import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,8 +38,9 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "hostUser", fetch = FetchType.LAZY)
     List<Session> sessions;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    List<UserAchievement> userAchievements;
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "users")
+    @JsonIgnore
+    List<Achievement> achievements;
 
     @Column(unique = true)
     String email;
@@ -63,22 +63,10 @@ public class User extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     String refreshToken;
 
-    String otpCode;
-    Instant otpExpiration;
-
-    @Column(nullable = false)
-    @Builder.Default
-    String provider = "basic";
-
-    String providerUserId;
-
     @Column(nullable = false)
     @Builder.Default
     Boolean isVerified = false;
 
     @Builder.Default
     Integer totalPoints = 0;
-
-    @Builder.Default
-    Integer level = 0;
 }

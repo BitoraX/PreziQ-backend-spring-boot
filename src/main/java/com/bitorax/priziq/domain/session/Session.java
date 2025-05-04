@@ -1,5 +1,6 @@
 package com.bitorax.priziq.domain.session;
 
+import com.bitorax.priziq.constant.SessionStatus;
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
@@ -43,6 +44,7 @@ public class Session extends BaseEntity {
     Instant endTime;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    Boolean isActive = true;
+    SessionStatus sessionStatus = SessionStatus.PENDING;
 }

@@ -1,18 +1,22 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.SessionStatus;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
+import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
+import com.bitorax.priziq.dto.request.session.NextActivityRequest;
+import com.bitorax.priziq.dto.request.session.StartSessionRequest;
+import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
-import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
+import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
-import com.bitorax.priziq.mapper.SessionParticipantMapper;
 import com.bitorax.priziq.repository.ActivitySubmissionRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
@@ -33,7 +37,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,8 +49,7 @@ public class SessionServiceImpl implements SessionService {
     SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionRepository activitySubmissionRepository;
     SessionMapper sessionMapper;
-    SessionParticipantMapper sessionParticipantMapper;
-    ActivitySubmissionMapper activitySubmissionMapper;
+    ActivityMapper activityMapper;
     SecurityUtils securityUtils;
 
     @NonFinal
@@ -64,15 +66,16 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionDetailResponse createSession(CreateSessionRequest createSessionRequest){
-        Collection currentCollection = collectionRepository.findById(createSessionRequest.getCollectionId()).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+    public SessionDetailResponse createSession(CreateSessionRequest createSessionRequest) {
+        Collection currentCollection = collectionRepository.findById(createSessionRequest.getCollectionId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         Session session = Session.builder()
                 .collection(currentCollection)
                 .hostUser(securityUtils.getAuthenticatedUser())
                 .sessionCode(generateUniqueSessionCode())
                 .startTime(Instant.now())
-                .isActive(true)
+                .sessionStatus(SessionStatus.PENDING)
                 .build();
 
         return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
@@ -80,22 +83,65 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest) {
-        Session currentSession = sessionRepository.findById(endSessionRequest.getSessionId())
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    public SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId) {
+        Session session = getSessionById(request.getSessionId());
+        validateHostUser(session);
 
-        // Only the host can end the session
-        User currentUser = securityUtils.getAuthenticatedUser();
-        if (!currentSession.getHostUser().getUserId().equals(currentUser.getUserId())) {
-            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_END_SESSION);
+        if (session.getSessionStatus() != SessionStatus.PENDING) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_PENDING);
         }
 
-        if (!currentSession.getIsActive()) {
+        session.setSessionStatus(SessionStatus.STARTED);
+        sessionRepository.save(session);
+
+        return sessionMapper.sessionToSummaryResponse(session);
+    }
+
+    @Override
+    @Transactional
+    public ActivitySummaryResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
+        Session session = getSessionById(request.getSessionId());
+        validateHostUser(session);
+
+        if (session.getSessionStatus() != SessionStatus.STARTED) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_STARTED);
+        }
+
+        // Find the next activity
+        List<Activity> activities = session.getCollection().getActivities().stream()
+                .filter(Activity::getIsPublished)
+                .sorted(Comparator.comparingInt(Activity::getOrderIndex))
+                .toList();
+
+        if (activities.isEmpty()) {
+            return null;
+        }
+
+        if (request.getActivityId() == null) {
+            return activityMapper.activityToSummaryResponse(activities.getFirst());
+        }
+
+        for (int i = 0; i < activities.size() - 1; i++) {
+            if (activities.get(i).getActivityId().equals(request.getActivityId())) {
+                return activityMapper.activityToSummaryResponse(activities.get(i + 1));
+            }
+        }
+
+        return null; // No next activity
+    }
+
+    @Override
+    @Transactional
+    public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId) {
+        Session currentSession = getSessionById(endSessionRequest.getSessionId());
+        validateHostUser(currentSession);
+
+        if (currentSession.getSessionStatus() == SessionStatus.ENDED) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);
         }
 
         currentSession.setEndTime(Instant.now());
-        currentSession.setIsActive(false);
+        currentSession.setSessionStatus(SessionStatus.ENDED);
 
         return sessionMapper.sessionToSummaryResponse(sessionRepository.save(currentSession));
     }
@@ -190,8 +236,21 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public String findSessionCodeBySessionId(String sessionId){
-        return sessionRepository.findSessionCodeBySessionId(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    public String findSessionCodeBySessionId(String sessionId) {
+        return sessionRepository.findSessionCodeBySessionId(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    }
+
+    private Session getSessionById(String sessionId) {
+        return sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    }
+
+    private void validateHostUser(Session session) {
+        User currentUser = securityUtils.getAuthenticatedUser();
+        if (!session.getHostUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_ALLOWED);
+        }
     }
 
     private String generateUniqueSessionCode() {
