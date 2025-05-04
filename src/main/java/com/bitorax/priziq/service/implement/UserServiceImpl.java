@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class UserServiceImp implements UserService {
+public class UserServiceImpl implements UserService {
     UserRepository userRepository;
     EmailService emailService;
     S3FileStorageService s3FileStorageService;

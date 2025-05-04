@@ -145,8 +145,9 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve all collections with query parameters", "/api/v1/collections", "GET", "COLLECTIONS"),
                         new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS"),
                         new Permission("Activities reorder", "/api/v1/collections/{id}/activities/reorder", "PUT", "COLLECTIONS"),
+                        new Permission("Retrieve my collections with query parameters", "/api/v1/collections/me", "GET", "COLLECTIONS"),
 
-                        // Module Activity
+                        // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
                         new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES"),
                         new Permission("Update quiz for activity", "/api/v1/activities/{activityId}/quiz", "PUT", "ACTIVITIES"),
@@ -155,7 +156,11 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update a slide", "/api/v1/slides/{slideId}", "PUT", "ACTIVITIES"),
                         new Permission("Add a slide element", "/api/v1/slides/{slideId}/elements", "POST", "ACTIVITIES"),
                         new Permission("Update a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "PUT", "ACTIVITIES"),
-                        new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES")
+                        new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
+
+                        // Module Sessions
+                        new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
+                        new Permission("Retrieve a session history", "/api/v1/sessions/{sessionId}/history", "GET", "SESSIONS")
                 );
         }
 
@@ -174,6 +179,8 @@ public class DataInitializer implements ApplicationRunner {
                 List<Permission> moduleCollectionAllPermissions = permissionRepository.findByModule("COLLECTIONS")
                         .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
                 List<Permission> moduleActivityAllPermissions = permissionRepository.findByModule("ACTIVITIES")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleSessionAllPermissions = permissionRepository.findByModule("SESSIONS")
                         .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
                 // General permission for user login (USER, ADMIN)
@@ -198,7 +205,8 @@ public class DataInitializer implements ApplicationRunner {
                                 modulePermissionAllPermissions,
                                 moduleFileAllPermissions,
                                 moduleCollectionAllPermissions,
-                                moduleActivityAllPermissions
+                                moduleActivityAllPermissions,
+                                moduleSessionAllPermissions
                         )
                 );
 

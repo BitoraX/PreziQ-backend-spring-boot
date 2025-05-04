@@ -53,6 +53,9 @@ priziq:
     account:
         base-password: ${ACCOUNT_BASE_PASSWORD:base_pass}
     allowed-init: ${ALLOWED_INIT:true}
+    submission:
+        base-score: ${SUBMISSION_BASE_SCORE:30}
+        time-decrement: ${SUBMISSION_TIME_DECREMENT:1}
 
 jwt:
     access-signer-key: ${JWT_ACCESS_SIGNER_KEY}
@@ -72,3 +75,9 @@ file:
     allowedTypes: ${FILE_ALLOWED_TYPES:image/jpeg,image/png,image/jpg}
     maxSize: ${FILE_MAX_SIZE:5242880} # 5 MB
     minSize: ${FILE_MIN_SIZE:1024} # 1 KB
+
+session:
+    code:
+        characters: ${SESSION_CODE_CHARACTERS:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789}
+        length: ${SESSION_CODE_LENGTH:6}
+        max-attempts: ${SESSION_CODE_MAX_ATTEMPTS:10}
