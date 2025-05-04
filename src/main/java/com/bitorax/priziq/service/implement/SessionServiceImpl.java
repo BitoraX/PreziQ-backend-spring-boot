@@ -7,6 +7,7 @@ import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
+import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -46,8 +47,6 @@ public class SessionServiceImpl implements SessionService {
     SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionRepository activitySubmissionRepository;
     SessionMapper sessionMapper;
-    SessionParticipantMapper sessionParticipantMapper;
-    ActivitySubmissionMapper activitySubmissionMapper;
     SecurityUtils securityUtils;
 
     @NonFinal
@@ -80,15 +79,29 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest) {
-        Session currentSession = sessionRepository.findById(endSessionRequest.getSessionId())
+    public SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId) {
+        Session session = sessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
-        // Only the host can end the session
+        // Check if the current user is the host
         User currentUser = securityUtils.getAuthenticatedUser();
-        if (!currentSession.getHostUser().getUserId().equals(currentUser.getUserId())) {
-            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_END_SESSION);
+        if (!session.getHostUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_ALLOWED);
         }
+
+        // Check if session is active
+        if (!session.getIsActive()) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_ACTIVE);
+        }
+
+        return sessionMapper.sessionToSummaryResponse(session);
+    }
+
+    @Override
+    @Transactional
+    public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId) {
+        Session currentSession = sessionRepository.findById(endSessionRequest.getSessionId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         if (!currentSession.getIsActive()) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);

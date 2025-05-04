@@ -1,6 +1,8 @@
 package com.bitorax.priziq.controller.websocket;
 
+import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
+import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
@@ -12,6 +14,7 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.ActivitySubmissionService;
 import com.bitorax.priziq.service.SessionParticipantService;
 import com.bitorax.priziq.service.SessionService;
+import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -101,6 +104,24 @@ public class SessionWebSocketController {
         messagingTemplate.convertAndSend(destination, apiResponse);
     }
 
+    @MessageMapping("/session/start")
+    public void handleStartSession(@Valid @Payload StartSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
+            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
+        }
+
+        SessionSummaryResponse sessionResponse = sessionService.startSession(request, websocketSessionId);
+
+        String sessionCode = sessionResponse.getSessionCode();
+        ApiResponse<SessionSummaryResponse> apiResponse = createApiResponse(
+                "Session with code %s has started",
+                sessionResponse, sessionCode, headerAccessor);
+
+        String destination = "/public/session/" + sessionCode + "/start";
+        messagingTemplate.convertAndSend(destination, apiResponse);
+    }
+
     @MessageMapping("/session/submit")
     public void handleSubmitActivity(@Valid @Payload CreateActivitySubmissionRequest request, SimpMessageHeaderAccessor headerAccessor) {
         String websocketSessionId = headerAccessor.getSessionId();
@@ -125,7 +146,7 @@ public class SessionWebSocketController {
         String sessionCode = sessionService.findSessionCodeBySessionId(request.getSessionId());
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "Activity submission processed and scores updated for session with code: %s",
-                        responses, sessionCode, headerAccessor);
+                responses, sessionCode, headerAccessor);
 
         // Broadcast updated participants list
         String destination = "/public/session/" + sessionCode + "/participants";
@@ -140,7 +161,7 @@ public class SessionWebSocketController {
         }
 
         // End session
-        SessionSummaryResponse endSessionResponse = sessionService.endSession(request);
+        SessionSummaryResponse endSessionResponse = sessionService.endSession(request, websocketSessionId);
 
         ApiResponse<SessionSummaryResponse> endApiResponse = createApiResponse(
                 "Session with code: %s has been successfully ended",
