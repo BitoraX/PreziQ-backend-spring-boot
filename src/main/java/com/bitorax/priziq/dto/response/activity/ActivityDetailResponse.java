@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ActivityResponse extends AuditResponse {
+public class ActivityDetailResponse extends AuditResponse {
     String activityId;
     String activityType;
     String title;
@@ -25,7 +25,9 @@ public class ActivityResponse extends AuditResponse {
     String backgroundColor;
     String backgroundImage;
     String customBackgroundMusic;
+
     QuizResponse quiz;
     SlideResponse slide;
+
     String conversionWarning;
 }

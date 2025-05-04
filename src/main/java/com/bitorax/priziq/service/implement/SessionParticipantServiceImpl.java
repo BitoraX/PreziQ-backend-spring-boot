@@ -1,5 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.SessionStatus;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
@@ -41,8 +42,8 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
-        if (!session.getIsActive()) {
-            throw new ApplicationException(ErrorCode.SESSION_NOT_ACTIVE);
+        if (session.getSessionStatus() != SessionStatus.PENDING) {
+            throw new ApplicationException(ErrorCode.SESSION_NOT_PENDING);
         }
 
         User user = null;

@@ -11,7 +11,8 @@ import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
-import com.bitorax.priziq.dto.response.activity.ActivityResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
+import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizAnswerResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
@@ -24,7 +25,9 @@ public interface ActivityMapper {
     @Mapping(target = "activityType", source = "activityType")
     Activity createActivityRequestToActivity(CreateActivityRequest createActivityRequest);
 
-    ActivityResponse activityToResponse(Activity activity);
+    ActivityDetailResponse activityToDetailResponse(Activity activity);
+
+    ActivitySummaryResponse activityToSummaryResponse(Activity activity);
 
     @Mapping(target = "quizId", ignore = true)
     @Mapping(target = "activity", ignore = true)

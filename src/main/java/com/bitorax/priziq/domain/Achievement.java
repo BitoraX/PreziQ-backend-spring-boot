@@ -1,11 +1,10 @@
-package com.bitorax.priziq.domain.archivement;
+package com.bitorax.priziq.domain;
 
-import com.bitorax.priziq.domain.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -21,19 +20,19 @@ public class Achievement extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     String achievementId;
 
-    @OneToMany(mappedBy = "achievement", fetch = FetchType.LAZY)
-    List<UserAchievement> userAchievements;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "achievement_users", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "achievement_id"))
+    @JsonIgnoreProperties(value = { "users" })
+    List<User> users;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     String name;
 
     @Column(columnDefinition = "TEXT")
     String description;
 
-    String icon;
-
-    @Column(nullable = false)
-    Integer requiredLevel;
+    @Column(columnDefinition = "TEXT")
+    String iconUrl;
 
     @Column(nullable = false)
     Integer requiredPoints;

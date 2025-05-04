@@ -2,7 +2,6 @@ package com.bitorax.priziq.domain.session;
 
 import com.bitorax.priziq.domain.BaseEntity;
 import com.bitorax.priziq.domain.User;
-import com.bitorax.priziq.domain.archivement.UserAchievement;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;

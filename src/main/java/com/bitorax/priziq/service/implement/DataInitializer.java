@@ -160,7 +160,14 @@ public class DataInitializer implements ApplicationRunner {
 
                         // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
-                        new Permission("Retrieve a session history", "/api/v1/sessions/{sessionId}/history", "GET", "SESSIONS")
+                        new Permission("Retrieve a session history", "/api/v1/sessions/{sessionId}/history", "GET", "SESSIONS"),
+
+                        // Module Achievements
+                        new Permission("Create a new achievement", "/api/v1/achievements", "POST", "ACHIEVEMENTS"),
+                        new Permission("Update achievement information", "/api/v1/achievements/{achievementId}", "PATCH", "ACHIEVEMENTS"),
+                        new Permission("Delete an achievement", "/api/v1/achievements/{achievementId}", "DELETE", "ACHIEVEMENTS"),
+                        new Permission("Retrieve achievement information", "/api/v1/achievements/{achievementId}", "GET", "ACHIEVEMENTS"),
+                        new Permission("Retrieve all achievements with query parameters", "/api/v1/achievements", "GET", "ACHIEVEMENTS")
                 );
         }
 
@@ -181,6 +188,8 @@ public class DataInitializer implements ApplicationRunner {
                 List<Permission> moduleActivityAllPermissions = permissionRepository.findByModule("ACTIVITIES")
                         .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
                 List<Permission> moduleSessionAllPermissions = permissionRepository.findByModule("SESSIONS")
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
+                List<Permission> moduleAchievementAllPermissions = permissionRepository.findByModule("ACHIEVEMENTS")
                         .orElseThrow(() -> new ApplicationException(ErrorCode.PERMISSION_MODULE_NOT_FOUND));
 
                 // General permission for user login (USER, ADMIN)
@@ -206,7 +215,8 @@ public class DataInitializer implements ApplicationRunner {
                                 moduleFileAllPermissions,
                                 moduleCollectionAllPermissions,
                                 moduleActivityAllPermissions,
-                                moduleSessionAllPermissions
+                                moduleSessionAllPermissions,
+                                moduleAchievementAllPermissions
                         )
                 );
 

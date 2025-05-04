@@ -1,6 +1,6 @@
 package com.bitorax.priziq.dto.response.collection;
 
-import com.bitorax.priziq.dto.response.activity.ActivityResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.common.AuditResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -23,5 +23,5 @@ public class CollectionDetailResponse extends AuditResponse {
     Boolean isPublished;
     String coverImage;
     String defaultBackgroundMusic;
-    List<ActivityResponse> activities;
+    List<ActivityDetailResponse> activities;
 }
