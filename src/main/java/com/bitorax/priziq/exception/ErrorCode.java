@@ -198,6 +198,13 @@ public enum ErrorCode {
     ANSWER_CONTENT_REQUIRED(2001, HttpStatus.BAD_REQUEST, "Answer content is required"),
     ACTIVITY_SUBMISSION_NOT_FOUND(2002, HttpStatus.NOT_FOUND, "Activity submission not found"),
 
+    // Module achievement errors
+    ACHIEVEMENT_NOT_FOUND(2101, HttpStatus.NOT_FOUND, "Achievement not found"),
+    ACHIEVEMENT_NAME_NOT_BLANK(2102, HttpStatus.BAD_REQUEST, "Achievement is required"),
+    REQUIRED_POINTS_NOT_NULL(2103, HttpStatus.BAD_REQUEST, "Required points is required"),
+    REQUIRED_POINTS_NOT_NEGATIVE(2104, HttpStatus.BAD_REQUEST, "Required points must be non-negative"),
+    ACHIEVEMENT_NAME_DUPLICATED(2105, HttpStatus.BAD_REQUEST, "Achievement name already exists")
+
     ;
 
     int code;
