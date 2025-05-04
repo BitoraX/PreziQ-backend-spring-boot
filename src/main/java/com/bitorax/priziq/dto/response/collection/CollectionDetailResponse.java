@@ -16,7 +16,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CollectionResponse extends AuditResponse {
+public class CollectionDetailResponse extends AuditResponse {
     String collectionId;
     String title;
     String description;

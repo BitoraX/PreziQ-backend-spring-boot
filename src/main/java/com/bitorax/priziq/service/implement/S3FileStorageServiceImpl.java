@@ -26,7 +26,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class S3FileStorageServiceImp implements S3FileStorageService {
+public class S3FileStorageServiceImpl implements S3FileStorageService {
     S3Client s3Client;
     FileUtils fileUtils;
 

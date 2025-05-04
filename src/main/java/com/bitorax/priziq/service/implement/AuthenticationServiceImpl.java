@@ -38,7 +38,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class AuthenticationServiceImp implements AuthenticationService {
+public class AuthenticationServiceImpl implements AuthenticationService {
     UserRepository userRepository;
     RoleRepository roleRepository;
     EmailService emailService;

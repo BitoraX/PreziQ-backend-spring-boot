@@ -34,9 +34,6 @@ public class Session extends BaseEntity {
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
     List<SessionParticipant> sessionParticipants;
 
-    @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
-    List<ActivitySubmission> activitySubmissions;
-
     @Column(nullable = false, unique = true)
     String sessionCode;
 
