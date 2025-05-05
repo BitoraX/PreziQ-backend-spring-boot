@@ -4,7 +4,7 @@ import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
-import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.session.*;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public interface SessionService {
 
     SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId);
 
-    ActivitySummaryResponse nextActivity(NextActivityRequest request, String websocketSessionId);
+    ActivityDetailResponse nextActivity(NextActivityRequest request, String websocketSessionId);
 
     SessionEndResultResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId);
 

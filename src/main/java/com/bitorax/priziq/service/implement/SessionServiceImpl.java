@@ -13,6 +13,7 @@ import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
@@ -100,7 +101,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public ActivitySummaryResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
+    public ActivityDetailResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
         Session session = getSessionById(request.getSessionId());
 
         if (session.getSessionStatus() != SessionStatus.STARTED) {
@@ -118,12 +119,12 @@ public class SessionServiceImpl implements SessionService {
         }
 
         if (request.getActivityId() == null) {
-            return activityMapper.activityToSummaryResponse(activities.getFirst());
+            return activityMapper.activityToDetailResponse(activities.getFirst());
         }
 
         for (int i = 0; i < activities.size() - 1; i++) {
             if (activities.get(i).getActivityId().equals(request.getActivityId())) {
-                return activityMapper.activityToSummaryResponse(activities.get(i + 1));
+                return activityMapper.activityToDetailResponse(activities.get(i + 1));
             }
         }
 

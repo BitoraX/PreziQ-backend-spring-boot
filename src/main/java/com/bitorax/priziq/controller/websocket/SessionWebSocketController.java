@@ -8,7 +8,7 @@ import com.bitorax.priziq.dto.request.session.session_participant.GetParticipant
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
-import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
@@ -163,10 +163,10 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        ActivitySummaryResponse activityResponse = sessionService.nextActivity(request, websocketSessionId);
+        ActivityDetailResponse activityResponse = sessionService.nextActivity(request, websocketSessionId);
 
         String sessionCode = sessionService.findSessionCodeBySessionId(request.getSessionId());
-        ApiResponse<ActivitySummaryResponse> apiResponse = createApiResponse(
+        ApiResponse<ActivityDetailResponse> apiResponse = createApiResponse(
                 activityResponse != null ? "Moved to next activity in session with code %s" : "No more activities in session with code %s",
                 activityResponse, sessionCode, headerAccessor);
 
@@ -214,7 +214,8 @@ public class SessionWebSocketController {
                         "Achievement updates for user in session with code: %s",
                         updates, endSessionResponse.getSessionCode(), headerAccessor);
 
-                messagingTemplate.convertAndSendToUser(userId, "/private/achievement", achievementApiResponse);
+                String achievementDestination = "/client/" + userId + "/private/achievement";
+                messagingTemplate.convertAndSend(achievementDestination, achievementApiResponse);
             });
         }
     }

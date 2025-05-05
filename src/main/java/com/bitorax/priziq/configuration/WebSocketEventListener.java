@@ -1,6 +1,7 @@
 package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
+import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.service.SessionParticipantService;
@@ -15,7 +16,9 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.context.event.EventListener;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -31,14 +34,31 @@ public class WebSocketEventListener {
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String websocketSessionId = headerAccessor.getSessionId();
+        String clientUuid = headerAccessor.getFirstNativeHeader("clientUuid");
 
-        // Save websocketSessionId to sessionAttributes
-        Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("websocketSessionId", websocketSessionId);
+        // Validate clientUuid
+        if (clientUuid == null || clientUuid.trim().isEmpty()) {
+            clientUuid = websocketSessionId;
+        }
 
-        if (websocketSessionId != null) {
-            log.info("Client connected with websocketSessionId: {}", websocketSessionId);
-        } else {
-            log.warn("websocketSessionId is null on connect");
+        // Save clientUuid to sessionAttributes
+        Map<String, Object> sessionAttributes = Objects.requireNonNull(headerAccessor.getSessionAttributes());
+        sessionAttributes.put("clientUuid", clientUuid);
+        sessionAttributes.put("websocketSessionId", websocketSessionId);
+
+        log.info("Client connected with clientUuid: {} (websocketSessionId: {})", clientUuid, websocketSessionId);
+
+        // Send confirmation back to client
+        Map<String, String> responseData = new HashMap<>();
+        responseData.put("clientUuid", clientUuid);
+        ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
+                .success(true)
+                .data(responseData)
+                .message("Connected successfully")
+                .build();
+
+        if(clientUuid != null) {
+            messagingTemplate.convertAndSendToUser(clientUuid, "/private/connect", response);
         }
     }
 
@@ -46,6 +66,7 @@ public class WebSocketEventListener {
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String websocketSessionId = headerAccessor.getSessionId();
+
         if (websocketSessionId == null) {
             log.warn("websocketSessionId is null on disconnect");
             return;

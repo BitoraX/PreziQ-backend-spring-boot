@@ -159,7 +159,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public UserSecureResponse getMyInfo() {
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String userId = SecurityContextHolder.getContext().getAuthentication().name();
         return this.userMapper.userToSecureResponse(
                 userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND)));
     }
