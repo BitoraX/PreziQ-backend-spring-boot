@@ -87,7 +87,6 @@ public class SessionServiceImpl implements SessionService {
     @Transactional
     public SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId) {
         Session session = getSessionById(request.getSessionId());
-        validateHostUser(session);
 
         if (session.getSessionStatus() != SessionStatus.PENDING) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_PENDING);
@@ -103,7 +102,6 @@ public class SessionServiceImpl implements SessionService {
     @Transactional
     public ActivitySummaryResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
         Session session = getSessionById(request.getSessionId());
-        validateHostUser(session);
 
         if (session.getSessionStatus() != SessionStatus.STARTED) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_STARTED);
@@ -136,7 +134,6 @@ public class SessionServiceImpl implements SessionService {
     @Transactional
     public SessionEndResultResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId) {
         Session currentSession = getSessionById(endSessionRequest.getSessionId());
-        validateHostUser(currentSession);
 
         if (currentSession.getSessionStatus() == SessionStatus.ENDED) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);
@@ -272,13 +269,6 @@ public class SessionServiceImpl implements SessionService {
     private Session getSessionById(String sessionId) {
         return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-    }
-
-    private void validateHostUser(Session session) {
-        User currentUser = securityUtils.getAuthenticatedUser();
-        if (!session.getHostUser().getUserId().equals(currentUser.getUserId())) {
-            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_ALLOWED);
-        }
     }
 
     private String generateUniqueSessionCode() {
