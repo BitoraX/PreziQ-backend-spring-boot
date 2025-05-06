@@ -15,7 +15,9 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.context.event.EventListener;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -30,22 +32,26 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
+
         String websocketSessionId = headerAccessor.getSessionId();
+        Principal principal = headerAccessor.getUser();
+        String stompClientId = (principal != null) ? principal.getName() : null;
 
-        // Save websocketSessionId to sessionAttributes
-        Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("websocketSessionId", websocketSessionId);
-
-        if (websocketSessionId != null) {
-            log.info("Client connected with websocketSessionId: {}", websocketSessionId);
-        } else {
-            log.warn("websocketSessionId is null on connect");
+        if (stompClientId == null) {
+            log.warn("StompClientId is null for websocketSessionId: {}", websocketSessionId);
+            return;
         }
+
+        Map<String, Object> sessionAttributes = Objects.requireNonNull(headerAccessor.getSessionAttributes());
+        sessionAttributes.put("websocketSessionId", websocketSessionId);
+        sessionAttributes.put("stompClientId", stompClientId);
     }
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String websocketSessionId = headerAccessor.getSessionId();
+
         if (websocketSessionId == null) {
             log.warn("websocketSessionId is null on disconnect");
             return;
@@ -63,8 +69,8 @@ public class WebSocketEventListener {
                     List<SessionParticipantSummaryResponse> responses = sessionParticipantService
                             .findParticipantsBySessionCode(
                                     GetParticipantsRequest.builder()
-                                    .sessionCode(sessionCode)
-                                    .build()
+                                            .sessionCode(sessionCode)
+                                            .build()
                             );
 
                     String destination = "/public/session/" + sessionCode + "/participants";

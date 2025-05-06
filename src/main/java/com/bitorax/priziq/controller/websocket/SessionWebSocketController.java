@@ -1,6 +1,5 @@
 package com.bitorax.priziq.controller.websocket;
 
-import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
@@ -8,7 +7,8 @@ import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivity
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
-import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
@@ -16,7 +16,6 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.ActivitySubmissionService;
 import com.bitorax.priziq.service.SessionParticipantService;
 import com.bitorax.priziq.service.SessionService;
-import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +28,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.bitorax.priziq.utils.MetaUtils.buildWebSocketMetaInfo;
 
@@ -53,12 +55,13 @@ public class SessionWebSocketController {
 
     @MessageMapping("/session/join")
     public void handleJoinSession(@Valid @Payload JoinSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String clientSessionId = headerAccessor.getSessionId();
-        if (clientSessionId == null) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        String stompClientId = Objects.requireNonNull(headerAccessor.getUser()).getName();
+        if (websocketSessionId == null) {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.joinSession(request, websocketSessionId, stompClientId);
 
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "A participant successfully joined session with code: %s",
@@ -70,12 +73,12 @@ public class SessionWebSocketController {
 
     @MessageMapping("/session/leave")
     public void handleLeaveSession(@Valid @Payload LeaveSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String clientSessionId = headerAccessor.getSessionId();
-        if (clientSessionId == null) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.leaveSession(request, clientSessionId);
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.leaveSession(request, websocketSessionId);
 
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
@@ -91,11 +94,6 @@ public class SessionWebSocketController {
 
     @MessageMapping("/session/participants")
     public void handleGetParticipants(@Valid @Payload GetParticipantsRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String websocketSessionId = headerAccessor.getSessionId();
-        if (websocketSessionId == null) {
-            throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
-        }
-
         List<SessionParticipantSummaryResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
 
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
@@ -113,7 +111,7 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        SessionSummaryResponse sessionResponse = sessionService.startSession(request, websocketSessionId);
+        SessionSummaryResponse sessionResponse = sessionService.startSession(request);
 
         String sessionCode = sessionResponse.getSessionCode();
         ApiResponse<SessionSummaryResponse> apiResponse = createApiResponse(
@@ -162,10 +160,10 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        ActivitySummaryResponse activityResponse = sessionService.nextActivity(request, websocketSessionId);
+        ActivityDetailResponse activityResponse = sessionService.nextActivity(request);
 
         String sessionCode = sessionService.findSessionCodeBySessionId(request.getSessionId());
-        ApiResponse<ActivitySummaryResponse> apiResponse = createApiResponse(
+        ApiResponse<ActivityDetailResponse> apiResponse = createApiResponse(
                 activityResponse != null ? "Moved to next activity in session with code %s" : "No more activities in session with code %s",
                 activityResponse, sessionCode, headerAccessor);
 
@@ -181,7 +179,8 @@ public class SessionWebSocketController {
         }
 
         // End session
-        SessionSummaryResponse endSessionResponse = sessionService.endSession(request, websocketSessionId);
+        SessionEndResultResponse endSessionResult = sessionService.endSession(request);
+        SessionSummaryResponse endSessionResponse = endSessionResult.getSessionSummary();
 
         ApiResponse<SessionSummaryResponse> endApiResponse = createApiResponse(
                 "Session with code: %s has been successfully ended",
@@ -191,13 +190,30 @@ public class SessionWebSocketController {
         messagingTemplate.convertAndSend(endDestination, endApiResponse);
 
         // Calculate summary information
-        List<EndSessionSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
+        List<SessionEndSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
 
-        ApiResponse<List<EndSessionSummaryResponse>> summaryApiResponse = createApiResponse(
+        ApiResponse<List<SessionEndSummaryResponse>> summaryApiResponse = createApiResponse(
                 "Final summary generated for session with code: %s",
                         summaries, endSessionResponse.getSessionCode(), headerAccessor);
 
         String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
         messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
+
+        // Get achievement update details from service
+        List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = sessionService.getAchievementUpdateDetails(
+                endSessionResult.getAchievementUpdates(), request.getSessionId());
+
+        // Send achievement updates to each user
+        updateDetails.forEach(entry -> {
+            String stompClientId = entry.getKey();
+            List<AchievementUpdateResponse> updates = entry.getValue();
+            ApiResponse<List<AchievementUpdateResponse>> achievementApiResponse = ApiResponse.<List<AchievementUpdateResponse>>builder()
+                    .message(String.format("Achievement updates for user in session with code: %s", endSessionResponse.getSessionCode()))
+                    .data(updates)
+                    .meta(buildWebSocketMetaInfo(headerAccessor))
+                    .build();
+            messagingTemplate.convertAndSendToUser(stompClientId, "/private/achievement", achievementApiResponse);
+            log.info("Sent achievement updates to stompClientId: {}", stompClientId);
+        });
     }
 }

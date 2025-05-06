@@ -8,9 +8,9 @@ import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse
 import java.util.List;
 
 public interface SessionParticipantService {
-    List<SessionParticipantSummaryResponse> joinSession(JoinSessionRequest request, String clientSessionId);
+    List<SessionParticipantSummaryResponse> joinSession(JoinSessionRequest request, String websocketSessionId, String stompClientId);
 
-    List<SessionParticipantSummaryResponse> leaveSession(LeaveSessionRequest request, String clientSessionId);
+    List<SessionParticipantSummaryResponse> leaveSession(LeaveSessionRequest request, String websocketSessionId);
 
     List<SessionParticipantSummaryResponse> findParticipantsBySessionCode(GetParticipantsRequest request);
 

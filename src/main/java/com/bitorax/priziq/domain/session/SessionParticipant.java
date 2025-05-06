@@ -33,13 +33,16 @@ public class SessionParticipant extends BaseEntity {
     List<ActivitySubmission> activitySubmissions;
 
     @Column
-    String websocketSessionId;
-
-    @Column
     String displayName;
 
     @Column(columnDefinition = "TEXT")
     String displayAvatar;
+
+    @Column
+    String websocketSessionId; // websocket
+
+    @Column
+    String stompClientId; // websocket
 
     @Column(nullable = false)
     @Builder.Default
