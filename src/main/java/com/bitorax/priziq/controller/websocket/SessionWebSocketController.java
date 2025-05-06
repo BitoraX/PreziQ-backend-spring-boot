@@ -54,12 +54,12 @@ public class SessionWebSocketController {
 
     @MessageMapping("/session/join")
     public void handleJoinSession(@Valid @Payload JoinSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String clientSessionId = headerAccessor.getSessionId();
-        if (clientSessionId == null) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.joinSession(request, clientSessionId);
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.joinSession(request, websocketSessionId);
 
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "A participant successfully joined session with code: %s",
@@ -71,12 +71,12 @@ public class SessionWebSocketController {
 
     @MessageMapping("/session/leave")
     public void handleLeaveSession(@Valid @Payload LeaveSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String clientSessionId = headerAccessor.getSessionId();
-        if (clientSessionId == null) {
+        String websocketSessionId = headerAccessor.getSessionId();
+        if (websocketSessionId == null) {
             throw new ApplicationException(ErrorCode.CLIENT_SESSION_ID_NOT_FOUND);
         }
 
-        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.leaveSession(request, clientSessionId);
+        List<SessionParticipantSummaryResponse> responses = sessionParticipantService.leaveSession(request, websocketSessionId);
 
         if (responses.isEmpty()) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
@@ -214,8 +214,7 @@ public class SessionWebSocketController {
                         "Achievement updates for user in session with code: %s",
                         updates, endSessionResponse.getSessionCode(), headerAccessor);
 
-                String achievementDestination = "/client/" + userId + "/private/achievement";
-                messagingTemplate.convertAndSend(achievementDestination, achievementApiResponse);
+                messagingTemplate.convertAndSendToUser(userId, "/private/achievement", achievementApiResponse);
             });
         }
     }

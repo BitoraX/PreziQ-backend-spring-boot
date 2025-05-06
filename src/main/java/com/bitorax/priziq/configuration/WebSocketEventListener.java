@@ -11,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
@@ -30,46 +31,37 @@ public class WebSocketEventListener {
     SimpMessagingTemplate messagingTemplate;
     SessionParticipantService sessionParticipantService;
     SessionParticipantRepository sessionParticipantRepository;
-
-    private record CustomPrincipal(String name) implements Principal {
-        @Override
-        public String getName() {
-            return name;
-        }
-    }
+    SimpUserRegistry simpUserRegistry;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String websocketSessionId = headerAccessor.getSessionId();
-        String clientUuid = headerAccessor.getFirstNativeHeader("clientUuid");
+        Principal principal = headerAccessor.getUser();
+        String username = (principal != null) ? principal.getName() : null;
 
-        // Validate clientUuid
-        if (clientUuid == null || clientUuid.trim().isEmpty()) {
-            clientUuid = websocketSessionId;
+        if (username == null) {
+            log.warn("Username is null for websocketSessionId: {}", websocketSessionId);
+            return;
         }
 
-        headerAccessor.setUser(new CustomPrincipal(clientUuid));
-
-        // Save clientUuid to sessionAttributes
         Map<String, Object> sessionAttributes = Objects.requireNonNull(headerAccessor.getSessionAttributes());
-        sessionAttributes.put("clientUuid", clientUuid);
         sessionAttributes.put("websocketSessionId", websocketSessionId);
+        sessionAttributes.put("username", username);
 
-        log.info("Client connected with clientUuid: {} (websocketSessionId: {})", clientUuid, websocketSessionId);
+        log.info("Client connected with username: {} (websocketSessionId: {})", username, websocketSessionId);
+        log.info("SimpUserRegistry users: {}", simpUserRegistry.getUsers());
 
         // Send confirmation back to client
         Map<String, String> responseData = new HashMap<>();
-        responseData.put("clientUuid", clientUuid);
+        responseData.put("username", username);
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .success(true)
                 .data(responseData)
                 .message("Connected successfully")
                 .build();
 
-        if (clientUuid != null) {
-            messagingTemplate.convertAndSendToUser(clientUuid, "/private/connect", response);
-        }
+        messagingTemplate.convertAndSendToUser(username, "/private/connect", response);
     }
 
     @EventListener

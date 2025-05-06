@@ -10,8 +10,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
+import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @ControllerAdvice
@@ -38,9 +38,9 @@ public class WebSocketExceptionHandler {
 
     @MessageExceptionHandler(ApplicationException.class)
     public void handleApplicationException(ApplicationException ex, SimpMessageHeaderAccessor headerAccessor) {
-        String clientUuid = getClientUuid(headerAccessor);
-        if (clientUuid == null) {
-            log.warn("Cannot send error: clientUuid is null for ApplicationException: {}", ex.getMessage());
+        String username = getUsername(headerAccessor);
+        if (username == null) {
+            log.warn("Cannot send error: username is null for ApplicationException: {}", ex.getMessage());
             return;
         }
 
@@ -48,14 +48,14 @@ public class WebSocketExceptionHandler {
         String message = ex.getCustomMessage() != null ? ex.getCustomMessage() : ex.getErrorCode().getMessage();
         ApiResponse<?> response = buildErrorResponse(ex.getErrorCode(), Optional.of(message), null);
 
-        sendErrorToClient(clientUuid, response);
+        sendErrorToClient(username, response);
     }
 
     @MessageExceptionHandler(MethodArgumentNotValidException.class)
     public void handleValidationException(MethodArgumentNotValidException ex, SimpMessageHeaderAccessor headerAccessor) {
-        String clientUuid = getClientUuid(headerAccessor);
-        if (clientUuid == null) {
-            log.warn("Cannot send error: clientUuid is null for MethodArgumentNotValidException");
+        String username = getUsername(headerAccessor);
+        if (username == null) {
+            log.warn("Cannot send error: username is null for MethodArgumentNotValidException");
             return;
         }
 
@@ -63,50 +63,46 @@ public class WebSocketExceptionHandler {
         List<ErrorDetail> errorDetails = ErrorDetailMapper.mapValidationErrors(ex);
         ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errorDetails);
 
-        sendErrorToClient(clientUuid, response);
+        sendErrorToClient(username, response);
     }
 
     @MessageExceptionHandler(MessageConversionException.class)
     public void handleMessageConversionException(MessageConversionException ex, SimpMessageHeaderAccessor headerAccessor) {
-        String clientUuid = getClientUuid(headerAccessor);
-        if (clientUuid == null) {
-            log.warn("Cannot send error: clientUuid is null for MessageConversionException");
+        String username = getUsername(headerAccessor);
+        if (username == null) {
+            log.warn("Cannot send error: username is null for MessageConversionException");
             return;
         }
 
         log.error("WebSocket MessageConversionException: {}", ex.getMessage(), ex);
         ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.of("Invalid message format"), null);
 
-        sendErrorToClient(clientUuid, response);
+        sendErrorToClient(username, response);
     }
 
     @MessageExceptionHandler(Throwable.class)
     public void handleAllExceptions(Throwable ex, SimpMessageHeaderAccessor headerAccessor) {
-        String clientUuid = getClientUuid(headerAccessor);
-        if (clientUuid == null) {
-            log.warn("Cannot send error: clientUuid is null for Throwable: {}", ex.getMessage());
+        String username = getUsername(headerAccessor);
+        if (username == null) {
+            log.warn("Cannot send error: username is null for Throwable: {}", ex.getMessage());
             return;
         }
 
         log.error("WebSocket Unhandled error: {}", ex.getMessage(), ex);
         ApiResponse<?> response = buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.of("An unexpected error occurred: " + ex.getMessage()), null);
 
-        sendErrorToClient(clientUuid, response);
+        sendErrorToClient(username, response);
     }
 
-    private String getClientUuid(SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
-        if (sessionAttributes == null) {
-            log.warn("Session attributes are null");
-            return null;
-        }
-        String clientUuid = (String) sessionAttributes.get("clientUuid");
-        log.info("Retrieved clientUuid: {}", clientUuid);
-        return clientUuid;
+    private String getUsername(SimpMessageHeaderAccessor headerAccessor) {
+        Principal principal = headerAccessor.getUser();
+        String username = (principal != null) ? principal.getName() : null;
+        log.info("Retrieved username: {}", username);
+        return username;
     }
 
-    private void sendErrorToClient(String clientUuid, ApiResponse<?> response) {
-        log.info("Sending error to clientUuid: {}", clientUuid);
-        messagingTemplate.convertAndSendToUser(clientUuid, "/private/errors", response);
+    private void sendErrorToClient(String username, ApiResponse<?> response) {
+        log.info("Sending error to username: {} with response: {}", username, response);
+        messagingTemplate.convertAndSendToUser(username, "/private/errors", response);
     }
 }
