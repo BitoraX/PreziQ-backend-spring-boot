@@ -51,7 +51,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
     @Transactional
     public ActivitySubmissionSummaryResponse createActivitySubmission(CreateActivitySubmissionRequest request, String websocketSessionId) {
         // Validate entities
-        Session session = sessionRepository.findById(request.getSessionId())
+        Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
         Activity activity = activityRepository.findById(request.getActivityId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
@@ -151,7 +151,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
         if (isCorrect && pointType != PointType.NO_POINTS) {
             List<ActivitySubmission> correctSubmissions = activitySubmissionRepository
                     .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
-                            request.getSessionId(), request.getActivityId(), true);
+                            session.getSessionId(), request.getActivityId(), true);
 
             // Sort by createdAt (earliest first) and find the index of the current submission
             correctSubmissions.sort(Comparator.comparing(ActivitySubmission::getCreatedAt));
