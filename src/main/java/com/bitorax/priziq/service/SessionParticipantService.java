@@ -14,5 +14,5 @@ public interface SessionParticipantService {
 
     List<SessionParticipantSummaryResponse> findParticipantsBySessionCode(GetParticipantsRequest request);
 
-    List<SessionParticipantSummaryResponse> updateRealtimeScoreAndRanking(String sessionId, String websocketSessionId, int responseScore);
+    List<SessionParticipantSummaryResponse> updateRealtimeScoreAndRanking(String sessionCode, String websocketSessionId, int responseScore);
 }

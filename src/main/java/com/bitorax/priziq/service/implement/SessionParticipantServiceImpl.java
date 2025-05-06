@@ -113,8 +113,8 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantSummaryResponse> updateRealtimeScoreAndRanking(String sessionId, String websocketSessionId, int responseScore) {
-        Session session = sessionRepository.findById(sessionId)
+    public List<SessionParticipantSummaryResponse> updateRealtimeScoreAndRanking(String sessionCode, String websocketSessionId, int responseScore) {
+        Session session = sessionRepository.findBySessionCode(sessionCode)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         // Find SessionParticipant by sessionId and websocketSessionId
@@ -129,7 +129,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         sessionParticipantRepository.save(participant);
 
         // Get all participants in the session and update rankings
-        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(sessionCode);
         // Sort by realtimeScore (descending) and assign rankings
         List<SessionParticipant> sortedParticipants = participants.stream()
                 .sorted(Comparator.comparingInt(SessionParticipant::getRealtimeScore).reversed())

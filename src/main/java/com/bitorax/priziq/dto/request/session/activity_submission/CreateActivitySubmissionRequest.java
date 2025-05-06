@@ -10,8 +10,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class CreateActivitySubmissionRequest {
-    @NotBlank(message = "SESSION_ID_REQUIRED")
-    String sessionId;
+    @NotBlank(message = "SESSION_CODE_REQUIRED")
+    String sessionCode;
 
     @NotBlank(message = "ACTIVITY_ID_REQUIRED")
     String activityId;

@@ -38,6 +38,9 @@ public class Session extends BaseEntity {
     @Column(nullable = false, unique = true)
     String sessionCode;
 
+    @Column(columnDefinition = "TEXT")
+    String joinSessionQrUrl;
+
     @Column(nullable = false)
     Instant startTime;
 

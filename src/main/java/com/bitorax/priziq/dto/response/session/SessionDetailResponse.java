@@ -20,11 +20,12 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionDetailResponse extends AuditResponse {
     String sessionId;
+    String sessionCode;
+    String joinSessionQrUrl;
+    String sessionStatus;
 
     CollectionSummaryResponse collection;
     UserSecureResponse hostUser;
-
-    String sessionCode;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     Instant startTime;
@@ -32,5 +33,4 @@ public class SessionDetailResponse extends AuditResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     Instant endTime;
 
-    String sessionStatus;
 }
