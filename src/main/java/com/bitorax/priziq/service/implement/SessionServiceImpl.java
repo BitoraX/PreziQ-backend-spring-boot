@@ -21,8 +21,8 @@ import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.AchievementService;
-import com.bitorax.priziq.service.SessionParticipantService;
 import com.bitorax.priziq.service.SessionService;
+import com.bitorax.priziq.utils.QRCodeUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -52,6 +52,7 @@ public class SessionServiceImpl implements SessionService {
     SessionMapper sessionMapper;
     ActivityMapper activityMapper;
     SecurityUtils securityUtils;
+    QRCodeUtils qrCodeUtils;
 
     @NonFinal
     @Value("${session.code.characters}")
@@ -64,6 +65,10 @@ public class SessionServiceImpl implements SessionService {
     @NonFinal
     @Value("${session.code.max-attempts}")
     Integer SESSION_CODE_MAX_ATTEMPTS;
+
+    @NonFinal
+    @Value("${priziq.frontend.base-url}")
+    String FRONT_END_BASE_URL;
 
     @Override
     @Transactional
@@ -80,7 +85,16 @@ public class SessionServiceImpl implements SessionService {
                 .build();
         sessionRepository.save(session);
 
-        return sessionMapper.sessionToDetailResponse(session);
+        // Generate QR code for session
+        try {
+            String contentQrCode = FRONT_END_BASE_URL + "/session/" + session.getSessionId() + "?sessionCode=" + session.getSessionCode();
+            String qrUrl = qrCodeUtils.generateQRCode(contentQrCode);
+            session.setJoinSessionQrUrl(qrUrl);
+        } catch (Exception e) {
+            throw new ApplicationException(ErrorCode.QR_CODE_GENERATION_FAILED);
+        }
+
+        return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
     }
 
     @Override

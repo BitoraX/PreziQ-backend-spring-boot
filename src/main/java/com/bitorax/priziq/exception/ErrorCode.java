@@ -189,6 +189,7 @@ public enum ErrorCode {
     INVALID_SESSION_STATUS(1807, HttpStatus.BAD_REQUEST, "Invalid session status. Only the following types are supported: PENDING, STARTED, ENDED"),
     SESSION_NOT_PENDING(1808, HttpStatus.BAD_REQUEST,"Session must be in PENDING status to start"),
     SESSION_NOT_STARTED(1809, HttpStatus.BAD_REQUEST,"Session must be in STARTED status to proceed to next activity"),
+    QR_CODE_GENERATION_FAILED(1810, HttpStatus.BAD_REQUEST, "Lỗi khi sinh mã QR"),
 
     // Module session participant errors
     SESSION_PARTICIPANT_NOT_FOUND(1901, HttpStatus.NOT_FOUND, "Session participant not found"),
