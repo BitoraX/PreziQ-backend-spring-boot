@@ -7,20 +7,21 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
+import com.bitorax.priziq.dto.request.achievement.AssignAchievementToUserRequest;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
 import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
-import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
-import com.bitorax.priziq.repository.ActivitySubmissionRepository;
-import com.bitorax.priziq.repository.CollectionRepository;
-import com.bitorax.priziq.repository.SessionParticipantRepository;
-import com.bitorax.priziq.repository.SessionRepository;
+import com.bitorax.priziq.repository.*;
+import com.bitorax.priziq.service.AchievementService;
+import com.bitorax.priziq.service.SessionParticipantService;
 import com.bitorax.priziq.service.SessionService;
 import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
@@ -34,9 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +47,8 @@ public class SessionServiceImpl implements SessionService {
     CollectionRepository collectionRepository;
     SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionRepository activitySubmissionRepository;
+    UserRepository userRepository;
+    AchievementService achievementService;
     SessionMapper sessionMapper;
     ActivityMapper activityMapper;
     SecurityUtils securityUtils;
@@ -77,15 +78,15 @@ public class SessionServiceImpl implements SessionService {
                 .startTime(Instant.now())
                 .sessionStatus(SessionStatus.PENDING)
                 .build();
+        sessionRepository.save(session);
 
-        return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
+        return sessionMapper.sessionToDetailResponse(session);
     }
 
     @Override
     @Transactional
-    public SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId) {
+    public SessionSummaryResponse startSession(StartSessionRequest request) {
         Session session = getSessionById(request.getSessionId());
-        validateHostUser(session);
 
         if (session.getSessionStatus() != SessionStatus.PENDING) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_PENDING);
@@ -99,9 +100,8 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public ActivitySummaryResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
+    public ActivityDetailResponse nextActivity(NextActivityRequest request) {
         Session session = getSessionById(request.getSessionId());
-        validateHostUser(session);
 
         if (session.getSessionStatus() != SessionStatus.STARTED) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_STARTED);
@@ -118,12 +118,12 @@ public class SessionServiceImpl implements SessionService {
         }
 
         if (request.getActivityId() == null) {
-            return activityMapper.activityToSummaryResponse(activities.getFirst());
+            return activityMapper.activityToDetailResponse(activities.getFirst());
         }
 
         for (int i = 0; i < activities.size() - 1; i++) {
             if (activities.get(i).getActivityId().equals(request.getActivityId())) {
-                return activityMapper.activityToSummaryResponse(activities.get(i + 1));
+                return activityMapper.activityToDetailResponse(activities.get(i + 1));
             }
         }
 
@@ -132,18 +132,43 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionSummaryResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId) {
+    public SessionEndResultResponse endSession(EndSessionRequest endSessionRequest) {
         Session currentSession = getSessionById(endSessionRequest.getSessionId());
-        validateHostUser(currentSession);
 
         if (currentSession.getSessionStatus() == SessionStatus.ENDED) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);
         }
 
+        // Update session status and end time
         currentSession.setEndTime(Instant.now());
         currentSession.setSessionStatus(SessionStatus.ENDED);
+        sessionRepository.save(currentSession);
 
-        return sessionMapper.sessionToSummaryResponse(sessionRepository.save(currentSession));
+        // Update totalPoints for each participant and collect achievement updates
+        List<AchievementUpdateResponse> achievementUpdates = new ArrayList<>();
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(endSessionRequest.getSessionId());
+        for (SessionParticipant participant : participants) {
+            User user = participant.getUser();
+            if (user != null) { // Only update for registered users
+                // Add realtimeScore to totalPoints
+                user.setTotalPoints(user.getTotalPoints() + participant.getRealtimeScore());
+                userRepository.save(user);
+
+                // Assign achievements and collect update information
+                AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
+                        AssignAchievementToUserRequest.builder()
+                                .userId(user.getUserId())
+                                .totalPoints(user.getTotalPoints())
+                                .build()
+                );
+                achievementUpdates.add(updateResponse);
+            }
+        }
+
+        return SessionEndResultResponse.builder()
+                .sessionSummary(sessionMapper.sessionToSummaryResponse(currentSession))
+                .achievementUpdates(achievementUpdates)
+                .build();
     }
 
     @Override
@@ -154,12 +179,12 @@ public class SessionServiceImpl implements SessionService {
         // Retrieve all participants associated with the session
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
 
-        List<EndSessionSummaryResponse> summaries = calculateSessionSummary(sessionId);
+        List<SessionEndSummaryResponse> summaries = calculateSessionSummary(sessionId);
         List<SessionParticipantHistoryResponse> participantHistoryResponses = new ArrayList<>();
 
         for (int i = 0; i < participants.size(); i++) {
             SessionParticipant participant = participants.get(i);
-            EndSessionSummaryResponse summary = summaries.get(i);
+            SessionEndSummaryResponse summary = summaries.get(i);
 
             List<ActivitySubmission> submissions = activitySubmissionRepository
                     .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
@@ -195,12 +220,12 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public List<EndSessionSummaryResponse> calculateSessionSummary(String sessionId) {
+    public List<SessionEndSummaryResponse> calculateSessionSummary(String sessionId) {
         Session currentSession = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
-        List<EndSessionSummaryResponse> summaries = new ArrayList<>();
+        List<SessionEndSummaryResponse> summaries = new ArrayList<>();
 
         for (SessionParticipant participant : participants) {
             List<ActivitySubmission> submissions = activitySubmissionRepository
@@ -215,7 +240,7 @@ public class SessionServiceImpl implements SessionService {
                     .count();
             int finalIncorrectCount = submissions.size() - finalCorrectCount;
 
-            EndSessionSummaryResponse summary = EndSessionSummaryResponse.builder()
+            SessionEndSummaryResponse summary = SessionEndSummaryResponse.builder()
                     .displayName(participant.getDisplayName())
                     .displayAvatar(participant.getDisplayAvatar())
                     .finalScore(finalScore)
@@ -227,7 +252,7 @@ public class SessionServiceImpl implements SessionService {
         }
 
         // Sort and assign ratings
-        summaries.sort(Comparator.comparingInt(EndSessionSummaryResponse::getFinalScore).reversed());
+        summaries.sort(Comparator.comparingInt(SessionEndSummaryResponse::getFinalScore).reversed());
         for (int i = 0; i < summaries.size(); i++) {
             summaries.get(i).setFinalRanking(i + 1);
         }
@@ -241,16 +266,36 @@ public class SessionServiceImpl implements SessionService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
     }
 
+    @Override
+    public List<Map.Entry<String, List<AchievementUpdateResponse>>> getAchievementUpdateDetails(
+            List<AchievementUpdateResponse> achievementUpdates, String sessionId) {
+            List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = new ArrayList<>();
+
+        if (achievementUpdates != null && !achievementUpdates.isEmpty()) {
+            Map<String, List<AchievementUpdateResponse>> updatesByUser = achievementUpdates.stream()
+                    .collect(Collectors.groupingBy(AchievementUpdateResponse::getUserId));
+
+            updatesByUser.forEach((userId, updates) -> {
+                if (userId != null) { // Skip guests
+                    sessionParticipantRepository.findBySession_SessionIdAndUser_UserId(sessionId, userId)
+                            .ifPresent(participant -> {
+                                String stompClientId = participant.getStompClientId();
+                                if (stompClientId != null) {
+                                    updateDetails.add(Map.entry(stompClientId, updates));
+                                } else {
+                                    log.warn("No stompClientId found for userId: {} in sessionId: {}", userId, sessionId);
+                                }
+                            });
+                }
+            });
+        }
+
+        return updateDetails;
+    }
+
     private Session getSessionById(String sessionId) {
         return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-    }
-
-    private void validateHostUser(Session session) {
-        User currentUser = securityUtils.getAuthenticatedUser();
-        if (!session.getHostUser().getUserId().equals(currentUser.getUserId())) {
-            throw new ApplicationException(ErrorCode.ONLY_HOST_USER_ALLOWED);
-        }
     }
 
     private String generateUniqueSessionCode() {

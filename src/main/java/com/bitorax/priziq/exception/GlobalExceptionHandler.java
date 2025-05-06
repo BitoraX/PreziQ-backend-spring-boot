@@ -55,30 +55,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception, HttpServletRequest request) {
-        List<ErrorDetail> errors = exception.getBindingResult().getAllErrors().stream()
-                .map(error -> {
-                    String defaultMessage = error.getDefaultMessage();
-                    ErrorCode errorCode;
-                    try {
-                        errorCode = ErrorCode.valueOf(defaultMessage);
-                    } catch (IllegalArgumentException e) {
-                        errorCode = ErrorCode.INVALID_KEY;
-                        log.error("Invalid error code: {}", defaultMessage);
-                    }
-                    String resource = null;
-                    String field = null;
-                    if (error instanceof FieldError fieldError) {
-                        resource = fieldError.getObjectName();
-                        field = fieldError.getField();
-                    }
-                    return ErrorDetail.builder()
-                            .resource(resource)
-                            .field(field)
-                            .code(errorCode.getCode())
-                            .message(errorCode.getMessage())
-                            .build();
-                })
-                .toList();
+        log.error("Validation error: {}", exception.getMessage());
+        List<ErrorDetail> errors = ErrorDetailMapper.mapValidationErrors(exception);
         return buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errors, request);
     }
 }

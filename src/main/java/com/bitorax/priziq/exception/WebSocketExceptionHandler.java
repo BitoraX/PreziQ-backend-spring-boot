@@ -3,106 +3,105 @@ package com.bitorax.priziq.exception;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
+import java.security.Principal;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
-@ControllerAdvice(annotations = org.springframework.stereotype.Controller.class)
-@Slf4j
+@ControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class WebSocketExceptionHandler {
 
     private final SimpMessagingTemplate messagingTemplate;
 
     private ApiResponse<?> buildErrorResponse(ErrorCode errorCode, Optional<String> customMessage, List<ErrorDetail> errorDetails) {
-        if (errorDetails == null || errorDetails.isEmpty()) {
-            errorDetails = List.of(ErrorDetail.builder()
-                    .code(errorCode.getCode())
-                    .message(customMessage.orElse(errorCode.getMessage()))
-                    .build());
-        }
+        List<ErrorDetail> details = (errorDetails == null || errorDetails.isEmpty())
+                ? List.of(ErrorDetail.builder()
+                .code(errorCode.getCode())
+                .message(customMessage.orElse(errorCode.getMessage()))
+                .build())
+                : errorDetails;
+
         return ApiResponse.builder()
                 .success(false)
-                .errors(errorDetails)
+                .errors(details)
                 .meta(null)
                 .build();
     }
 
     @MessageExceptionHandler(ApplicationException.class)
     public void handleApplicationException(ApplicationException ex, SimpMessageHeaderAccessor headerAccessor) {
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for ApplicationException: {}", ex.getMessage());
+            return;
+        }
+
         log.error("WebSocket ApplicationException: {}", ex.getMessage(), ex);
-        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
-        if (sessionAttributes == null) {
-            log.warn("Session attributes are null, cannot send error message");
-            return;
-        }
-        String websocketSessionId = (String) sessionAttributes.get("websocketSessionId");
-        if (websocketSessionId == null) {
-            log.warn("websocketSessionId is null, cannot send error message");
-            return;
-        }
         String message = ex.getCustomMessage() != null ? ex.getCustomMessage() : ex.getErrorCode().getMessage();
         ApiResponse<?> response = buildErrorResponse(ex.getErrorCode(), Optional.of(message), null);
-        log.info("Sending error to /client/{}/private/errors", websocketSessionId);
-        messagingTemplate.convertAndSendToUser(websocketSessionId, "/private/errors", response);
+
+        sendErrorToClient(stompClientId, response);
     }
 
     @MessageExceptionHandler(MethodArgumentNotValidException.class)
     public void handleValidationException(MethodArgumentNotValidException ex, SimpMessageHeaderAccessor headerAccessor) {
-        log.error("WebSocket ValidationException: {}", ex.getMessage(), ex);
-        String websocketSessionId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("websocketSessionId");
-        if (websocketSessionId == null) {
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for MethodArgumentNotValidException");
             return;
         }
-        List<ErrorDetail> errors = ex.getBindingResult().getAllErrors().stream()
-                .map(error -> {
-                    ErrorCode errorCode;
-                    try {
-                        errorCode = ErrorCode.valueOf(error.getDefaultMessage());
-                    } catch (IllegalArgumentException e) {
-                        errorCode = ErrorCode.INVALID_KEY;
-                    }
-                    String resource = null, field = null;
-                    if (error instanceof FieldError fieldError) {
-                        resource = fieldError.getObjectName();
-                        field = fieldError.getField();
-                    }
-                    return ErrorDetail.builder()
-                            .resource(resource)
-                            .field(field)
-                            .code(errorCode.getCode())
-                            .message(errorCode.getMessage())
-                            .build();
-                })
-                .toList();
-        ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errors);
-        messagingTemplate.convertAndSendToUser(
-                websocketSessionId,
-                "/private/errors",
-                response
-        );
+
+        log.error("WebSocket ValidationException: {}", ex.getMessage(), ex);
+        List<ErrorDetail> errorDetails = ErrorDetailMapper.mapValidationErrors(ex);
+        ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errorDetails);
+
+        sendErrorToClient(stompClientId, response);
     }
 
-    @MessageExceptionHandler(Exception.class)
-    public void handleGenericException(Exception ex, SimpMessageHeaderAccessor headerAccessor) {
-        log.error("WebSocket Unexpected error: {}", ex.getMessage(), ex);
-        String websocketSessionId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("websocketSessionId");
-        if (websocketSessionId == null) {
+    @MessageExceptionHandler(MessageConversionException.class)
+    public void handleMessageConversionException(MessageConversionException ex, SimpMessageHeaderAccessor headerAccessor) {
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for MessageConversionException");
             return;
         }
-        ApiResponse<?> response = buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.empty(), null);
-        messagingTemplate.convertAndSendToUser(
-                websocketSessionId,
-                "/private/errors",
-                response
-        );
+
+        log.error("WebSocket MessageConversionException: {}", ex.getMessage(), ex);
+        ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.of("Invalid message format"), null);
+
+        sendErrorToClient(stompClientId, response);
+    }
+
+    @MessageExceptionHandler(Throwable.class)
+    public void handleAllExceptions(Throwable ex, SimpMessageHeaderAccessor headerAccessor) {
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for Throwable: {}", ex.getMessage());
+            return;
+        }
+
+        log.error("WebSocket Unhandled error: {}", ex.getMessage(), ex);
+        ApiResponse<?> response = buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.of("An unexpected error occurred: " + ex.getMessage()), null);
+
+        sendErrorToClient(stompClientId, response);
+    }
+
+    private String getStompClientId(SimpMessageHeaderAccessor headerAccessor) {
+        Principal principal = headerAccessor.getUser();
+        String stompClientId = (principal != null) ? principal.getName() : null;
+        log.info("Retrieved stompClientId: {}", stompClientId);
+        return stompClientId;
+    }
+
+    private void sendErrorToClient(String stompClientId, ApiResponse<?> response) {
+        messagingTemplate.convertAndSendToUser(stompClientId, "/private/errors", response);
     }
 }
