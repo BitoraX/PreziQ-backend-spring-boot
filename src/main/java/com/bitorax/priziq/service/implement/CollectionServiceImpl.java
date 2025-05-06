@@ -1,5 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.RoleType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
@@ -41,6 +42,7 @@ public class CollectionServiceImpl implements CollectionService {
     ActivityRepository activityRepository;
     UserRepository userRepository;
     CollectionMapper collectionMapper;
+    SecurityUtils securityUtils;
 
     @Override
     public CollectionDetailResponse createCollection(CreateCollectionRequest createCollectionRequest){
@@ -90,23 +92,30 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     public CollectionDetailResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
+        // Check owner or admin to access and get current collection
+        validateCollectionOwnership(collectionId);
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+
         this.collectionMapper.updateCollectionRequestToCollection(currentCollection, updateCollectionRequest);
         return this.collectionMapper.collectionToDetailResponse(collectionRepository.save(currentCollection));
     }
 
     @Override
     public void deleteCollectionById(String collectionId){
+        // Check owner or admin to access and get current collection
+        validateCollectionOwnership(collectionId);
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+
         this.collectionRepository.delete(currentCollection);
     }
 
     @Override
     @Transactional
     public List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest) {
-        // Get collection or throw if not found
+        // Check owner or admin to access and get current collection
+        validateCollectionOwnership(collectionId);
         Collection currentCollection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND, "Collection ID: " + collectionId + " not found"));
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         // Get all activity IDs in this collection
         Set<String> currentActivityIds = currentCollection.getActivities().stream()
@@ -158,10 +167,7 @@ public class CollectionServiceImpl implements CollectionService {
             Activity activity = activityMap.get(activityId);
 
             if (activity == null) {
-                throw new ApplicationException(
-                        ErrorCode.ACTIVITY_NOT_FOUND,
-                        "Activity ID: " + activityId + " not found in database"
-                );
+                throw new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND);
             }
 
             if (!Objects.equals(activity.getOrderIndex(), newIndex)) {
@@ -183,6 +189,20 @@ public class CollectionServiceImpl implements CollectionService {
         }
 
         return updatedActivities;
+    }
+
+    private void validateCollectionOwnership(String collectionId) {
+        Collection collection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+
+        User currentUser = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Check if user has ADMIN role. If not admin, verify ownership
+        boolean isAdmin = securityUtils.isAdmin(currentUser);
+        if (!isAdmin && !Objects.equals(collection.getCreator().getUserId(), currentUser.getUserId())) {
+            throw new ApplicationException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
     }
 
     private Set<String> findDuplicates(List<String> ids) {
