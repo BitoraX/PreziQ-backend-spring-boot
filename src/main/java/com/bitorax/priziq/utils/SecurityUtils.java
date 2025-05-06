@@ -86,10 +86,10 @@ public class SecurityUtils {
     public User getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.name()))
+                || "anonymousUser".equals(authentication.getName()))
             throw new ApplicationException(ErrorCode.UNAUTHENTICATED);
 
-        String userId = authentication.name();
+        String userId = authentication.getName();
         return userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
     }
 

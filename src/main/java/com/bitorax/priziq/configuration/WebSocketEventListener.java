@@ -16,6 +16,7 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.context.event.EventListener;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,13 @@ public class WebSocketEventListener {
     SessionParticipantService sessionParticipantService;
     SessionParticipantRepository sessionParticipantRepository;
 
+    private record CustomPrincipal(String name) implements Principal {
+        @Override
+        public String getName() {
+            return name;
+        }
+    }
+
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
@@ -40,6 +48,8 @@ public class WebSocketEventListener {
         if (clientUuid == null || clientUuid.trim().isEmpty()) {
             clientUuid = websocketSessionId;
         }
+
+        headerAccessor.setUser(new CustomPrincipal(clientUuid));
 
         // Save clientUuid to sessionAttributes
         Map<String, Object> sessionAttributes = Objects.requireNonNull(headerAccessor.getSessionAttributes());
@@ -57,7 +67,7 @@ public class WebSocketEventListener {
                 .message("Connected successfully")
                 .build();
 
-        if(clientUuid != null) {
+        if (clientUuid != null) {
             messagingTemplate.convertAndSendToUser(clientUuid, "/private/connect", response);
         }
     }
@@ -84,8 +94,8 @@ public class WebSocketEventListener {
                     List<SessionParticipantSummaryResponse> responses = sessionParticipantService
                             .findParticipantsBySessionCode(
                                     GetParticipantsRequest.builder()
-                                    .sessionCode(sessionCode)
-                                    .build()
+                                            .sessionCode(sessionCode)
+                                            .build()
                             );
 
                     String destination = "/public/session/" + sessionCode + "/participants";
