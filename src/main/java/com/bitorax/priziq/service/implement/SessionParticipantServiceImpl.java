@@ -38,7 +38,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     @Transactional
-    public List<SessionParticipantSummaryResponse> joinSession(JoinSessionRequest request, String websocketSessionId) {
+    public List<SessionParticipantSummaryResponse> joinSession(JoinSessionRequest request, String websocketSessionId, String stompClientId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -77,6 +77,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .displayName(displayName)
                 .displayAvatar(displayAvatar)
                 .websocketSessionId(websocketSessionId)
+                .stompClientId(stompClientId)
                 .realtimeScore(0)
                 .realtimeRanking(0)
                 .build();

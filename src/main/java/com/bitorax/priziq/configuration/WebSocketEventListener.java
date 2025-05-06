@@ -1,7 +1,6 @@
 package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
-import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.service.SessionParticipantService;
@@ -11,14 +10,12 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.context.event.EventListener;
 
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,37 +28,23 @@ public class WebSocketEventListener {
     SimpMessagingTemplate messagingTemplate;
     SessionParticipantService sessionParticipantService;
     SessionParticipantRepository sessionParticipantRepository;
-    SimpUserRegistry simpUserRegistry;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
+
         String websocketSessionId = headerAccessor.getSessionId();
         Principal principal = headerAccessor.getUser();
-        String username = (principal != null) ? principal.getName() : null;
+        String stompClientId = (principal != null) ? principal.getName() : null;
 
-        if (username == null) {
-            log.warn("Username is null for websocketSessionId: {}", websocketSessionId);
+        if (stompClientId == null) {
+            log.warn("StompClientId is null for websocketSessionId: {}", websocketSessionId);
             return;
         }
 
         Map<String, Object> sessionAttributes = Objects.requireNonNull(headerAccessor.getSessionAttributes());
         sessionAttributes.put("websocketSessionId", websocketSessionId);
-        sessionAttributes.put("username", username);
-
-        log.info("Client connected with username: {} (websocketSessionId: {})", username, websocketSessionId);
-        log.info("SimpUserRegistry users: {}", simpUserRegistry.getUsers());
-
-        // Send confirmation back to client
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("username", username);
-        ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
-                .success(true)
-                .data(responseData)
-                .message("Connected successfully")
-                .build();
-
-        messagingTemplate.convertAndSendToUser(username, "/private/connect", response);
+        sessionAttributes.put("stompClientId", stompClientId);
     }
 
     @EventListener

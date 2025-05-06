@@ -31,6 +31,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -86,7 +87,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId) {
+    public SessionSummaryResponse startSession(StartSessionRequest request) {
         Session session = getSessionById(request.getSessionId());
 
         if (session.getSessionStatus() != SessionStatus.PENDING) {
@@ -101,7 +102,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public ActivityDetailResponse nextActivity(NextActivityRequest request, String websocketSessionId) {
+    public ActivityDetailResponse nextActivity(NextActivityRequest request) {
         Session session = getSessionById(request.getSessionId());
 
         if (session.getSessionStatus() != SessionStatus.STARTED) {
@@ -133,7 +134,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    public SessionEndResultResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId) {
+    public SessionEndResultResponse endSession(EndSessionRequest endSessionRequest) {
         Session currentSession = getSessionById(endSessionRequest.getSessionId());
 
         if (currentSession.getSessionStatus() == SessionStatus.ENDED) {

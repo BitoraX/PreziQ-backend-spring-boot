@@ -33,7 +33,7 @@ public class UserInterceptor implements ChannelInterceptor {
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             Object raw = message.getHeaders().get(SimpMessageHeaderAccessor.NATIVE_HEADERS);
             if (raw instanceof Map) {
-                Object name = ((Map<?, ?>) raw).get("username");
+                Object name = ((Map<?, ?>) raw).get("stompClientId");
                 if (name instanceof List && !((List<?>) name).isEmpty()) {
                     accessor.setUser(new User(((List<?>) name).getFirst().toString()));
                 }

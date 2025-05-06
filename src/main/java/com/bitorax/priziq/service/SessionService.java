@@ -12,11 +12,11 @@ import java.util.List;
 public interface SessionService {
     SessionDetailResponse createSession(CreateSessionRequest createSessionRequest);
 
-    SessionSummaryResponse startSession(StartSessionRequest request, String websocketSessionId);
+    SessionSummaryResponse startSession(StartSessionRequest request);
 
-    ActivityDetailResponse nextActivity(NextActivityRequest request, String websocketSessionId);
+    ActivityDetailResponse nextActivity(NextActivityRequest request);
 
-    SessionEndResultResponse endSession(EndSessionRequest endSessionRequest, String websocketSessionId);
+    SessionEndResultResponse endSession(EndSessionRequest endSessionRequest);
 
     SessionHistoryResponse getSessionHistory(String sessionId);
 

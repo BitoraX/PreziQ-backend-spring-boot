@@ -38,9 +38,9 @@ public class WebSocketExceptionHandler {
 
     @MessageExceptionHandler(ApplicationException.class)
     public void handleApplicationException(ApplicationException ex, SimpMessageHeaderAccessor headerAccessor) {
-        String username = getUsername(headerAccessor);
-        if (username == null) {
-            log.warn("Cannot send error: username is null for ApplicationException: {}", ex.getMessage());
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for ApplicationException: {}", ex.getMessage());
             return;
         }
 
@@ -48,14 +48,14 @@ public class WebSocketExceptionHandler {
         String message = ex.getCustomMessage() != null ? ex.getCustomMessage() : ex.getErrorCode().getMessage();
         ApiResponse<?> response = buildErrorResponse(ex.getErrorCode(), Optional.of(message), null);
 
-        sendErrorToClient(username, response);
+        sendErrorToClient(stompClientId, response);
     }
 
     @MessageExceptionHandler(MethodArgumentNotValidException.class)
     public void handleValidationException(MethodArgumentNotValidException ex, SimpMessageHeaderAccessor headerAccessor) {
-        String username = getUsername(headerAccessor);
-        if (username == null) {
-            log.warn("Cannot send error: username is null for MethodArgumentNotValidException");
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for MethodArgumentNotValidException");
             return;
         }
 
@@ -63,46 +63,45 @@ public class WebSocketExceptionHandler {
         List<ErrorDetail> errorDetails = ErrorDetailMapper.mapValidationErrors(ex);
         ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.empty(), errorDetails);
 
-        sendErrorToClient(username, response);
+        sendErrorToClient(stompClientId, response);
     }
 
     @MessageExceptionHandler(MessageConversionException.class)
     public void handleMessageConversionException(MessageConversionException ex, SimpMessageHeaderAccessor headerAccessor) {
-        String username = getUsername(headerAccessor);
-        if (username == null) {
-            log.warn("Cannot send error: username is null for MessageConversionException");
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for MessageConversionException");
             return;
         }
 
         log.error("WebSocket MessageConversionException: {}", ex.getMessage(), ex);
         ApiResponse<?> response = buildErrorResponse(ErrorCode.INVALID_REQUEST_DATA, Optional.of("Invalid message format"), null);
 
-        sendErrorToClient(username, response);
+        sendErrorToClient(stompClientId, response);
     }
 
     @MessageExceptionHandler(Throwable.class)
     public void handleAllExceptions(Throwable ex, SimpMessageHeaderAccessor headerAccessor) {
-        String username = getUsername(headerAccessor);
-        if (username == null) {
-            log.warn("Cannot send error: username is null for Throwable: {}", ex.getMessage());
+        String stompClientId = getStompClientId(headerAccessor);
+        if (stompClientId == null) {
+            log.warn("Cannot send error: stompClientId is null for Throwable: {}", ex.getMessage());
             return;
         }
 
         log.error("WebSocket Unhandled error: {}", ex.getMessage(), ex);
         ApiResponse<?> response = buildErrorResponse(ErrorCode.UNCATEGORIZED_EXCEPTION, Optional.of("An unexpected error occurred: " + ex.getMessage()), null);
 
-        sendErrorToClient(username, response);
+        sendErrorToClient(stompClientId, response);
     }
 
-    private String getUsername(SimpMessageHeaderAccessor headerAccessor) {
+    private String getStompClientId(SimpMessageHeaderAccessor headerAccessor) {
         Principal principal = headerAccessor.getUser();
-        String username = (principal != null) ? principal.getName() : null;
-        log.info("Retrieved username: {}", username);
-        return username;
+        String stompClientId = (principal != null) ? principal.getName() : null;
+        log.info("Retrieved stompClientId: {}", stompClientId);
+        return stompClientId;
     }
 
-    private void sendErrorToClient(String username, ApiResponse<?> response) {
-        log.info("Sending error to username: {} with response: {}", username, response);
-        messagingTemplate.convertAndSendToUser(username, "/private/errors", response);
+    private void sendErrorToClient(String stompClientId, ApiResponse<?> response) {
+        messagingTemplate.convertAndSendToUser(stompClientId, "/private/errors", response);
     }
 }
