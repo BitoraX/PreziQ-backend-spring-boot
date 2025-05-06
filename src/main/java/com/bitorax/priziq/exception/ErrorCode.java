@@ -29,6 +29,9 @@ public enum ErrorCode {
     PHONE_NUMBER_NOT_SUPPORTED(1014, HttpStatus.BAD_REQUEST, "Phone number is not supported"),
     INVALID_HTTP_METHOD(1015, HttpStatus.BAD_REQUEST, "Invalid HTTP method. Only the following methods are supported: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"),
     INVALID_REQUEST_DATA(1016, HttpStatus.BAD_REQUEST, "Invalid request data. Please check field formats and values and try again"),
+    RESOURCE_NOT_FOUND(1017, HttpStatus.NOT_FOUND, "Resource not found"),
+    INVALID_OWNER_ID(1018, HttpStatus.BAD_REQUEST, "Invalid owner id"),
+    UNAUTHORIZED_ACCESS(1019, HttpStatus.UNAUTHORIZED, "User does not have permission to access this resource"),
 
     // Module auth errors
     EMAIL_NOT_BLANK(1101, HttpStatus.BAD_REQUEST, "Email must not be blank"),

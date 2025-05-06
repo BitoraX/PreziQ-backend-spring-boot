@@ -3,6 +3,7 @@ package com.bitorax.priziq.service.implement;
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.constant.SlideElementType;
+import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
@@ -25,6 +26,7 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.ActivityService;
+import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +51,9 @@ public class ActivityServiceImpl implements ActivityService {
     QuizRepository quizRepository;
     SlideRepository slideRepository;
     SlideElementRepository slideElementRepository;
+    UserRepository userRepository;
     ActivityMapper activityMapper;
+    SecurityUtils securityUtils;
 
     private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE");
 
@@ -90,6 +94,9 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public QuizResponse updateQuiz(String activityId, UpdateQuizRequest updateQuizRequest) {
+        // Check owner or admin to access
+        validateActivityOwnership(activityId);
+
         // Validate quiz type
         String requestType = updateQuizRequest.getType();
         if (requestType == null || !VALID_QUIZ_TYPES.contains(requestType.toUpperCase())) {
@@ -163,6 +170,8 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public void deleteActivity(String activityId) {
+        // Check owner or admin to access and get current activity
+        validateActivityOwnership(activityId);
         Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
         if (activity.getActivityType().name().startsWith("QUIZ_")) {
@@ -177,6 +186,8 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public SlideResponse updateSlide(String slideId, UpdateSlideRequest updateSlideRequest) {
+        // Check owner or admin to access and get slide activity
+        validateActivityOwnership(slideId);
         Slide slide = slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
 
         activityMapper.updateSlideFromRequest(updateSlideRequest, slide);
@@ -189,6 +200,9 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public SlideElementResponse addSlideElement(String slideId, CreateSlideElementRequest createSlideElementRequest) {
+        // Check owner or admin to access
+        validateActivityOwnership(slideId);
+
         Slide slide = getSlideById(slideId);
 
         SlideElementType.validateSlideElementType(createSlideElementRequest.getSlideElementType());
@@ -201,6 +215,9 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest) {
+        // Check owner or admin to access
+        validateActivityOwnership(slideId);
+
         Slide slide = getSlideById(slideId);
         SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
 
@@ -217,6 +234,9 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public void deleteSlideElement(String slideId, String elementId) {
+        // Check owner or admin to access
+        validateActivityOwnership(slideId);
+
         Slide slide = getSlideById(slideId);
         SlideElement slideElement = slideElementRepository.findById(elementId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_ELEMENT_NOT_FOUND));
 
@@ -227,13 +247,11 @@ public class ActivityServiceImpl implements ActivityService {
         slideElementRepository.delete(slideElement);
     }
 
-    private Slide getSlideById(String slideId) {
-        return slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
-    }
-
     @Override
     @Transactional
     public ActivitySummaryResponse updateActivity(String activityId, UpdateActivityRequest request) {
+        // Check owner or admin to access and get current activity
+        validateActivityOwnership(activityId);
         Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
         // Initialize related data to prevent lazy loading issues
@@ -283,6 +301,10 @@ public class ActivityServiceImpl implements ActivityService {
         ActivitySummaryResponse response = activityMapper.activityToSummaryResponse(activity);
         response.setConversionWarning(!conversionWarning.isEmpty() ? conversionWarning.toString() : null);
         return response;
+    }
+
+    private Slide getSlideById(String slideId) {
+        return slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
     }
 
     private void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
@@ -580,6 +602,20 @@ public class ActivityServiceImpl implements ActivityService {
             warning.append("Added default step");
         } else {
             answers.forEach(answer -> answer.setIsCorrect(true));
+        }
+    }
+
+    private void validateActivityOwnership(String activityId) {
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        User currentUser = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Check if user has ADMIN role. If not admin, verify ownership
+        boolean isAdmin = securityUtils.isAdmin(currentUser);
+        if (!isAdmin && !Objects.equals(activity.getCollection().getCreator().getUserId(), currentUser.getUserId())) {
+            throw new ApplicationException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
     }
 }
