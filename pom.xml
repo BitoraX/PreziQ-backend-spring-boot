@@ -23,6 +23,7 @@
         <aws-sdk.version>2.31.6</aws-sdk.version>
         <libphonenumber.version>9.0.1</libphonenumber.version>
         <dotenv-java.version>3.2.0</dotenv-java.version>
+        <google.zxing.version>3.5.3</google.zxing.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -40,6 +41,16 @@
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
             <version>${dotenv-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>${google.zxing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>${google.zxing.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

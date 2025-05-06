@@ -30,7 +30,6 @@ import org.springframework.stereotype.Controller;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.bitorax.priziq.utils.MetaUtils.buildWebSocketMetaInfo;
 
@@ -134,7 +133,7 @@ public class SessionWebSocketController {
 
         // Update realtimeScore and realtimeRanking
         List<SessionParticipantSummaryResponse> responses = sessionParticipantService.updateRealtimeScoreAndRanking(
-                request.getSessionId(),
+                request.getSessionCode(),
                 websocketSessionId,
                 submissionResponse.getResponseScore()
         );
@@ -143,7 +142,7 @@ public class SessionWebSocketController {
             throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        String sessionCode = sessionService.findSessionCodeBySessionId(request.getSessionId());
+        String sessionCode = request.getSessionCode();
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "Activity submission processed and scores updated for session with code: %s",
                 responses, sessionCode, headerAccessor);
