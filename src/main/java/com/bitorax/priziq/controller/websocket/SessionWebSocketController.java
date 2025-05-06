@@ -199,21 +199,21 @@ public class SessionWebSocketController {
         String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
         messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
 
-        // Group achievement updates by userId and send as a list
-        List<AchievementUpdateResponse> achievementUpdates = endSessionResult.getAchievementUpdates();
-        if (achievementUpdates != null && !achievementUpdates.isEmpty()) {
-            Map<String, List<AchievementUpdateResponse>> updatesByUser = achievementUpdates.stream()
-                    .collect(Collectors.groupingBy(AchievementUpdateResponse::getUserId));
+        // Get achievement update details from service
+        List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = sessionService.getAchievementUpdateDetails(
+                endSessionResult.getAchievementUpdates(), request.getSessionId());
 
-            // Send list of updates to each user
-            updatesByUser.forEach((userId, updates) -> {
-                ApiResponse<List<AchievementUpdateResponse>> achievementApiResponse = createApiResponse(
-                        "Achievement updates for user in session with code: %s",
-                        updates, endSessionResponse.getSessionCode(), headerAccessor);
-
-                String stompClientId = (String) Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("stompClientId");
-                messagingTemplate.convertAndSendToUser(stompClientId, "/private/achievement", achievementApiResponse);
-            });
-        }
+        // Send achievement updates to each user
+        updateDetails.forEach(entry -> {
+            String stompClientId = entry.getKey();
+            List<AchievementUpdateResponse> updates = entry.getValue();
+            ApiResponse<List<AchievementUpdateResponse>> achievementApiResponse = ApiResponse.<List<AchievementUpdateResponse>>builder()
+                    .message(String.format("Achievement updates for user in session with code: %s", endSessionResponse.getSessionCode()))
+                    .data(updates)
+                    .meta(buildWebSocketMetaInfo(headerAccessor))
+                    .build();
+            messagingTemplate.convertAndSendToUser(stompClientId, "/private/achievement", achievementApiResponse);
+            log.info("Sent achievement updates to stompClientId: {}", stompClientId);
+        });
     }
 }

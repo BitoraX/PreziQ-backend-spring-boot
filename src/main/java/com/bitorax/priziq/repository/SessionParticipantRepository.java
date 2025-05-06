@@ -18,4 +18,6 @@ public interface SessionParticipantRepository extends JpaRepository<SessionParti
     Optional<SessionParticipant> findBySessionAndWebsocketSessionId(Session session, String websocketSessionId);
 
     Optional<SessionParticipant> findByWebsocketSessionId(String websocketSessionId);
+
+    Optional<SessionParticipant> findBySession_SessionIdAndUser_UserId(String sessionId, String userId);
 }

@@ -14,7 +14,6 @@ import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
-import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.session.*;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -22,6 +21,7 @@ import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.AchievementService;
+import com.bitorax.priziq.service.SessionParticipantService;
 import com.bitorax.priziq.service.SessionService;
 import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
@@ -31,14 +31,11 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -81,8 +78,9 @@ public class SessionServiceImpl implements SessionService {
                 .startTime(Instant.now())
                 .sessionStatus(SessionStatus.PENDING)
                 .build();
+        sessionRepository.save(session);
 
-        return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
+        return sessionMapper.sessionToDetailResponse(session);
     }
 
     @Override
@@ -266,6 +264,33 @@ public class SessionServiceImpl implements SessionService {
     public String findSessionCodeBySessionId(String sessionId) {
         return sessionRepository.findSessionCodeBySessionId(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    }
+
+    @Override
+    public List<Map.Entry<String, List<AchievementUpdateResponse>>> getAchievementUpdateDetails(
+            List<AchievementUpdateResponse> achievementUpdates, String sessionId) {
+            List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = new ArrayList<>();
+
+        if (achievementUpdates != null && !achievementUpdates.isEmpty()) {
+            Map<String, List<AchievementUpdateResponse>> updatesByUser = achievementUpdates.stream()
+                    .collect(Collectors.groupingBy(AchievementUpdateResponse::getUserId));
+
+            updatesByUser.forEach((userId, updates) -> {
+                if (userId != null) { // Skip guests
+                    sessionParticipantRepository.findBySession_SessionIdAndUser_UserId(sessionId, userId)
+                            .ifPresent(participant -> {
+                                String stompClientId = participant.getStompClientId();
+                                if (stompClientId != null) {
+                                    updateDetails.add(Map.entry(stompClientId, updates));
+                                } else {
+                                    log.warn("No stompClientId found for userId: {} in sessionId: {}", userId, sessionId);
+                                }
+                            });
+                }
+            });
+        }
+
+        return updateDetails;
     }
 
     private Session getSessionById(String sessionId) {
