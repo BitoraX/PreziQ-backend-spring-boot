@@ -196,13 +196,32 @@ public class DataInitializer implements ApplicationRunner {
                 List<Permission> commonAuthenticatedPermissions = List.of(
                         findPermissionOrThrow("/api/v1/auth/logout", "POST"),
                         findPermissionOrThrow("/api/v1/auth/account", "GET"),
+
                         findPermissionOrThrow("/api/v1/users/update-profile", "PATCH"),
                         findPermissionOrThrow("/api/v1/users/update-password", "PUT"),
                         findPermissionOrThrow("/api/v1/users/update-email", "PUT"),
                         findPermissionOrThrow("/api/v1/users/verify-change-email", "POST"),
-                        findPermissionOrThrow("/api/v1/users/{id}", "GET"),
+
                         findPermissionOrThrow("/api/v1/storage/aws-s3/upload/single", "POST"),
-                        findPermissionOrThrow("/api/v1/storage/aws-s3/upload/multiple", "POST")
+                        findPermissionOrThrow("/api/v1/storage/aws-s3/upload/multiple", "POST"),
+
+                        findPermissionOrThrow("/api/v1/collections", "POST"),
+                        findPermissionOrThrow("/api/v1/collections/me", "GET"),
+                        findPermissionOrThrow("/api/v1/collections/{id}", "PATCH"),
+                        findPermissionOrThrow("/api/v1/collections/{id}", "DELETE"),
+                        findPermissionOrThrow("/api/v1/collections/{id}/activities/reorder", "PUT"),
+
+                        findPermissionOrThrow("/api/v1/activities", "POST"),
+                        findPermissionOrThrow("/api/v1/activities/{activityId}/quiz", "PUT"),
+                        findPermissionOrThrow("/api/v1/activities/{activityId}", "DELETE"),
+                        findPermissionOrThrow("/api/v1/activities/{activityId}", "PUT"),
+                        findPermissionOrThrow("/api/v1/slides/{slideId}", "PUT"),
+                        findPermissionOrThrow("/api/v1/slides/{slideId}/elements", "POST"),
+                        findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "PUT"),
+                        findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "DELETE"),
+
+                        findPermissionOrThrow("/api/v1/sessions", "POST"),
+                        findPermissionOrThrow("/api/v1/sessions/{sessionId}/history", "GET")
                 );
 
                 // Permission for ADMIN (entire system)

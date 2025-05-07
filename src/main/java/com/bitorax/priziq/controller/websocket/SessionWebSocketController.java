@@ -199,20 +199,19 @@ public class SessionWebSocketController {
         messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
 
         // Get achievement update details from service
-        List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = sessionService.getAchievementUpdateDetails(
+        List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = sessionParticipantService.getAchievementUpdateDetails(
                 endSessionResult.getAchievementUpdates(), request.getSessionId());
 
         // Send achievement updates to each user
         updateDetails.forEach(entry -> {
             String stompClientId = entry.getKey();
-            List<AchievementUpdateResponse> updates = entry.getValue();
-            ApiResponse<List<AchievementUpdateResponse>> achievementApiResponse = ApiResponse.<List<AchievementUpdateResponse>>builder()
+            AchievementUpdateResponse update = entry.getValue();
+            ApiResponse<AchievementUpdateResponse> achievementApiResponse = ApiResponse.<AchievementUpdateResponse>builder()
                     .message(String.format("Achievement updates for user in session with code: %s", endSessionResponse.getSessionCode()))
-                    .data(updates)
+                    .data(update)
                     .meta(buildWebSocketMetaInfo(headerAccessor))
                     .build();
             messagingTemplate.convertAndSendToUser(stompClientId, "/private/achievement", achievementApiResponse);
-            log.info("Sent achievement updates to stompClientId: {}", stompClientId);
         });
     }
 }

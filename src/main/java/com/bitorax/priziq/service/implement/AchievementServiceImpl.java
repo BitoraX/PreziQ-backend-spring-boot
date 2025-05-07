@@ -21,6 +21,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -98,6 +99,8 @@ public class AchievementServiceImpl implements AchievementService {
     public AchievementUpdateResponse assignAchievementsToUser(AssignAchievementToUserRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        Hibernate.initialize(user.getAchievements());
 
         // Find achievements that the user qualifies for and filter out achievements the user already has
         List<Achievement> eligibleAchievements = achievementRepository
