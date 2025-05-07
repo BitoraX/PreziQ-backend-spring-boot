@@ -153,7 +153,6 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = new ArrayList<>();
 
         if (achievementUpdates == null || achievementUpdates.isEmpty()) {
-            log.info("No achievement updates to process for sessionId: {}", sessionId);
             return updateDetails;
         }
 
@@ -162,14 +161,10 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
             String userId = update.getUserId();
             if (userId != null && userRepository.existsById(userId)) {
                 userIdToUpdateMap.put(userId, update);
-                log.debug("Mapped achievement update for userId: {}", userId);
-            } else {
-                log.warn("Invalid or missing userId in achievement update: {}", update);
             }
         }
 
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
-        log.info("Total participants found for sessionId: {}: {}", sessionId, participants.size());
 
         for (SessionParticipant participant : participants) {
             String stompClientId = participant.getStompClientId();
@@ -180,17 +175,10 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 AchievementUpdateResponse update = userIdToUpdateMap.get(user.getUserId());
                 if (stompClientId != null) {
                     updateDetails.add(Map.entry(stompClientId, update));
-                    log.info("Added achievement update for stompClientId: {} with userId: {} (participantId: {})",
-                            stompClientId, user.getUserId(), participantId);
-                } else {
-                    log.warn("Missing stompClientId for participantId: {} with userId: {}", participantId, user.getUserId());
                 }
-            } else {
-                log.debug("Skipping participantId: {} - no valid user or no achievement update", participantId);
             }
         }
 
-        log.info("Total achievement updates to send: {} for sessionId: {}", updateDetails.size(), sessionId);
         return updateDetails;
     }
 }
