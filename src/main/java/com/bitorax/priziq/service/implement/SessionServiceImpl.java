@@ -302,6 +302,40 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    public List<Map.Entry<String, Object>> getSessionSummaryDetails(String sessionId) {
+        Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        User hostUser = session.getHostUser();
+
+        List<SessionEndSummaryResponse> summaries = calculateSessionSummary(sessionId);
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+        List<Map.Entry<String, Object>> summaryDetails = new ArrayList<>();
+
+        // Handle each participant
+        for (SessionParticipant participant : participants) {
+            String stompClientId = participant.getStompClientId();
+            if (stompClientId == null) {
+                continue;
+            }
+
+            // Find the corresponding SessionEndSummaryResponse
+            SessionEndSummaryResponse participantSummary = summaries.stream()
+                    .filter(summary -> summary.getDisplayName().equals(participant.getDisplayName()))
+                    .findFirst()
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.SUMMARY_NOT_FOUND_FOR_PARTICIPANT));
+
+            // If host user, add the entire list of summaries
+            if (participant.getUser() != null && hostUser != null && participant.getUser().getUserId().equals(hostUser.getUserId())) {
+                summaryDetails.add(Map.entry(stompClientId, summaries));
+            } else {
+                // If not host user (guest or user login), add just their summary
+                summaryDetails.add(Map.entry(stompClientId, participantSummary));
+            }
+        }
+
+        return summaryDetails;
+    }
+
+    @Override
     public String findSessionCodeBySessionId(String sessionId) {
         return sessionRepository.findSessionCodeBySessionId(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));

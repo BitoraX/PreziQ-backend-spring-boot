@@ -188,15 +188,30 @@ public class SessionWebSocketController {
         String endDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/end";
         messagingTemplate.convertAndSend(endDestination, endApiResponse);
 
-        // Calculate summary information
-        List<SessionEndSummaryResponse> summaries = sessionService.calculateSessionSummary(request.getSessionId());
+        // Send summary to each participant
+        List<Map.Entry<String, Object>> summaryDetails = sessionService.getSessionSummaryDetails(request.getSessionId());
+        for (Map.Entry<String, Object> entry : summaryDetails) {
+            String stompClientId = entry.getKey();
+            Object summaryData = entry.getValue();
 
-        ApiResponse<List<SessionEndSummaryResponse>> summaryApiResponse = createApiResponse(
-                "Final summary generated for session with code: %s",
+            if (summaryData instanceof List) {
+                // Host get full list
+                @SuppressWarnings("unchecked")
+                List<SessionEndSummaryResponse> summaries = (List<SessionEndSummaryResponse>) summaryData;
+                ApiResponse<List<SessionEndSummaryResponse>> hostSummaryApiResponse = createApiResponse(
+                        "Final summary for all participants in session with code: %s",
                         summaries, endSessionResponse.getSessionCode(), headerAccessor);
-
-        String summaryDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/summary";
-        messagingTemplate.convertAndSend(summaryDestination, summaryApiResponse);
+                messagingTemplate.convertAndSendToUser(stompClientId, "/private/summary", hostSummaryApiResponse);
+            } else if (summaryData instanceof SessionEndSummaryResponse individualSummary) {
+                // Other users or guests receive personal summaries
+                ApiResponse<SessionEndSummaryResponse> individualSummaryApiResponse = createApiResponse(
+                        "Your final summary for session with code: %s",
+                        individualSummary, endSessionResponse.getSessionCode(), headerAccessor);
+                messagingTemplate.convertAndSendToUser(stompClientId, "/private/summary", individualSummaryApiResponse);
+            } else {
+                log.error("Invalid summary data type for stompClientId: {}", stompClientId);
+            }
+        }
 
         // Get achievement update details from service
         List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = sessionParticipantService.getAchievementUpdateDetails(

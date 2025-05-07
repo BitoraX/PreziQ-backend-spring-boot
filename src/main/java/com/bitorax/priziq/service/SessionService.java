@@ -8,6 +8,7 @@ import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.session.*;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SessionService {
     SessionDetailResponse createSession(CreateSessionRequest createSessionRequest);
@@ -23,4 +24,6 @@ public interface SessionService {
     List<SessionEndSummaryResponse> calculateSessionSummary(String sessionId);
 
     String findSessionCodeBySessionId(String sessionId);
+
+    List<Map.Entry<String, Object>> getSessionSummaryDetails(String sessionId);
 }
