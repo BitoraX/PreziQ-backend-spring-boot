@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -95,34 +96,31 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     @Override
-    @Transactional
     public AchievementUpdateResponse assignAchievementsToUser(AssignAchievementToUserRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
-        Hibernate.initialize(user.getAchievements());
+        List<Achievement> newAchievements = achievementRepository.findByRequiredPointsLessThanEqual(user.getTotalPoints());
+        List<Achievement> currentAchievements = user.getAchievements();
 
-        // Find achievements that the user qualifies for and filter out achievements the user already has
-        List<Achievement> eligibleAchievements = achievementRepository
-                .findByRequiredPointsLessThanEqual(request.getTotalPoints());
-
-        List<Achievement> newAchievements = eligibleAchievements.stream()
-                .filter(achievement -> !user.getAchievements().contains(achievement))
+        List<Achievement> achievementsToAdd = newAchievements.stream()
+                .filter(achievement -> !currentAchievements.contains(achievement))
                 .toList();
 
-        // Assign new achievements to the user
-        if (!newAchievements.isEmpty()) {
-            List<Achievement> updatedAchievements = new ArrayList<>(user.getAchievements());
-            updatedAchievements.addAll(newAchievements);
-            user.setAchievements(updatedAchievements);
+        if (!achievementsToAdd.isEmpty()) {
+            currentAchievements.addAll(achievementsToAdd);
             userRepository.save(user);
         }
 
-        // Return response with new achievements and total points
         return AchievementUpdateResponse.builder()
-                .userId(request.getUserId())
+                .userId(user.getUserId())
                 .totalPoints(user.getTotalPoints())
-                .newAchievements(achievementMapper.achievementsToSummaryResponseList(newAchievements))
+                .newAchievements(achievementsToAdd.stream()
+                        .map(achievement -> AchievementSummaryResponse.builder()
+                                .achievementId(achievement.getAchievementId())
+                                .name(achievement.getName())
+                                .build())
+                        .collect(Collectors.toList()))
                 .build();
     }
 

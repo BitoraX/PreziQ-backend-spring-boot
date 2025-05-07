@@ -30,7 +30,7 @@ public class PermissionInterceptorConfiguration implements WebMvcConfigurer {
                 "/api/v1/auth/refresh", "/api/v1/auth/resend-verify", "/api/v1/auth/forgot-password",
                 "/api/v1/auth/reset-password", "/api/v1/users/{id}", "/api/v1/collections/{id}",
                 "/api/v1/activities/types", "/api/v1/achievements/{achievementId}", "/api/v1/achievements", "/ws/**",
-//                "/api/v1/collections"
+                "/api/v1/collections"
         };
 
         registry.addInterceptor(getPermissionInterceptor()).excludePathPatterns(whiteList);

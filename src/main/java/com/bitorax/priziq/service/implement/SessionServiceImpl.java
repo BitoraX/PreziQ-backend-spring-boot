@@ -165,10 +165,16 @@ public class SessionServiceImpl implements SessionService {
         Map<String, Integer> userScoreMap = new HashMap<>();
         Set<String> processedUserIds = new HashSet<>();
 
+        log.info("Processing {} participants for sessionId: {}", participants.size(), endSessionRequest.getSessionId());
+
         for (SessionParticipant participant : participants) {
             User user = participant.getUser();
             if (user != null) { // Only update for registered users
                 String userId = user.getUserId();
+                if (!userRepository.existsById(userId)) {
+                    log.warn("User with userId {} does not exist, skipping achievement update", userId);
+                    continue;
+                }
                 userScoreMap.merge(userId, participant.getRealtimeScore(), Integer::sum);
 
                 if (processedUserIds.add(userId)) {
@@ -176,19 +182,27 @@ public class SessionServiceImpl implements SessionService {
                     user.setTotalPoints(user.getTotalPoints() + scoreToAdd);
                     usersToUpdate.add(user);
 
-                    AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
-                            AssignAchievementToUserRequest.builder()
-                                    .userId(userId)
-                                    .totalPoints(user.getTotalPoints())
-                                    .build()
-                    );
+                    try {
+                        AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
+                                AssignAchievementToUserRequest.builder()
+                                        .userId(userId)
+                                        .totalPoints(user.getTotalPoints())
+                                        .build()
+                        );
 
-                    if (!updateResponse.getNewAchievements().isEmpty()) {
                         achievementUpdates.add(updateResponse);
+                        log.info("Achievement update for userId {}: totalPoints={}, newAchievements={}",
+                                userId, updateResponse.getTotalPoints(), updateResponse.getNewAchievements().size());
+                    } catch (Exception e) {
+                        log.error("Failed to assign achievements for userId {}: {}", userId, e.getMessage(), e);
                     }
                 }
+            } else {
+                log.debug("Skipping guest participant with sessionParticipantId: {}", participant.getSessionParticipantId());
             }
         }
+
+        log.info("Total users to update: {}, achievement updates: {}", usersToUpdate.size(), achievementUpdates.size());
 
         if (!usersToUpdate.isEmpty()) {
             userRepository.saveAll(usersToUpdate);
