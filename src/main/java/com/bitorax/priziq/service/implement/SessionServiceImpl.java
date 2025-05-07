@@ -87,7 +87,7 @@ public class SessionServiceImpl implements SessionService {
 
         // Generate QR code for session
         try {
-            String contentQrCode = FRONT_END_BASE_URL + "/session/" + session.getSessionId() + "?sessionCode=" + session.getSessionCode();
+            String contentQrCode = FRONT_END_BASE_URL + "/sessions/" + session.getSessionCode();
             String qrUrl = qrCodeUtils.generateQRCode(contentQrCode);
             session.setJoinSessionQrUrl(qrUrl);
         } catch (Exception e) {
@@ -235,20 +235,18 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public List<SessionEndSummaryResponse> calculateSessionSummary(String sessionId) {
-        Session currentSession = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
         List<SessionEndSummaryResponse> summaries = new ArrayList<>();
 
         for (SessionParticipant participant : participants) {
             List<ActivitySubmission> submissions = activitySubmissionRepository
-                    .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
-                            sessionId, null, null);
+                    .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
 
             int finalScore = submissions.stream()
                     .mapToInt(ActivitySubmission::getResponseScore)
-                    .sum();
+                    .sum(); // errors
             int finalCorrectCount = (int) submissions.stream()
                     .filter(ActivitySubmission::getIsCorrect)
                     .count();
@@ -286,6 +284,7 @@ public class SessionServiceImpl implements SessionService {
             List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = new ArrayList<>();
 
         if (achievementUpdates != null && !achievementUpdates.isEmpty()) {
+            // errors
             Map<String, List<AchievementUpdateResponse>> updatesByUser = achievementUpdates.stream()
                     .collect(Collectors.groupingBy(AchievementUpdateResponse::getUserId));
 
