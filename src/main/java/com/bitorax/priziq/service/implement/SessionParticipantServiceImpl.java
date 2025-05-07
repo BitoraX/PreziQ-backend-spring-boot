@@ -7,6 +7,8 @@ import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
+import com.bitorax.priziq.dto.response.achievement.AchievementSummaryResponse;
+import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
@@ -22,8 +24,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -145,5 +146,55 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         // Return updated participant list
         return sessionParticipantMapper.sessionParticipantsToSummaryResponseList(participants);
+    }
+
+    @Override
+    public List<Map.Entry<String, AchievementUpdateResponse>> getAchievementUpdateDetails(List<AchievementUpdateResponse> achievementUpdates, String sessionId) {
+        List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = new ArrayList<>();
+
+        if (achievementUpdates == null || achievementUpdates.isEmpty()) {
+            return updateDetails;
+        }
+
+        Map<String, AchievementUpdateResponse> mergedUpdates = new HashMap<>();
+        for (AchievementUpdateResponse update : achievementUpdates) {
+            String userId = update.getUserId();
+            if (userId != null) {
+                mergedUpdates.compute(userId, (key, existing) -> {
+                    if (existing == null) {
+                        return update;
+                    }
+
+                    List<AchievementSummaryResponse> combinedAchievements = new ArrayList<>(existing.getNewAchievements());
+                    combinedAchievements.addAll(update.getNewAchievements());
+                    return AchievementUpdateResponse.builder()
+                            .userId(userId)
+                            .totalPoints(Math.max(existing.getTotalPoints(), update.getTotalPoints()))
+                            .newAchievements(combinedAchievements)
+                            .build();
+                });
+            }
+        }
+
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+
+        Map<String, List<SessionParticipant>> participantMap = participants.stream()
+                .filter(participant -> participant.getUser() != null)
+                .collect(Collectors.groupingBy(
+                        participant -> participant.getUser().getUserId()
+                ));
+
+        for (AchievementUpdateResponse update : mergedUpdates.values()) {
+            String userId = update.getUserId();
+            List<SessionParticipant> userParticipants = participantMap.getOrDefault(userId, Collections.emptyList());
+            for (SessionParticipant participant : userParticipants) {
+                String stompClientId = participant.getStompClientId();
+                if (stompClientId != null) {
+                    updateDetails.add(Map.entry(stompClientId, update));
+                }
+            }
+        }
+
+        return updateDetails;
     }
 }

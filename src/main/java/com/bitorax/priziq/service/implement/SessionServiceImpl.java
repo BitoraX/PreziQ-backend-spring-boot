@@ -161,22 +161,37 @@ public class SessionServiceImpl implements SessionService {
         // Update totalPoints for each participant and collect achievement updates
         List<AchievementUpdateResponse> achievementUpdates = new ArrayList<>();
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(endSessionRequest.getSessionId());
+        List<User> usersToUpdate = new ArrayList<>();
+        Map<String, Integer> userScoreMap = new HashMap<>();
+        Set<String> processedUserIds = new HashSet<>();
+
         for (SessionParticipant participant : participants) {
             User user = participant.getUser();
             if (user != null) { // Only update for registered users
-                // Add realtimeScore to totalPoints
-                user.setTotalPoints(user.getTotalPoints() + participant.getRealtimeScore());
-                userRepository.save(user);
+                String userId = user.getUserId();
+                userScoreMap.merge(userId, participant.getRealtimeScore(), Integer::sum);
 
-                // Assign achievements and collect update information
-                AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
-                        AssignAchievementToUserRequest.builder()
-                                .userId(user.getUserId())
-                                .totalPoints(user.getTotalPoints())
-                                .build()
-                );
-                achievementUpdates.add(updateResponse);
+                if (processedUserIds.add(userId)) {
+                    int scoreToAdd = userScoreMap.get(userId);
+                    user.setTotalPoints(user.getTotalPoints() + scoreToAdd);
+                    usersToUpdate.add(user);
+
+                    AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
+                            AssignAchievementToUserRequest.builder()
+                                    .userId(userId)
+                                    .totalPoints(user.getTotalPoints())
+                                    .build()
+                    );
+
+                    if (!updateResponse.getNewAchievements().isEmpty()) {
+                        achievementUpdates.add(updateResponse);
+                    }
+                }
             }
+        }
+
+        if (!usersToUpdate.isEmpty()) {
+            userRepository.saveAll(usersToUpdate);
         }
 
         return SessionEndResultResponse.builder()
@@ -276,34 +291,6 @@ public class SessionServiceImpl implements SessionService {
     public String findSessionCodeBySessionId(String sessionId) {
         return sessionRepository.findSessionCodeBySessionId(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-    }
-
-    @Override
-    public List<Map.Entry<String, List<AchievementUpdateResponse>>> getAchievementUpdateDetails(
-            List<AchievementUpdateResponse> achievementUpdates, String sessionId) {
-            List<Map.Entry<String, List<AchievementUpdateResponse>>> updateDetails = new ArrayList<>();
-
-        if (achievementUpdates != null && !achievementUpdates.isEmpty()) {
-            // errors
-            Map<String, List<AchievementUpdateResponse>> updatesByUser = achievementUpdates.stream()
-                    .collect(Collectors.groupingBy(AchievementUpdateResponse::getUserId));
-
-            updatesByUser.forEach((userId, updates) -> {
-                if (userId != null) { // Skip guests
-                    sessionParticipantRepository.findBySession_SessionIdAndUser_UserId(sessionId, userId)
-                            .ifPresent(participant -> {
-                                String stompClientId = participant.getStompClientId();
-                                if (stompClientId != null) {
-                                    updateDetails.add(Map.entry(stompClientId, updates));
-                                } else {
-                                    log.warn("No stompClientId found for userId: {} in sessionId: {}", userId, sessionId);
-                                }
-                            });
-                }
-            });
-        }
-
-        return updateDetails;
     }
 
     private Session getSessionById(String sessionId) {
