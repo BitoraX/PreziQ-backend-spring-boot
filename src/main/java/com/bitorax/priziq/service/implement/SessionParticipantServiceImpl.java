@@ -168,7 +168,6 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         for (SessionParticipant participant : participants) {
             String stompClientId = participant.getStompClientId();
-            String participantId = participant.getSessionParticipantId();
             User user = participant.getUser();
 
             if (user != null && user.getUserId() != null && userIdToUpdateMap.containsKey(user.getUserId())) {

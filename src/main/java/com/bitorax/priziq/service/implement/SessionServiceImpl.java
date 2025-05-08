@@ -180,6 +180,7 @@ public class SessionServiceImpl implements SessionService {
                 if (processedUserIds.add(userId)) {
                     int scoreToAdd = userScoreMap.get(userId);
                     user.setTotalPoints(user.getTotalPoints() + scoreToAdd);
+                    userRepository.save(user);
                     usersToUpdate.add(user);
 
                     try {
@@ -191,21 +192,11 @@ public class SessionServiceImpl implements SessionService {
                         );
 
                         achievementUpdates.add(updateResponse);
-                        log.info("Achievement update for userId {}: totalPoints={}, newAchievements={}",
-                                userId, updateResponse.getTotalPoints(), updateResponse.getNewAchievements().size());
                     } catch (Exception e) {
                         log.error("Failed to assign achievements for userId {}: {}", userId, e.getMessage(), e);
                     }
                 }
-            } else {
-                log.debug("Skipping guest participant with sessionParticipantId: {}", participant.getSessionParticipantId());
             }
-        }
-
-        log.info("Total users to update: {}, achievement updates: {}", usersToUpdate.size(), achievementUpdates.size());
-
-        if (!usersToUpdate.isEmpty()) {
-            userRepository.saveAll(usersToUpdate);
         }
 
         return SessionEndResultResponse.builder()
@@ -282,6 +273,7 @@ public class SessionServiceImpl implements SessionService {
             int finalIncorrectCount = submissions.size() - finalCorrectCount;
 
             SessionEndSummaryResponse summary = SessionEndSummaryResponse.builder()
+                    .sessionParticipantId(participant.getSessionParticipantId())
                     .displayName(participant.getDisplayName())
                     .displayAvatar(participant.getDisplayAvatar())
                     .finalScore(finalScore)
@@ -319,7 +311,7 @@ public class SessionServiceImpl implements SessionService {
 
             // Find the corresponding SessionEndSummaryResponse
             SessionEndSummaryResponse participantSummary = summaries.stream()
-                    .filter(summary -> summary.getDisplayName().equals(participant.getDisplayName()))
+                    .filter(summary -> summary.getSessionParticipantId().equals(participant.getSessionParticipantId()))
                     .findFirst()
                     .orElseThrow(() -> new ApplicationException(ErrorCode.SUMMARY_NOT_FOUND_FOR_PARTICIPANT));
 
