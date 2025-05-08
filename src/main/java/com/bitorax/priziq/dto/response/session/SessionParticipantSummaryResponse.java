@@ -18,6 +18,7 @@ public class SessionParticipantSummaryResponse extends AuditResponse {
 
     String displayName;
     String displayAvatar;
+    Boolean isOnline;
 
     Integer realtimeScore;
     Integer realtimeRanking;

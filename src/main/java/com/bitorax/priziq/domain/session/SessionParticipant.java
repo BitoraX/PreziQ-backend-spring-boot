@@ -49,4 +49,8 @@ public class SessionParticipant extends BaseEntity {
     Integer realtimeScore = 0;
 
     Integer realtimeRanking;
+
+    @Column(nullable = false)
+    @Builder.Default
+    Boolean isOnline = true;
 }

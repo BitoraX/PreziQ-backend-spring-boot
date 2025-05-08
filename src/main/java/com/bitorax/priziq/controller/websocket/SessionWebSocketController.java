@@ -215,7 +215,9 @@ public class SessionWebSocketController {
 
         // Get achievement update details from service
         List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = sessionParticipantService.getAchievementUpdateDetails(
-                endSessionResult.getAchievementUpdates(), request.getSessionId());
+                endSessionResult.getAchievementUpdates(),
+                request.getSessionId()
+        );
 
         // Send achievement updates to each user
         updateDetails.forEach(entry -> {
