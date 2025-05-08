@@ -8,6 +8,7 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -155,6 +156,10 @@ public class ActivityServiceImpl implements ActivityService {
             case QUIZ_TRUE_OR_FALSE:
                 UpdateTrueFalseQuizRequest trueFalseRequest = (UpdateTrueFalseQuizRequest) updateQuizRequest;
                 handleTrueFalseQuiz(quiz, trueFalseRequest);
+                break;
+            case QUIZ_LOCATION:
+                UpdateLocationQuizRequest locationRequest = (UpdateLocationQuizRequest) updateQuizRequest;
+                handleLocationQuiz(quiz, locationRequest);
                 break;
             default:
                 throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
@@ -331,6 +336,11 @@ public class ActivityServiceImpl implements ActivityService {
                     throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
+            case QUIZ_LOCATION:
+                if (!requestType.equals("LOCATION") || !(request instanceof UpdateLocationQuizRequest)) {
+                    throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
+                }
+                break;
             default:
                 throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
@@ -404,6 +414,30 @@ public class ActivityServiceImpl implements ActivityService {
                 .orderIndex(1)
                 .build();
         updateQuizAnswers(quiz, List.of(trueAnswer, falseAnswer));
+    }
+
+    private void handleLocationQuiz(Quiz quiz, UpdateLocationQuizRequest request){
+        List<QuizLocationAnswer> locationAnswers = new ArrayList<>();
+        for (int i = 0; i < request.getLocationAnswers().size(); i++) {
+            LocationAnswerRequest answerReq = request.getLocationAnswers().get(i);
+            QuizLocationAnswer locationAnswer = QuizLocationAnswer.builder()
+                    .quiz(quiz)
+                    .longitude(answerReq.getLongitude())
+                    .latitude(answerReq.getLatitude())
+                    .radius(answerReq.getRadius())
+                    .build();
+            locationAnswers.add(locationAnswer);
+        }
+        updateQuizLocationAnswers(quiz, locationAnswers);
+    }
+
+    private void updateQuizLocationAnswers(Quiz quiz, List<QuizLocationAnswer> newAnswers) {
+        if (quiz.getQuizAnswers() != null) {
+            quiz.getQuizAnswers().clear();
+        } else {
+            quiz.setQuizAnswers(new ArrayList<>());
+        }
+        quiz.getQuizLocationAnswers().addAll(newAnswers);
     }
 
     private void updateQuizAnswers(Quiz quiz, List<QuizAnswer> newAnswers) {

@@ -163,6 +163,11 @@ public enum ErrorCode {
     ACTIVITY_TYPE_UNCHANGED(1729, HttpStatus.BAD_REQUEST, "Activity type unchanged"),
     QUIZ_ANSWER_NOT_FOUND(1730, HttpStatus.NOT_FOUND, "Quiz answer not found"),
 
+    LONGITUDE_REQUIRED(1731, HttpStatus.BAD_REQUEST, "Longitude is required"),
+    LATITUDE_REQUIRED(1732, HttpStatus.BAD_REQUEST, "Latitude is required"),
+    RADIUS_REQUIRED(1733, HttpStatus.BAD_REQUEST, "Radius is required"),
+    LOCATION_DATA_REQUIRED(1734, HttpStatus.BAD_REQUEST, "Location data is required"),
+
     // Slide-related errors
     SLIDE_NOT_FOUND(1730, HttpStatus.NOT_FOUND, "Slide not found"),
     SLIDE_ELEMENT_NOT_FOUND(1731, HttpStatus.BAD_REQUEST, "Slide element not found"),

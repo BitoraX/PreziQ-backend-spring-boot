@@ -20,6 +20,7 @@ public enum ActivityType {
     QUIZ_REORDER("Reorder", "Reorder steps or options in the correct sequence.", "quiz_reorder_icon"),
     QUIZ_TYPE_ANSWER("Type Answer", "Enter the correct answer manually.", "quiz_type_answer_icon"),
     QUIZ_TRUE_OR_FALSE("True or False", "Choose between True or False.", "quiz_true_false_icon"),
+    QUIZ_LOCATION("Location", "Choose the correct location", "quiz_location_icon"),
     INFO_SLIDE("Info Slide", "Display informational content without interaction.", "info_slide_icon");
 
     String name;
