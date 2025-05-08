@@ -108,8 +108,19 @@ public class AchievementServiceImpl implements AchievementService {
                 .toList();
 
         if (!achievementsToAdd.isEmpty()) {
-            currentAchievements.addAll(achievementsToAdd);
+            for (Achievement achievement : achievementsToAdd) {
+                currentAchievements.add(achievement);
+                List<User> achievementUsers = achievement.getUsers();
+                if (achievementUsers == null) {
+                    achievementUsers = new ArrayList<>();
+                    achievement.setUsers(achievementUsers);
+                }
+                if (!achievementUsers.contains(user)) {
+                    achievementUsers.add(user);
+                }
+            }
             userRepository.save(user);
+            achievementRepository.saveAll(achievementsToAdd);
         }
 
         return AchievementUpdateResponse.builder()
@@ -119,6 +130,9 @@ public class AchievementServiceImpl implements AchievementService {
                         .map(achievement -> AchievementSummaryResponse.builder()
                                 .achievementId(achievement.getAchievementId())
                                 .name(achievement.getName())
+                                .description(achievement.getDescription())
+                                .iconUrl(achievement.getIconUrl())
+                                .requiredPoints(achievement.getRequiredPoints())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
