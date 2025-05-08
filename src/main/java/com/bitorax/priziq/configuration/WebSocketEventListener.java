@@ -1,8 +1,8 @@
 package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
+import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
-import com.bitorax.priziq.repository.ActivitySubmissionRepository;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.service.SessionParticipantService;
 import lombok.AccessLevel;
@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.bitorax.priziq.utils.MetaUtils.buildWebSocketMetaInfo;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -29,7 +31,6 @@ public class WebSocketEventListener {
     SimpMessagingTemplate messagingTemplate;
     SessionParticipantService sessionParticipantService;
     SessionParticipantRepository sessionParticipantRepository;
-    ActivitySubmissionRepository activitySubmissionRepository;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
@@ -61,23 +62,26 @@ public class WebSocketEventListener {
 
         log.info("Client disconnected with websocketSessionId: {}", websocketSessionId);
 
-        // Find and remove SessionParticipant by websocketSessionId
+        // Update isOnline = false and send the list of participants directly
         sessionParticipantRepository.findByWebsocketSessionId(websocketSessionId)
                 .ifPresent(participant -> {
+                    participant.setIsOnline(false);
+                    sessionParticipantRepository.save(participant);
+
                     String sessionCode = participant.getSession().getSessionCode();
+                    GetParticipantsRequest request = GetParticipantsRequest.builder()
+                            .sessionCode(sessionCode)
+                            .build();
 
-                    sessionParticipantRepository.delete(participant);
-
-                    // Broadcast updated participants list
-                    List<SessionParticipantSummaryResponse> responses = sessionParticipantService
-                            .findParticipantsBySessionCode(
-                                    GetParticipantsRequest.builder()
-                                            .sessionCode(sessionCode)
-                                            .build()
-                            );
+                    List<SessionParticipantSummaryResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
+                    ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = ApiResponse.<List<SessionParticipantSummaryResponse>>builder()
+                            .message(String.format("List of participants retrieved for session with code: %s", sessionCode))
+                            .data(participants)
+                            .meta(buildWebSocketMetaInfo(headerAccessor))
+                            .build();
 
                     String destination = "/public/session/" + sessionCode + "/participants";
-                    messagingTemplate.convertAndSend(destination, responses);
+                    messagingTemplate.convertAndSend(destination, apiResponse);
                 });
     }
 }

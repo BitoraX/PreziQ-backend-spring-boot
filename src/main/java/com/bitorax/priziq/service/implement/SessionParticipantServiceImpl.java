@@ -81,6 +81,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .stompClientId(stompClientId)
                 .realtimeScore(0)
                 .realtimeRanking(0)
+                .isOnline(true)
                 .build();
 
         sessionParticipantRepository.save(sessionParticipant);
@@ -100,7 +101,8 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .findBySessionAndWebsocketSessionId(session, websocketSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
-        sessionParticipantRepository.delete(participant);
+        participant.setIsOnline(false);
+        sessionParticipantRepository.save(participant);
 
         return findParticipantsBySessionCode(GetParticipantsRequest.builder()
                 .sessionCode(session.getSessionCode())
