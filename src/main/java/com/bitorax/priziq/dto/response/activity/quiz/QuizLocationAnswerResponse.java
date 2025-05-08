@@ -6,8 +6,6 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -15,12 +13,9 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class QuizResponse extends AuditResponse {
-    String quizId;
-    String questionText;
-    Integer timeLimitSeconds;
-    String pointType;
-
-    List<QuizAnswerResponse> quizAnswers;
-    List<QuizLocationAnswerResponse> quizLocationAnswers;
+public class QuizLocationAnswerResponse extends AuditResponse {
+    String quizLocationAnswerId;
+    Double longitude;
+    Double latitude;
+    Double radius;
 }
