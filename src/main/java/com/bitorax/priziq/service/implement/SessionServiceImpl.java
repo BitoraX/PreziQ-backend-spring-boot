@@ -161,7 +161,6 @@ public class SessionServiceImpl implements SessionService {
         // Update totalPoints for each participant and collect achievement updates
         List<AchievementUpdateResponse> achievementUpdates = new ArrayList<>();
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(endSessionRequest.getSessionId());
-        List<User> usersToUpdate = new ArrayList<>();
         Map<String, Integer> userScoreMap = new HashMap<>();
         Set<String> processedUserIds = new HashSet<>();
 
@@ -181,7 +180,6 @@ public class SessionServiceImpl implements SessionService {
                     int scoreToAdd = userScoreMap.get(userId);
                     user.setTotalPoints(user.getTotalPoints() + scoreToAdd);
                     userRepository.save(user);
-                    usersToUpdate.add(user);
 
                     try {
                         AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(

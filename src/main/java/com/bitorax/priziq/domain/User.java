@@ -38,7 +38,7 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "hostUser", fetch = FetchType.LAZY)
     List<Session> sessions;
 
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "users")
+    @ManyToMany(mappedBy = "users")
     @JsonIgnore
     List<Achievement> achievements;
 
