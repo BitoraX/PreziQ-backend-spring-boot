@@ -80,6 +80,19 @@ public class AchievementController {
                 .build();
     }
 
+    @GetMapping("/me")
+    ApiResponse<PaginationResponse> getMyAchievements(
+            @Filter Specification<Achievement> spec,
+            Pageable pageable,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.<PaginationResponse>builder()
+                .message("My achievements retrieved successfully")
+                .data(achievementService.getMyAchievements(spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
     @DeleteMapping("/{achievementId}")
     ApiResponse<Void> deleteAchievementById(
             @PathVariable String achievementId,
