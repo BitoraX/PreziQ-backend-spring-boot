@@ -39,8 +39,8 @@ public class RoleController {
                 .build();
     }
 
-    @GetMapping("/{id}")
-    ApiResponse<RoleResponse> getRoleById(@PathVariable("id") String roleId, HttpServletRequest servletRequest) {
+    @GetMapping("/{roleId}")
+    ApiResponse<RoleResponse> getRoleById(@PathVariable String roleId, HttpServletRequest servletRequest) {
         return ApiResponse.<RoleResponse>builder()
                 .message("Role retrieved successfully")
                 .data(roleService.getRoleById(roleId))
@@ -57,8 +57,8 @@ public class RoleController {
                 .build();
     }
 
-    @PatchMapping("/{id}")
-    ApiResponse<RoleResponse> updateRoleById(@PathVariable("id") String roleId, @RequestBody UpdateRoleRequest updateRoleRequest, HttpServletRequest servletRequest) {
+    @PatchMapping("/{roleId}")
+    ApiResponse<RoleResponse> updateRoleById(@PathVariable String roleId, @RequestBody UpdateRoleRequest updateRoleRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<RoleResponse>builder()
                 .message("Role updated successfully")
                 .data(roleService.updateRoleById(roleId, updateRoleRequest))
@@ -66,8 +66,8 @@ public class RoleController {
                 .build();
     }
 
-    @DeleteMapping("/{id}/permissions")
-    ApiResponse<Void> deletePermissionFromRole(@PathVariable("id") String roleId, @RequestBody DeletePermissionFromRoleRequest deletePermissionFromRoleRequest, HttpServletRequest servletRequest) {
+    @DeleteMapping("/{roleId}/permissions")
+    ApiResponse<Void> deletePermissionFromRole(@PathVariable String roleId, @RequestBody DeletePermissionFromRoleRequest deletePermissionFromRoleRequest, HttpServletRequest servletRequest) {
         roleService.deletePermissionFromRole(roleId, deletePermissionFromRoleRequest);
         return ApiResponse.<Void>builder()
                 .message("Permission removed from role successfully")
@@ -75,8 +75,8 @@ public class RoleController {
                 .build();
     }
 
-    @DeleteMapping("/{id}")
-    ApiResponse<Void> deleteRoleById(@PathVariable("id") String roleId, HttpServletRequest servletRequest) {
+    @DeleteMapping("/{roleId}")
+    ApiResponse<Void> deleteRoleById(@PathVariable String roleId, HttpServletRequest servletRequest) {
         roleService.deleteRoleById(roleId);
         return ApiResponse.<Void>builder()
                 .message("Role deleted successfully")

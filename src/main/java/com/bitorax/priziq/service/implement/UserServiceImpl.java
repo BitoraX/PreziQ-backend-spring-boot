@@ -122,13 +122,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Object getUserById(String userId) {
+    public UserSecureResponse getUserById(String userId) {
         User user = this.userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
-        User userAuthenticated = this.securityUtils.getAuthenticatedUser();
-
-        // Check role (if ADMIN response UserResponse, else response UserSecureResponse)
-        boolean isAdmin = this.securityUtils.isAdmin(userAuthenticated);
-        return isAdmin ? this.userMapper.userToResponse(user) : this.userMapper.userToSecureResponse(user);
+        return this.userMapper.userToSecureResponse(user);
     }
 
     @Override
