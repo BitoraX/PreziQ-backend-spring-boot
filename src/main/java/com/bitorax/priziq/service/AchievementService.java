@@ -22,5 +22,7 @@ public interface AchievementService {
 
     PaginationResponse getAllAchievementsWithQuery(Specification<Achievement> spec, Pageable pageable);
 
+    PaginationResponse getMyAchievements(Specification<Achievement> spec, Pageable pageable);
+
     AchievementUpdateResponse assignAchievementsToUser(AssignAchievementToUserRequest request);
 }

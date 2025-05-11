@@ -73,7 +73,6 @@ public class CollectionServiceImpl implements CollectionService {
         return getAllCollectionWithQuery(finalSpec, pageable);
     }
 
-
     @Override
     public PaginationResponse getAllCollectionWithQuery(Specification<Collection> spec, Pageable pageable) {
         Page<Collection> collectionPage = this.collectionRepository.findAll(spec, pageable);

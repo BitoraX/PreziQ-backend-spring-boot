@@ -1,6 +1,7 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.domain.Achievement;
+import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.dto.request.achievement.AssignAchievementToUserRequest;
 import com.bitorax.priziq.dto.request.achievement.CreateAchievementRequest;
@@ -16,6 +17,7 @@ import com.bitorax.priziq.mapper.AchievementMapper;
 import com.bitorax.priziq.repository.AchievementRepository;
 import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.AchievementService;
+import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +72,21 @@ public class AchievementServiceImpl implements AchievementService {
     public AchievementDetailResponse getAchievementById(String achievementId) {
         return achievementMapper.achievementToDetailResponse(achievementRepository
                 .findById(achievementId).orElseThrow(() -> new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND)));
+    }
+
+    @Override
+    public PaginationResponse getMyAchievements(Specification<Achievement> spec, Pageable pageable) {
+        User user = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Filter achievements where the user is in the 'users' list
+        Specification<Achievement> userSpec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.isMember(user, root.get("users"));
+
+        // Combine with client-provided specification if present
+        Specification<Achievement> finalSpec = spec != null ? Specification.where(spec).and(userSpec) : userSpec;
+
+        return getAllAchievementsWithQuery(finalSpec, pageable);
     }
 
     @Override

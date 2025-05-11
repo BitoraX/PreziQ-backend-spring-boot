@@ -34,7 +34,8 @@ public class SecurityConfiguration {
             "/api/v1/auth/register", "/api/v1/auth/verify-active-account", "/api/v1/auth/login",
             "/api/v1/auth/refresh", "/api/v1/auth/resend-verify", "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password", "/api/v1/users/{id}", "/api/v1/collections/{id}, /api/v1/collections",
-            "/api/v1/activities/types", "/api/v1/achievements/{achievementId}", "/api/v1/achievements", "/ws/**"
+            "/api/v1/activities/types", "/api/v1/achievements/{achievementId}", "/api/v1/achievements",
+            "/ws/**"
     };
 
     @NonFinal
@@ -67,7 +68,7 @@ public class SecurityConfiguration {
                 "https://localhost:5173",
                 "http://localhost:3000",
                 "https://localhost:3000",
-                "https://prezi-q-frontend-nextjs.vercel.app"
+                "https://preziq.vercel.app"
         ));
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
