@@ -149,6 +149,7 @@ public class DataInitializer implements ApplicationRunner {
 
                         // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
+                        new Permission("Retrieve a activity detail", "/api/v1/activities/{activityId}", "GET", "ACTIVITIES"),
                         new Permission("Retrieve the list of activity types", "/api/v1/activities/types", "GET", "ACTIVITIES"),
                         new Permission("Update quiz for activity", "/api/v1/activities/{activityId}/quiz", "PUT", "ACTIVITIES"),
                         new Permission("Delete a activity", "/api/v1/activities/{activityId}", "DELETE", "ACTIVITIES"),
@@ -213,6 +214,7 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/collections/{collectionId}/activities/reorder", "PUT"),
 
                         findPermissionOrThrow("/api/v1/activities", "POST"),
+                        findPermissionOrThrow("/api/v1/activities/{activityId}", "GET"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}/quiz", "PUT"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}", "DELETE"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}", "PUT"),
