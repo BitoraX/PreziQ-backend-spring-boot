@@ -106,29 +106,29 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update user password", "/api/v1/users/update-password", "PUT", "USERS"),
                         new Permission("Update user email", "/api/v1/users/update-email", "PUT", "USERS"),
                         new Permission("Verify and update new email", "/api/v1/users/verify-change-email", "POST", "USERS"),
-                        new Permission("Retrieve user account details", "/api/v1/users/{id}", "GET", "USERS"),
+                        new Permission("Retrieve user account details", "/api/v1/users/{userId}", "GET", "USERS"),
                         new Permission("Retrieve all user accounts with query parameters", "/api/v1/users", "GET", "USERS"),
-                        new Permission("Update user account information (admin)", "/api/v1/users/{id}", "PATCH", "USERS"),
-                        new Permission("Delete a user account", "/api/v1/users/{id}", "DELETE", "USERS"),
-                        new Permission("Delete roles from user", "/api/v1/users/{id}/roles", "DELETE", "USERS"),
+                        new Permission("Update user account information (admin)", "/api/v1/users/{userId}", "PATCH", "USERS"),
+                        new Permission("Delete a user account", "/api/v1/users/{userId}", "DELETE", "USERS"),
+                        new Permission("Delete roles from user", "/api/v1/users/{userId}/roles", "DELETE", "USERS"),
 
                         // Module Roles
                         new Permission("Create a new role", "/api/v1/roles", "POST", "ROLES"),
-                        new Permission("Update role information (including adding permissions)", "/api/v1/roles/{id}", "PATCH", "ROLES"),
-                        new Permission("Retrieve role information", "/api/v1/roles/{id}", "GET", "ROLES"),
+                        new Permission("Update role information (including adding permissions)", "/api/v1/roles/{roleId}", "PATCH", "ROLES"),
+                        new Permission("Retrieve role information", "/api/v1/roles/{roleId}", "GET", "ROLES"),
                         new Permission("Retrieve all roles with query parameters", "/api/v1/roles", "GET", "ROLES"),
-                        new Permission("Remove permissions from a role", "/api/v1/roles/{id}/permissions", "DELETE", "ROLES"),
-                        new Permission("Delete a role", "/api/v1/roles/{id}", "DELETE", "ROLES"),
+                        new Permission("Remove permissions from a role", "/api/v1/roles/{roleId}/permissions", "DELETE", "ROLES"),
+                        new Permission("Delete a role", "/api/v1/roles/{roleId}", "DELETE", "ROLES"),
 
                         // Module Permissions
                         new Permission("Create a new module", "/api/v1/permissions/module", "POST", "PERMISSIONS"),
                         new Permission("Delete a module by name", "/api/v1/permissions/module/{name}", "DELETE", "PERMISSIONS"),
                         new Permission("Retrieve all module names", "/api/v1/permissions/modules", "GET", "PERMISSIONS"),
                         new Permission("Create a new permission", "/api/v1/permissions", "POST", "PERMISSIONS"),
-                        new Permission("Update permission information", "/api/v1/permissions/{id}", "PATCH", "PERMISSIONS"),
-                        new Permission("Retrieve permission information", "/api/v1/permissions/{id}", "GET", "PERMISSIONS"),
+                        new Permission("Update permission information", "/api/v1/permissions/{permissionId}", "PATCH", "PERMISSIONS"),
+                        new Permission("Retrieve permission information", "/api/v1/permissions/{permissionId}", "GET", "PERMISSIONS"),
                         new Permission("Retrieve all permissions with query parameters", "/api/v1/permissions", "GET", "PERMISSIONS"),
-                        new Permission("Delete a permission", "/api/v1/permissions/{id}", "DELETE", "PERMISSIONS"),
+                        new Permission("Delete a permission", "/api/v1/permissions/{permissionId}", "DELETE", "PERMISSIONS"),
 
                         // Module Files (AWS S3)
                         new Permission("Upload a file to AWS S3", "/api/v1/storage/aws-s3/upload/single", "POST", "FILES"),
@@ -140,11 +140,11 @@ public class DataInitializer implements ApplicationRunner {
 
                         // Module Collections
                         new Permission("Create a new collection", "/api/v1/collections", "POST", "COLLECTIONS"),
-                        new Permission("Retrieve a collection", "/api/v1/collections/{id}", "GET", "COLLECTIONS"),
-                        new Permission("Update collection information", "/api/v1/collections/{id}", "PATCH", "COLLECTIONS"),
+                        new Permission("Retrieve a collection", "/api/v1/collections/{collectionId}", "GET", "COLLECTIONS"),
+                        new Permission("Update collection information", "/api/v1/collections/{collectionId}", "PATCH", "COLLECTIONS"),
                         new Permission("Retrieve all collections with query parameters", "/api/v1/collections", "GET", "COLLECTIONS"),
-                        new Permission("Delete a collection", "/api/v1/collections/{id}", "DELETE", "COLLECTIONS"),
-                        new Permission("Activities reorder", "/api/v1/collections/{id}/activities/reorder", "PUT", "COLLECTIONS"),
+                        new Permission("Delete a collection", "/api/v1/collections/{collectionId}", "DELETE", "COLLECTIONS"),
+                        new Permission("Activities reorder", "/api/v1/collections/{collectionId}/activities/reorder", "PUT", "COLLECTIONS"),
                         new Permission("Retrieve my collections with query parameters", "/api/v1/collections/me", "GET", "COLLECTIONS"),
 
                         // Module Activities
@@ -208,9 +208,9 @@ public class DataInitializer implements ApplicationRunner {
 
                         findPermissionOrThrow("/api/v1/collections", "POST"),
                         findPermissionOrThrow("/api/v1/collections/me", "GET"),
-                        findPermissionOrThrow("/api/v1/collections/{id}", "PATCH"),
-                        findPermissionOrThrow("/api/v1/collections/{id}", "DELETE"),
-                        findPermissionOrThrow("/api/v1/collections/{id}/activities/reorder", "PUT"),
+                        findPermissionOrThrow("/api/v1/collections/{collectionId}", "PATCH"),
+                        findPermissionOrThrow("/api/v1/collections/{collectionId}", "DELETE"),
+                        findPermissionOrThrow("/api/v1/collections/{collectionId}/activities/reorder", "PUT"),
 
                         findPermissionOrThrow("/api/v1/activities", "POST"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}/quiz", "PUT"),

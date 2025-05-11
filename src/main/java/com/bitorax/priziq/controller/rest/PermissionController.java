@@ -68,8 +68,8 @@ public class PermissionController {
                 .build();
     }
 
-    @PatchMapping("/{id}")
-    ApiResponse<PermissionResponse> updatePermissionById(@RequestBody @Valid UpdatePermissionRequest updatePermissionRequest, @PathVariable("id") String permissionId, HttpServletRequest servletRequest) {
+    @PatchMapping("/{permissionId}")
+    ApiResponse<PermissionResponse> updatePermissionById(@RequestBody @Valid UpdatePermissionRequest updatePermissionRequest, @PathVariable String permissionId, HttpServletRequest servletRequest) {
         return ApiResponse.<PermissionResponse>builder()
                 .message("Permission updated successfully")
                 .data(permissionService.updatePermissionById(permissionId, updatePermissionRequest))
@@ -77,8 +77,8 @@ public class PermissionController {
                 .build();
     }
 
-    @GetMapping("/{id}")
-    ApiResponse<PermissionResponse> getPermissionById(@PathVariable("id") String permissionId, HttpServletRequest servletRequest) {
+    @GetMapping("/{permissionId}")
+    ApiResponse<PermissionResponse> getPermissionById(@PathVariable String permissionId, HttpServletRequest servletRequest) {
         return ApiResponse.<PermissionResponse>builder()
                 .message("Permission retrieved successfully")
                 .data(permissionService.getPermissionById(permissionId))
@@ -95,8 +95,8 @@ public class PermissionController {
                 .build();
     }
 
-    @DeleteMapping("/{id}")
-    ApiResponse<Void> deletePermissionById(@PathVariable("id") String permissionId, HttpServletRequest servletRequest) {
+    @DeleteMapping("/{permissionId}")
+    ApiResponse<Void> deletePermissionById(@PathVariable String permissionId, HttpServletRequest servletRequest) {
         permissionService.deletePermissionById(permissionId);
         return ApiResponse.<Void>builder()
                 .message("Permission deleted successfully")

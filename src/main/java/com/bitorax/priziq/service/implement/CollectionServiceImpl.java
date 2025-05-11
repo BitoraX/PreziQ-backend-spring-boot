@@ -55,11 +55,6 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public CollectionDetailResponse getCollectionById(String collectionId){
-        return collectionMapper.collectionToDetailResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
-    }
-
-    @Override
     public PaginationResponse getMyCollections(Specification<Collection> spec, Pageable pageable) {
         User creator = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
@@ -71,6 +66,11 @@ public class CollectionServiceImpl implements CollectionService {
         Specification<Collection> finalSpec = spec != null ? Specification.where(spec).and(creatorSpec) : creatorSpec;
 
         return getAllCollectionWithQuery(finalSpec, pageable);
+    }
+
+    @Override
+    public CollectionDetailResponse getCollectionById(String collectionId){
+        return collectionMapper.collectionToDetailResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
     }
 
     @Override

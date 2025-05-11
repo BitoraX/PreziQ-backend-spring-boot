@@ -78,17 +78,17 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/{id}")
-    ApiResponse<Object> getUserById(@PathVariable("id") String userId, HttpServletRequest servletRequest) {
-        return ApiResponse.builder()
+    @GetMapping("/{userId}")
+    ApiResponse<UserSecureResponse> getUserById(@PathVariable String userId, HttpServletRequest servletRequest) {
+        return ApiResponse.<UserSecureResponse>builder()
                 .message("User information retrieved successfully")
                 .data(userService.getUserById(userId))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
-    @PatchMapping("/{id}")
-    ApiResponse<UserResponse> updateUserForAdmin(@PathVariable("id") String userId, @RequestBody @Valid UpdateUserForAdminRequest updateUserForAdminRequest, HttpServletRequest servletRequest) {
+    @PatchMapping("/{userId}")
+    ApiResponse<UserResponse> updateUserForAdmin(@PathVariable String userId, @RequestBody @Valid UpdateUserForAdminRequest updateUserForAdminRequest, HttpServletRequest servletRequest) {
         return ApiResponse.<UserResponse>builder()
                 .message("User information updated successfully")
                 .data(userService.updateUserForAdmin(userId, updateUserForAdminRequest))
@@ -96,8 +96,8 @@ public class UserController {
                 .build();
     }
 
-    @DeleteMapping("/{id}")
-    ApiResponse<Void> deleteUserById(@PathVariable("id") String userId, HttpServletRequest servletRequest) {
+    @DeleteMapping("/{userId}")
+    ApiResponse<Void> deleteUserById(@PathVariable String userId, HttpServletRequest servletRequest) {
         userService.deleteUserById(userId);
         return ApiResponse.<Void>builder()
                 .message("User account deleted successfully")
@@ -105,8 +105,8 @@ public class UserController {
                 .build();
     }
 
-    @DeleteMapping("/{id}/roles")
-    ApiResponse<Void> deleteRoleFromUser(@PathVariable("id") String userId, @RequestBody DeleteRoleFromUserRequest deleteRoleFromUserRequest, HttpServletRequest servletRequest) {
+    @DeleteMapping("/{userId}/roles")
+    ApiResponse<Void> deleteRoleFromUser(@PathVariable String userId, @RequestBody DeleteRoleFromUserRequest deleteRoleFromUserRequest, HttpServletRequest servletRequest) {
         userService.deleteRoleFromUser(userId, deleteRoleFromUserRequest);
         return ApiResponse.<Void>builder()
                 .message("Xóa vai trò khỏi người dùng thành công")

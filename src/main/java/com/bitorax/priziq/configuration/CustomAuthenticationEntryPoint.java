@@ -20,7 +20,7 @@ import java.util.List;
 
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    @Override
+    // Handle 401 error (Authentication fail, throw error in Spring Filter)
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         ErrorCode errorCode;
 
@@ -51,14 +51,23 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 .meta(meta)
                 .build();
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper(); // Tool convert JAVA object to JSON
+
+        // ObjectMapper understands how to handle modern Java time types (like Instant, used in MetaInfo)
         objectMapper.registerModule(new JavaTimeModule());
+
+        // Turn off Jackson's default mode, ensuring times (as Instant) are written as ISO-8601 strings
+        // (e.g. "2025-04-21T10:00:00Z") instead of timestamp numbers (like 1742544000000)
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         response.setStatus(errorCode.getStatusCode().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
+
+        // Convert object apiResponse to JSON string and write that string to the response
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+
+        // Push all response data (JSON, status code, headers) to the client immediately
         response.flushBuffer();
     }
 }
