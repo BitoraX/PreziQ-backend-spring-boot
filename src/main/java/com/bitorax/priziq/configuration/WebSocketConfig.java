@@ -28,7 +28,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 "https://localhost:5173",
                 "http://localhost:3000",
                 "https://localhost:3000",
-                "https://prezi-q-frontend-nextjs.vercel.app"
+                "https://preziq.vercel.app"
         );
     }
 

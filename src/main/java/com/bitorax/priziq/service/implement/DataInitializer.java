@@ -167,7 +167,8 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update achievement information", "/api/v1/achievements/{achievementId}", "PATCH", "ACHIEVEMENTS"),
                         new Permission("Delete an achievement", "/api/v1/achievements/{achievementId}", "DELETE", "ACHIEVEMENTS"),
                         new Permission("Retrieve achievement information", "/api/v1/achievements/{achievementId}", "GET", "ACHIEVEMENTS"),
-                        new Permission("Retrieve all achievements with query parameters", "/api/v1/achievements", "GET", "ACHIEVEMENTS")
+                        new Permission("Retrieve all achievements with query parameters", "/api/v1/achievements", "GET", "ACHIEVEMENTS"),
+                        new Permission("Retrieve my achievements with query parameters", "/api/v1/achievements/me", "GET", "ACHIEVEMENTS")
                 );
         }
 
@@ -221,7 +222,9 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "DELETE"),
 
                         findPermissionOrThrow("/api/v1/sessions", "POST"),
-                        findPermissionOrThrow("/api/v1/sessions/{sessionId}/history", "GET")
+                        findPermissionOrThrow("/api/v1/sessions/{sessionId}/history", "GET"),
+
+                        findPermissionOrThrow("/api/v1/achievements/me", "GET")
                 );
 
                 // Permission for ADMIN (entire system)

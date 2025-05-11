@@ -1,6 +1,6 @@
 package com.bitorax.priziq.configuration;
 
-import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
+import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
@@ -62,20 +62,17 @@ public class WebSocketEventListener {
 
         log.info("Client disconnected with websocketSessionId: {}", websocketSessionId);
 
-        // Update isOnline = false and send the list of participants directly
         sessionParticipantRepository.findByWebsocketSessionId(websocketSessionId)
                 .ifPresent(participant -> {
-                    participant.setIsOnline(false);
-                    sessionParticipantRepository.save(participant);
-
                     String sessionCode = participant.getSession().getSessionCode();
-                    GetParticipantsRequest request = GetParticipantsRequest.builder()
+                    LeaveSessionRequest leaveRequest = LeaveSessionRequest.builder()
                             .sessionCode(sessionCode)
                             .build();
 
-                    List<SessionParticipantSummaryResponse> participants = sessionParticipantService.findParticipantsBySessionCode(request);
+                    List<SessionParticipantSummaryResponse> participants = sessionParticipantService.leaveSession(leaveRequest, websocketSessionId);
+
                     ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = ApiResponse.<List<SessionParticipantSummaryResponse>>builder()
-                            .message(String.format("List of participants retrieved for session with code: %s", sessionCode))
+                            .message(String.format("A participant left session with code: %s due to disconnect", sessionCode))
                             .data(participants)
                             .meta(buildWebSocketMetaInfo(headerAccessor))
                             .build();
