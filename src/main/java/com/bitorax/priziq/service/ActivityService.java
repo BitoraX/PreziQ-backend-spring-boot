@@ -15,6 +15,8 @@ import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
 public interface ActivityService {
     ActivitySummaryResponse createActivity(CreateActivityRequest createActivityRequest);
 
+    ActivityDetailResponse getActivityById(String activityId);
+
     QuizResponse updateQuiz(String activityId, UpdateQuizRequest updateQuizRequest);
 
     void deleteActivity(String activityId);
@@ -28,4 +30,6 @@ public interface ActivityService {
     SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest);
 
     void deleteSlideElement(String slideId, String elementId);
+
+    void createDefaultQuizButtonsActivity(String collectionId);
 }

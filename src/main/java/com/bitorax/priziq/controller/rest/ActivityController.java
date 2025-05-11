@@ -7,6 +7,7 @@ import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
+import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
@@ -39,6 +40,15 @@ public class ActivityController {
         return ApiResponse.<ActivitySummaryResponse>builder()
                 .message("Activity created successfully")
                 .data(activityService.createActivity(createActivityRequest))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/activities/{activityId}")
+    ApiResponse<ActivityDetailResponse> getActivityById(@PathVariable String activityId, HttpServletRequest servletRequest){
+        return ApiResponse.<ActivityDetailResponse>builder()
+                .message("Activity detail retrieved successfully")
+                .data(activityService.getActivityById(activityId))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

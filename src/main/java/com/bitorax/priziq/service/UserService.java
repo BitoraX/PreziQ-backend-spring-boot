@@ -7,7 +7,6 @@ import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.user.UserResponse;
 import com.bitorax.priziq.dto.response.user.UserSecureResponse;
 import com.nimbusds.jose.JOSEException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -24,7 +23,7 @@ public interface UserService {
 
     PaginationResponse getAllUserWithQuery(Specification<User> spec, Pageable pageable);
 
-    Object getUserById(String userId);
+    UserSecureResponse getUserById(String userId);
 
     UserResponse updateUserForAdmin(String userId, UpdateUserForAdminRequest updateUserForAdminRequest);
 

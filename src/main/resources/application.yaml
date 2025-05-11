@@ -56,6 +56,34 @@ priziq:
     submission:
         base-score: ${SUBMISSION_BASE_SCORE:30}
         time-decrement: ${SUBMISSION_TIME_DECREMENT:1}
+    quiz:
+        default:
+            question: ${QUIZ_DEFAULT_QUESTION:Default question}
+            time_limit_seconds: ${QUIZ_DEFAULT_TIME_LIMIT_SECONDS:30}
+            point_type: ${QUIZ_DEFAULT_POINT_TYPE:STANDARD}
+        reorder:
+            step1: ${QUIZ_REORDER_STEP1:Step 1}
+            step2: ${QUIZ_REORDER_STEP2:Step 2}
+            default_step: ${QUIZ_REORDER_DEFAULT_STEP:Default step}
+        choice:
+            option1: ${QUIZ_CHOICE_OPTION1:Option 1}
+            option2: ${QUIZ_CHOICE_OPTION2:Option 2}
+            option3: ${QUIZ_CHOICE_OPTION3:Option 3}
+            option4: ${QUIZ_CHOICE_OPTION4:Option 4}
+            wrong_answer: ${QUIZ_CHOICE_WRONG_ANSWER:Wrong answer}
+        type_answer:
+            default: ${QUIZ_TYPE_ANSWER_DEFAULT:Default answer}
+        true_false:
+            option_true: ${QUIZ_CHOICE_TRUE:True}
+            option_false: ${QUIZ_CHOICE_FALSE:False}
+        default_activity:
+            title: ${QUIZ_DEFAULT_ACTIVITY_TITLE:Default Quiz}
+            description: ${QUIZ_DEFAULT_ACTIVITY_DESCRIPTION:A default multiple-choice quiz}
+            is_published: ${QUIZ_DEFAULT_ACTIVITY_IS_PUBLISHED:true}
+    slide:
+        default:
+            transition_duration: ${SLIDE_DEFAULT_TRANSITION_DURATION:1}
+            auto_advance_seconds: ${SLIDE_DEFAULT_AUTO_ADVANCE_SECONDS:0}
 
 jwt:
     access-signer-key: ${JWT_ACCESS_SIGNER_KEY}

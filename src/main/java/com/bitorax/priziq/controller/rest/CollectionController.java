@@ -42,29 +42,11 @@ public class CollectionController {
                 .build();
     }
 
-    @PatchMapping("/{id}")
-    ApiResponse<CollectionDetailResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable("id") String collectionId, HttpServletRequest servletRequest) {
-        return ApiResponse.<CollectionDetailResponse>builder()
-                .message("Collection updated successfully")
-                .data(collectionService.updateCollectionById(collectionId, updateCollectionRequest))
-                .meta(buildMetaInfo(servletRequest))
-                .build();
-    }
-
-    @GetMapping("/{id}")
-    ApiResponse<CollectionDetailResponse> getCollectionById(@PathVariable("id") String collectionId, HttpServletRequest servletRequest) {
+    @GetMapping("/{collectionId}")
+    ApiResponse<CollectionDetailResponse> getCollectionById(@PathVariable String collectionId, HttpServletRequest servletRequest) {
         return ApiResponse.<CollectionDetailResponse>builder()
                 .message("Collection retrieved successfully")
                 .data(collectionService.getCollectionById(collectionId))
-                .meta(buildMetaInfo(servletRequest))
-                .build();
-    }
-
-    @GetMapping("/me")
-    ApiResponse<PaginationResponse> getMyCollections(@Filter Specification<Collection> spec, Pageable pageable, HttpServletRequest servletRequest) {
-        return ApiResponse.<PaginationResponse>builder()
-                .message("My collections retrieved successfully")
-                .data(collectionService.getMyCollections(spec, pageable))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
@@ -78,8 +60,26 @@ public class CollectionController {
                 .build();
     }
 
-    @DeleteMapping("/{id}")
-    ApiResponse<Void> deleteCollectionById(@PathVariable("id") String collectionId, HttpServletRequest servletRequest) {
+    @PatchMapping("/{collectionId}")
+    ApiResponse<CollectionDetailResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable String collectionId, HttpServletRequest servletRequest) {
+        return ApiResponse.<CollectionDetailResponse>builder()
+                .message("Collection updated successfully")
+                .data(collectionService.updateCollectionById(collectionId, updateCollectionRequest))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/me")
+    ApiResponse<PaginationResponse> getMyCollections(@Filter Specification<Collection> spec, Pageable pageable, HttpServletRequest servletRequest) {
+        return ApiResponse.<PaginationResponse>builder()
+                .message("My collections retrieved successfully")
+                .data(collectionService.getMyCollections(spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @DeleteMapping("/{collectionId}")
+    ApiResponse<Void> deleteCollectionById(@PathVariable String collectionId, HttpServletRequest servletRequest) {
         collectionService.deleteCollectionById(collectionId);
         return ApiResponse.<Void>builder()
                 .message("Collection deleted successfully")
@@ -87,8 +87,8 @@ public class CollectionController {
                 .build();
     }
 
-    @PutMapping("/{id}/activities/reorder")
-    ApiResponse<List<ReorderedActivityResponse>> reorderActivities(@PathVariable("id") String collectionId, @RequestBody @Valid ActivityReorderRequest activityReorderRequest, HttpServletRequest servletRequest){
+    @PutMapping("/{collectionId}/activities/reorder")
+    ApiResponse<List<ReorderedActivityResponse>> reorderActivities(@PathVariable String collectionId, @RequestBody @Valid ActivityReorderRequest activityReorderRequest, HttpServletRequest servletRequest){
         return ApiResponse.<List<ReorderedActivityResponse>>builder()
                 .message("Activities reordered successfully")
                 .data(collectionService.reorderActivities(collectionId, activityReorderRequest))

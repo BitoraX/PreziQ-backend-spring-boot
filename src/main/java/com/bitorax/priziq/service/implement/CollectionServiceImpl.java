@@ -1,6 +1,5 @@
 package com.bitorax.priziq.service.implement;
 
-import com.bitorax.priziq.constant.RoleType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
@@ -17,6 +16,7 @@ import com.bitorax.priziq.mapper.CollectionMapper;
 import com.bitorax.priziq.repository.ActivityRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
 import com.bitorax.priziq.repository.UserRepository;
+import com.bitorax.priziq.service.ActivityService;
 import com.bitorax.priziq.service.CollectionService;
 import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
@@ -41,22 +41,25 @@ public class CollectionServiceImpl implements CollectionService {
     CollectionRepository collectionRepository;
     ActivityRepository activityRepository;
     UserRepository userRepository;
+    ActivityService activityService;
     CollectionMapper collectionMapper;
     SecurityUtils securityUtils;
 
     @Override
-    public CollectionDetailResponse createCollection(CreateCollectionRequest createCollectionRequest){
+    @Transactional
+    public CollectionDetailResponse createCollection(CreateCollectionRequest createCollectionRequest) {
         Collection collection = collectionMapper.createCollectionRequestToCollection(createCollectionRequest);
 
-        User creator = this.userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt()).orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+        User creator = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
         collection.setCreator(creator);
 
-        return collectionMapper.collectionToDetailResponse(collectionRepository.save(collection));
-    }
+        Collection savedCollection = collectionRepository.save(collection);
 
-    @Override
-    public CollectionDetailResponse getCollectionById(String collectionId){
-        return collectionMapper.collectionToDetailResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
+        // Create default QUIZ_BUTTONS activity
+//        activityService.createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
+
+        return collectionMapper.collectionToDetailResponse(savedCollection);
     }
 
     @Override
@@ -71,6 +74,11 @@ public class CollectionServiceImpl implements CollectionService {
         Specification<Collection> finalSpec = spec != null ? Specification.where(spec).and(creatorSpec) : creatorSpec;
 
         return getAllCollectionWithQuery(finalSpec, pageable);
+    }
+
+    @Override
+    public CollectionDetailResponse getCollectionById(String collectionId){
+        return collectionMapper.collectionToDetailResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
     }
 
     @Override
