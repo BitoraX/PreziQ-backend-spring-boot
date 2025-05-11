@@ -2,17 +2,18 @@ package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.constant.SessionStatus;
 import com.bitorax.priziq.domain.User;
+import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
-import com.bitorax.priziq.dto.response.achievement.AchievementSummaryResponse;
 import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.SessionParticipantMapper;
+import com.bitorax.priziq.repository.ActivitySubmissionRepository;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.repository.SessionRepository;
 import com.bitorax.priziq.repository.UserRepository;
@@ -35,6 +36,7 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
     SessionParticipantRepository sessionParticipantRepository;
     SessionRepository sessionRepository;
     UserRepository userRepository;
+    ActivitySubmissionRepository activitySubmissionRepository;
     SessionParticipantMapper sessionParticipantMapper;
 
     @Override
@@ -81,7 +83,6 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .stompClientId(stompClientId)
                 .realtimeScore(0)
                 .realtimeRanking(0)
-                .isOnline(true)
                 .build();
 
         sessionParticipantRepository.save(sessionParticipant);
@@ -101,8 +102,15 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .findBySessionAndWebsocketSessionId(session, websocketSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
-        participant.setIsOnline(false);
-        sessionParticipantRepository.save(participant);
+        // Delete all related ActivitySubmissions to avoid foreign key constraint violation
+        List<ActivitySubmission> submissions = activitySubmissionRepository
+                .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
+        if (!submissions.isEmpty()) {
+            activitySubmissionRepository.deleteAll(submissions);
+        }
+
+        // Delete the SessionParticipant
+        sessionParticipantRepository.delete(participant);
 
         return findParticipantsBySessionCode(GetParticipantsRequest.builder()
                 .sessionCode(session.getSessionCode())
