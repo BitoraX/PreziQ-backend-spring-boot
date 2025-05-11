@@ -161,6 +161,7 @@ public class DataInitializer implements ApplicationRunner {
 
                         // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
+                        new Permission("Retrieve my sessions with query parameters", "/api/v1/sessions/me", "GET", "SESSIONS"),
                         new Permission("Retrieve a session history", "/api/v1/sessions/{sessionId}/history", "GET", "SESSIONS"),
 
                         // Module Achievements
@@ -224,6 +225,7 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "DELETE"),
 
                         findPermissionOrThrow("/api/v1/sessions", "POST"),
+                        findPermissionOrThrow("/api/v1/sessions/me", "GET"),
                         findPermissionOrThrow("/api/v1/sessions/{sessionId}/history", "GET"),
 
                         findPermissionOrThrow("/api/v1/achievements/me", "GET")
