@@ -327,6 +327,15 @@ public class SessionServiceImpl implements SessionService {
     public PaginationResponse getAllParticipantHistoryWithQuery(String sessionId, Specification<SessionParticipant> spec, Pageable pageable) {
         Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
+        // Check if user has ADMIN role. If not admin, verify if user is a participant in the session
+        User currentUser = securityUtils.getAuthenticatedUser();
+        boolean isAdmin = securityUtils.isAdmin(currentUser);
+        boolean isParticipant = session.getSessionParticipants().stream()
+                .anyMatch(participant -> participant.getUser() != null && currentUser.getUserId().equals(participant.getUser().getUserId()));
+        if (!isAdmin && !isParticipant) {
+            throw new ApplicationException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
         // Create specification to filter SessionParticipant by sessionId
         Specification<SessionParticipant> finalSpec = Specification.where(spec)
                 .and((root, query, cb) -> cb.equal(root.get("session").get("sessionId"), sessionId));
@@ -378,6 +387,14 @@ public class SessionServiceImpl implements SessionService {
 
         if (!participant.getSession().getSessionId().equals(sessionId)) {
             throw new ApplicationException(ErrorCode.PARTICIPANT_NOT_IN_SESSION);
+        }
+
+        // Check if user has ADMIN role. If not admin, verify if user is the participant
+        User currentUser = securityUtils.getAuthenticatedUser();
+        boolean isAdmin = securityUtils.isAdmin(currentUser);
+        boolean isSelf = participant.getUser() != null && currentUser.getUserId().equals(participant.getUser().getUserId());
+        if (!isAdmin && !isSelf) {
+            throw new ApplicationException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
         // Create specification to filter ActivitySubmission by participantId
