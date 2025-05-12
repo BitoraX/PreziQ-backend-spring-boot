@@ -17,7 +17,6 @@ import java.time.Instant;
 public class SessionSummaryResponse {
     String sessionId;
     String sessionCode;
-    String joinSessionQrUrl;
     String sessionStatus;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")

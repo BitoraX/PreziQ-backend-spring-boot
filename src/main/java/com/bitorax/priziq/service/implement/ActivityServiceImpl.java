@@ -274,9 +274,4 @@ public class ActivityServiceImpl implements ActivityService {
         Activity currentActivity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
         return activityMapper.activityToDetailResponse(currentActivity);
     }
-
-    @Transactional
-    public void createDefaultQuizButtonsActivity(String collectionId) {
-        activityUtils.createDefaultQuizButtonsActivity(collectionId, this);
-    }
 }

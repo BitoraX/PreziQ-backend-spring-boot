@@ -1,5 +1,7 @@
 package com.bitorax.priziq.configuration;
 
+import com.bitorax.priziq.constant.SessionStatus;
+import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse;
@@ -67,20 +69,36 @@ public class WebSocketEventListener {
         sessionParticipantRepository.findByWebsocketSessionId(websocketSessionId)
                 .ifPresent(participant -> {
                     String sessionCode = participant.getSession().getSessionCode();
-                    LeaveSessionRequest leaveRequest = LeaveSessionRequest.builder()
-                            .sessionCode(sessionCode)
-                            .build();
+                    SessionStatus sessionStatus = participant.getSession().getSessionStatus();
 
-                    List<SessionParticipantSummaryResponse> participants = sessionParticipantService.leaveSession(leaveRequest, websocketSessionId);
+                    // Only delete SessionParticipant when sessionStatus is PENDING
+                    if (SessionStatus.PENDING.equals(sessionStatus)) {
+                        LeaveSessionRequest leaveRequest = LeaveSessionRequest.builder()
+                                .sessionCode(sessionCode)
+                                .build();
 
-                    ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = ApiResponse.<List<SessionParticipantSummaryResponse>>builder()
-                            .message(String.format("A participant left session with code: %s due to disconnect", sessionCode))
-                            .data(participants)
-                            .meta(buildWebSocketMetaInfo(headerAccessor))
-                            .build();
+                        List<SessionParticipantSummaryResponse> participants = sessionParticipantService.leaveSession(leaveRequest, websocketSessionId);
 
-                    String destination = "/public/session/" + sessionCode + "/participants";
-                    messagingTemplate.convertAndSend(destination, apiResponse);
+                        ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = ApiResponse.<List<SessionParticipantSummaryResponse>>builder()
+                                .message(String.format("A participant left session with code: %s due to disconnect", sessionCode))
+                                .data(participants)
+                                .meta(buildWebSocketMetaInfo(headerAccessor))
+                                .build();
+
+                        String destination = "/public/session/" + sessionCode + "/participants";
+                        messagingTemplate.convertAndSend(destination, apiResponse);
+                    } else {
+                        ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = ApiResponse.<List<SessionParticipantSummaryResponse>>builder()
+                                .message(String.format("A participant disconnected from session with code: %s but remains in history", sessionCode))
+                                .data(sessionParticipantService.findParticipantsBySessionCode(GetParticipantsRequest
+                                        .builder().sessionCode(sessionCode).build())
+                                )
+                                .meta(buildWebSocketMetaInfo(headerAccessor))
+                                .build();
+
+                        String destination = "/public/session/" + sessionCode + "/participants";
+                        messagingTemplate.convertAndSend(destination, apiResponse);
+                    }
                 });
     }
 }

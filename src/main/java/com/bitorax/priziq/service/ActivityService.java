@@ -30,6 +30,4 @@ public interface ActivityService {
     SlideElementResponse updateSlideElement(String slideId, String elementId, UpdateSlideElementRequest updateSlideElementRequest);
 
     void deleteSlideElement(String slideId, String elementId);
-
-    void createDefaultQuizButtonsActivity(String collectionId);
 }

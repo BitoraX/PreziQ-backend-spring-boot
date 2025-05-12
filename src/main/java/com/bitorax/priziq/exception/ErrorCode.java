@@ -206,6 +206,7 @@ public enum ErrorCode {
     USER_OR_GUEST_REQUIRED(1904, HttpStatus.BAD_REQUEST, "Either userId or guestName must be provided"),
     CLIENT_SESSION_ID_NOT_FOUND(1905, HttpStatus.NOT_FOUND, "Client session id not found"),
     SUMMARY_NOT_FOUND_FOR_PARTICIPANT(1906, HttpStatus.NOT_FOUND, "Summary not found for participant"),
+    PARTICIPANT_NOT_IN_SESSION(1907, HttpStatus.BAD_REQUEST, "The participant is not associated with the current session"),
 
     // Module activity submission errors
     ANSWER_CONTENT_REQUIRED(2001, HttpStatus.BAD_REQUEST, "Answer content is required"),
