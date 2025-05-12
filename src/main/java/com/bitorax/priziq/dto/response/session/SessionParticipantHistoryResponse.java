@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,12 +11,8 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionParticipantHistoryResponse {
-    String sessionParticipantId;
-
     String displayName;
     String displayAvatar;
-
-    List<ActivitySubmissionHistoryResponse> activitySubmissions;
 
     Integer finalScore;
     Integer finalRanking;

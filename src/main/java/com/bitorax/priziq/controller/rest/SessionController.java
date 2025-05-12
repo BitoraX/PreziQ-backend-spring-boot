@@ -1,10 +1,11 @@
 package com.bitorax.priziq.controller.rest;
 
+import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
+import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
-import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
 import com.bitorax.priziq.dto.response.session.SessionDetailResponse;
 import com.bitorax.priziq.service.SessionService;
 import com.turkraft.springfilter.boot.Filter;
@@ -47,11 +48,31 @@ public class SessionController {
                 .build();
     }
 
-    @GetMapping("/{sessionId}/history")
-    ApiResponse<SessionHistoryResponse> getSessionHistory(@PathVariable String sessionId, HttpServletRequest servletRequest) {
-        return ApiResponse.<SessionHistoryResponse>builder()
-                .message("Session history retrieved successfully")
-                .data(sessionService.getSessionHistory(sessionId))
+    @GetMapping("/{sessionId}/participants")
+    ApiResponse<PaginationResponse> getAllParticipantHistoryWithQuery(
+            @PathVariable String sessionId,
+            @Filter Specification<SessionParticipant> spec,
+            Pageable pageable,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.<PaginationResponse>builder()
+                .message("Session participants retrieved successfully with query filters")
+                .data(sessionService.getAllParticipantHistoryWithQuery(sessionId, spec, pageable))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/{sessionId}/participants/{participantId}/submissions")
+    ApiResponse<PaginationResponse> getAllActivitySubmissionHistoryWithQuery(
+            @PathVariable String sessionId,
+            @PathVariable String participantId,
+            @Filter Specification<ActivitySubmission> spec,
+            Pageable pageable,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.<PaginationResponse>builder()
+                .message("Activity submissions retrieved successfully with query filters")
+                .data(sessionService.getAllActivitySubmissionHistoryWithQuery(sessionId,participantId, spec, pageable))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

@@ -17,11 +17,10 @@ import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.session.*;
-import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
-import com.bitorax.priziq.dto.response.session.SessionParticipantHistoryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
+import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.AchievementService;
@@ -60,6 +59,7 @@ public class SessionServiceImpl implements SessionService {
     AchievementService achievementService;
     SessionMapper sessionMapper;
     ActivityMapper activityMapper;
+    ActivitySubmissionMapper activitySubmissionMapper;
     SecurityUtils securityUtils;
     QRCodeUtils qrCodeUtils;
 
@@ -244,53 +244,6 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public SessionHistoryResponse getSessionHistory(String sessionId) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-
-        // Retrieve all participants associated with the session
-        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
-
-        List<SessionEndSummaryResponse> summaries = calculateSessionSummary(sessionId);
-        List<SessionParticipantHistoryResponse> participantHistoryResponses = new ArrayList<>();
-
-        for (int i = 0; i < participants.size(); i++) {
-            SessionParticipant participant = participants.get(i);
-            SessionEndSummaryResponse summary = summaries.get(i);
-
-            List<ActivitySubmission> submissions = activitySubmissionRepository
-                    .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
-
-            List<ActivitySubmissionHistoryResponse> submissionResponses = submissions.stream()
-                    .map(submission -> ActivitySubmissionHistoryResponse.builder()
-                            .activity(activityMapper.activityToDetailResponse((submission.getActivity())))
-                            .answerContent(submission.getAnswerContent())
-                            .isCorrect(submission.getIsCorrect())
-                            .responseScore(submission.getResponseScore())
-                            .build())
-                    .collect(Collectors.toList());
-
-            // Create SessionParticipantHistoryResponse
-            SessionParticipantHistoryResponse participantResponse = SessionParticipantHistoryResponse.builder()
-                    .activitySubmissions(submissionResponses)
-                    .displayName(summary.getDisplayName())
-                    .displayAvatar(summary.getDisplayAvatar())
-                    .finalScore(summary.getFinalScore())
-                    .finalRanking(summary.getFinalRanking())
-                    .finalCorrectCount(summary.getFinalCorrectCount())
-                    .finalIncorrectCount(summary.getFinalIncorrectCount())
-                    .build();
-
-            participantHistoryResponses.add(participantResponse);
-        }
-
-        return SessionHistoryResponse.builder()
-                .session(sessionMapper.sessionToSummaryResponse(session))
-                .participantHistoryResponses(participantHistoryResponses)
-                .build();
-    }
-
-    @Override
     public List<SessionEndSummaryResponse> calculateSessionSummary(String sessionId) {
         sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
@@ -302,10 +255,10 @@ public class SessionServiceImpl implements SessionService {
                     .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
 
             int finalScore = submissions.stream()
-                    .mapToInt(ActivitySubmission::getResponseScore)
-                    .sum(); // errors
+                    .mapToInt(submission -> submission.getResponseScore() != null ? submission.getResponseScore() : 0)
+                    .sum();
             int finalCorrectCount = (int) submissions.stream()
-                    .filter(ActivitySubmission::getIsCorrect)
+                    .filter(submission -> Boolean.TRUE.equals(submission.getIsCorrect()))
                     .count();
             int finalIncorrectCount = submissions.size() - finalCorrectCount;
 
@@ -368,6 +321,87 @@ public class SessionServiceImpl implements SessionService {
     public String findSessionCodeBySessionId(String sessionId) {
         return sessionRepository.findSessionCodeBySessionId(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+    }
+
+    @Override
+    public PaginationResponse getAllParticipantHistoryWithQuery(String sessionId, Specification<SessionParticipant> spec, Pageable pageable) {
+        sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Create specification to filter SessionParticipant by sessionId
+        Specification<SessionParticipant> finalSpec = Specification.where(spec)
+                .and((root, query, cb) -> cb.equal(root.get("session").get("sessionId"), sessionId));
+
+        Page<SessionParticipant> participantPage = sessionParticipantRepository.findAll(finalSpec, pageable);
+
+        // Calculate summary for session and convert to SessionParticipantHistoryResponse
+        List<SessionEndSummaryResponse> summaries = calculateSessionSummary(sessionId);
+        List<SessionParticipantHistoryResponse> participantHistories = participantPage.getContent().stream()
+                .map(participant -> {
+                    // Find summary corresponding to participant
+                    SessionEndSummaryResponse summary = summaries.stream()
+                            .filter(s -> s.getSessionParticipantId().equals(participant.getSessionParticipantId()))
+                            .findFirst()
+                            .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
+
+                    return SessionParticipantHistoryResponse.builder()
+                            .displayName(summary.getDisplayName())
+                            .displayAvatar(summary.getDisplayAvatar())
+                            .finalScore(summary.getFinalScore())
+                            .finalRanking(summary.getFinalRanking())
+                            .finalCorrectCount(summary.getFinalCorrectCount())
+                            .finalIncorrectCount(summary.getFinalIncorrectCount())
+                            .build();
+                })
+                .toList();
+
+        return PaginationResponse.builder()
+                .meta(PaginationMeta.builder()
+                        .currentPage(pageable.getPageNumber() + 1)
+                        .pageSize(pageable.getPageSize())
+                        .totalPages(participantPage.getTotalPages())
+                        .totalElements(participantPage.getTotalElements())
+                        .hasNext(participantPage.hasNext())
+                        .hasPrevious(participantPage.hasPrevious())
+                        .build())
+                .content(participantHistories)
+                .build();
+    }
+
+    @Override
+    public PaginationResponse getAllActivitySubmissionHistoryWithQuery(String sessionId, String participantId, Specification<ActivitySubmission> spec, Pageable pageable) {
+        // Validate session and participant
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        SessionParticipant participant = sessionParticipantRepository.findById(participantId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
+
+        if (!participant.getSession().getSessionId().equals(sessionId)) {
+            throw new ApplicationException(ErrorCode.PARTICIPANT_NOT_IN_SESSION);
+        }
+
+        // Create specification to filter ActivitySubmission by participantId
+        Specification<ActivitySubmission> finalSpec = Specification.where(spec)
+                .and((root, query, cb) -> cb.equal(root.get("sessionParticipant").get("sessionParticipantId"), participantId));
+
+        Page<ActivitySubmission> submissionPage = activitySubmissionRepository.findAll(finalSpec, pageable);
+
+        // Convert to ActivitySubmissionHistoryResponse
+        List<ActivitySubmissionHistoryResponse> submissionHistories = submissionPage.getContent().stream()
+                .map(activitySubmissionMapper::activitySubmissionToHistoryResponse)
+                .toList();
+
+        return PaginationResponse.builder()
+                .meta(PaginationMeta.builder()
+                        .currentPage(pageable.getPageNumber() + 1)
+                        .pageSize(pageable.getPageSize())
+                        .totalPages(submissionPage.getTotalPages())
+                        .totalElements(submissionPage.getTotalElements())
+                        .hasNext(submissionPage.hasNext())
+                        .hasPrevious(submissionPage.hasPrevious())
+                        .build())
+                .content(submissionHistories)
+                .build();
     }
 
     private Session getSessionById(String sessionId) {
