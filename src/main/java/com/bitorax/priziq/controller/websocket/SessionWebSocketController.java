@@ -25,6 +25,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -122,6 +123,7 @@ public class SessionWebSocketController {
     }
 
     @MessageMapping("/session/submit")
+    @Async("asyncTaskExecutor")
     public void handleSubmitActivity(@Valid @Payload CreateActivitySubmissionRequest request, SimpMessageHeaderAccessor headerAccessor) {
         String websocketSessionId = headerAccessor.getSessionId();
         if (websocketSessionId == null) {
@@ -153,6 +155,7 @@ public class SessionWebSocketController {
     }
 
     @MessageMapping("/session/nextActivity")
+    @Async("asyncTaskExecutor")
     public void handleNextActivity(@Valid @Payload NextActivityRequest request, SimpMessageHeaderAccessor headerAccessor) {
         String websocketSessionId = headerAccessor.getSessionId();
         if (websocketSessionId == null) {
@@ -171,6 +174,7 @@ public class SessionWebSocketController {
     }
 
     @MessageMapping("/session/complete")
+    @Async("asyncTaskExecutor")
     public void handleEndSession(@Valid @Payload EndSessionRequest request, SimpMessageHeaderAccessor headerAccessor) {
         String websocketSessionId = headerAccessor.getSessionId();
         if (websocketSessionId == null) {

@@ -58,8 +58,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Bean
     public Executor channelExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(8);
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(16);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("channel-thread-");
         executor.initialize();
