@@ -63,11 +63,12 @@ public class ActivityServiceImpl implements ActivityService {
         Activity activity = activityMapper.createActivityRequestToActivity(createActivityRequest);
         activity.setCollection(currentCollection);
 
-        Integer maxOrderIndex = currentCollection.getActivities().stream()
-                .map(Activity::getOrderIndex)
-                .filter(Objects::nonNull)
-                .max(Integer::compareTo)
-                .orElse(-1);
+        int maxOrderIndex = currentCollection.getActivities() != null ?
+                currentCollection.getActivities().stream()
+                        .map(Activity::getOrderIndex)
+                        .filter(Objects::nonNull)
+                        .max(Integer::compareTo)
+                        .orElse(-1) : -1;
 
         activity.setOrderIndex(maxOrderIndex + 1);
 
@@ -272,10 +273,5 @@ public class ActivityServiceImpl implements ActivityService {
     public ActivityDetailResponse getActivityById(String activityId){
         Activity currentActivity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
         return activityMapper.activityToDetailResponse(currentActivity);
-    }
-
-    @Transactional
-    public void createDefaultQuizButtonsActivity(String collectionId) {
-        activityUtils.createDefaultQuizButtonsActivity(collectionId, this);
     }
 }
