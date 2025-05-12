@@ -167,6 +167,9 @@ public enum ErrorCode {
     LATITUDE_REQUIRED(1732, HttpStatus.BAD_REQUEST, "Latitude is required"),
     RADIUS_REQUIRED(1733, HttpStatus.BAD_REQUEST, "Radius is required"),
     LOCATION_DATA_REQUIRED(1734, HttpStatus.BAD_REQUEST, "Location data is required"),
+    INVALID_LONGITUDE(1735, HttpStatus.BAD_REQUEST, "Longitude must be between -180 and 180"),
+    INVALID_LATITUDE(1736, HttpStatus.BAD_REQUEST, "Latitude must be between -90 and 90"),
+    INVALID_RADIUS(1737, HttpStatus.BAD_REQUEST, "Radius must be positive"),
 
     // Slide-related errors
     SLIDE_NOT_FOUND(1730, HttpStatus.NOT_FOUND, "Slide not found"),

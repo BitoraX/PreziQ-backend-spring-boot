@@ -218,10 +218,10 @@ public class ActivityUtils {
     }
 
     public void updateQuizLocationAnswers(Quiz quiz, List<QuizLocationAnswer> newAnswers) {
-        if (quiz.getQuizAnswers() != null) {
-            quiz.getQuizAnswers().clear();
+        if (quiz.getQuizLocationAnswers() != null) {
+            quiz.getQuizLocationAnswers().clear();
         } else {
-            quiz.setQuizAnswers(new ArrayList<>());
+            quiz.setQuizLocationAnswers(new ArrayList<>());
         }
         quiz.getQuizLocationAnswers().addAll(newAnswers);
     }
