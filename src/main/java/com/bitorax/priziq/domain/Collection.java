@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -26,7 +27,7 @@ public class Collection extends BaseEntity {
     User creator;
 
     @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
-    List<Activity> activities;
+    List<Activity> activities = new ArrayList<>();
 
     @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
     List<Session> sessions;

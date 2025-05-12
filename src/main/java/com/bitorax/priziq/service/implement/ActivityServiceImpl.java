@@ -63,11 +63,12 @@ public class ActivityServiceImpl implements ActivityService {
         Activity activity = activityMapper.createActivityRequestToActivity(createActivityRequest);
         activity.setCollection(currentCollection);
 
-        Integer maxOrderIndex = currentCollection.getActivities().stream()
-                .map(Activity::getOrderIndex)
-                .filter(Objects::nonNull)
-                .max(Integer::compareTo)
-                .orElse(-1);
+        int maxOrderIndex = currentCollection.getActivities() != null ?
+                currentCollection.getActivities().stream()
+                        .map(Activity::getOrderIndex)
+                        .filter(Objects::nonNull)
+                        .max(Integer::compareTo)
+                        .orElse(-1) : -1;
 
         activity.setOrderIndex(maxOrderIndex + 1);
 
