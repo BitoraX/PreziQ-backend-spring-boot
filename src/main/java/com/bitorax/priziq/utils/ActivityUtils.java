@@ -67,14 +67,6 @@ public class ActivityUtils {
     String CHOICE_OPTION2;
 
     @NonFinal
-    @Value("${priziq.quiz.choice.option3}")
-    String CHOICE_OPTION3;
-
-    @NonFinal
-    @Value("${priziq.quiz.choice.option4}")
-    String CHOICE_OPTION4;
-
-    @NonFinal
     @Value("${priziq.quiz.choice.wrong_answer}")
     String CHOICE_WRONG_ANSWER;
 
@@ -97,18 +89,6 @@ public class ActivityUtils {
     @NonFinal
     @Value("${priziq.quiz.default.point_type}")
     String DEFAULT_POINT_TYPE;
-
-    @NonFinal
-    @Value("${priziq.quiz.default_activity.title}")
-    String DEFAULT_ACTIVITY_TITLE;
-
-    @NonFinal
-    @Value("${priziq.quiz.default_activity.description}")
-    String DEFAULT_ACTIVITY_DESCRIPTION;
-
-    @NonFinal
-    @Value("${priziq.quiz.default_activity.is_published}")
-    Boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
 
     @NonFinal
     @Value("${priziq.slide.default.transition_duration}")
@@ -455,61 +435,6 @@ public class ActivityUtils {
 
     public Slide getSlideById(String slideId) {
         return slideRepository.findById(slideId).orElseThrow(() -> new ApplicationException(ErrorCode.SLIDE_NOT_FOUND));
-    }
-
-    public void createDefaultQuizButtonsActivity(String collectionId, ActivityServiceImpl activityService) {
-        CreateActivityRequest request = CreateActivityRequest.builder()
-                .collectionId(collectionId)
-                .activityType("QUIZ_BUTTONS")
-                .title(DEFAULT_ACTIVITY_TITLE)
-                .description(DEFAULT_ACTIVITY_DESCRIPTION)
-                .isPublished(DEFAULT_ACTIVITY_IS_PUBLISHED)
-                .build();
-
-        ActivitySummaryResponse activityResponse = activityService.createActivity(request);
-
-        Activity activity = activityRepository.findById(activityResponse.getActivityId())
-                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
-
-        Quiz defaultQuiz = Quiz.builder()
-                .quizId(activity.getActivityId())
-                .activity(activity)
-                .questionText(DEFAULT_QUESTION)
-                .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
-                .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
-                .quizAnswers(new ArrayList<>())
-                .build();
-
-        List<QuizAnswer> defaultAnswers = new ArrayList<>();
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION1)
-                .isCorrect(true)
-                .orderIndex(0)
-                .build());
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION2)
-                .isCorrect(false)
-                .orderIndex(1)
-                .build());
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION3)
-                .isCorrect(false)
-                .orderIndex(2)
-                .build());
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION4)
-                .isCorrect(false)
-                .orderIndex(3)
-                .build());
-
-        defaultQuiz.setQuizAnswers(defaultAnswers);
-        activity.setQuiz(defaultQuiz);
-
-        quizRepository.save(defaultQuiz);
     }
 
     public SlideElement validateAndGetSlideElement(String slideId, String elementId) {

@@ -1,11 +1,16 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
+import com.bitorax.priziq.domain.activity.quiz.Quiz;
+import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
+import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
+import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.collection.CollectionDetailResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
@@ -15,6 +20,7 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
 import com.bitorax.priziq.repository.ActivityRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
+import com.bitorax.priziq.repository.QuizRepository;
 import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.ActivityService;
 import com.bitorax.priziq.service.CollectionService;
@@ -23,7 +29,9 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -41,9 +49,50 @@ public class CollectionServiceImpl implements CollectionService {
     CollectionRepository collectionRepository;
     ActivityRepository activityRepository;
     UserRepository userRepository;
+    QuizRepository quizRepository;
     ActivityService activityService;
     CollectionMapper collectionMapper;
     SecurityUtils securityUtils;
+
+    @NonFinal
+    @Value("${priziq.quiz.default.question}")
+    String DEFAULT_QUESTION;
+
+    @NonFinal
+    @Value("${priziq.quiz.choice.option1}")
+    String CHOICE_OPTION1;
+
+    @NonFinal
+    @Value("${priziq.quiz.choice.option2}")
+    String CHOICE_OPTION2;
+
+    @NonFinal
+    @Value("${priziq.quiz.choice.option3}")
+    String CHOICE_OPTION3;
+
+    @NonFinal
+    @Value("${priziq.quiz.choice.option4}")
+    String CHOICE_OPTION4;
+
+    @NonFinal
+    @Value("${priziq.quiz.default.time_limit_seconds}")
+    Integer DEFAULT_TIME_LIMIT_SECONDS;
+
+    @NonFinal
+    @Value("${priziq.quiz.default.point_type}")
+    String DEFAULT_POINT_TYPE;
+
+    @NonFinal
+    @Value("${priziq.quiz.default_activity.title}")
+    String DEFAULT_ACTIVITY_TITLE;
+
+    @NonFinal
+    @Value("${priziq.quiz.default_activity.description}")
+    String DEFAULT_ACTIVITY_DESCRIPTION;
+
+    @NonFinal
+    @Value("${priziq.quiz.default_activity.is_published}")
+    Boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
 
     @Override
     @Transactional
@@ -57,7 +106,7 @@ public class CollectionServiceImpl implements CollectionService {
         Collection savedCollection = collectionRepository.save(collection);
 
         // Create default QUIZ_BUTTONS activity
-        activityService.createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
+        createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
 
         return collectionMapper.collectionToDetailResponse(savedCollection);
     }
@@ -217,5 +266,60 @@ public class CollectionServiceImpl implements CollectionService {
         return ids.stream()
                 .filter(id -> !seen.add(id))
                 .collect(Collectors.toSet());
+    }
+
+    private void createDefaultQuizButtonsActivity(String collectionId) {
+        CreateActivityRequest request = CreateActivityRequest.builder()
+                .collectionId(collectionId)
+                .activityType("QUIZ_BUTTONS")
+                .title(DEFAULT_ACTIVITY_TITLE)
+                .description(DEFAULT_ACTIVITY_DESCRIPTION)
+                .isPublished(DEFAULT_ACTIVITY_IS_PUBLISHED)
+                .build();
+
+        ActivitySummaryResponse activityResponse = activityService.createActivity(request);
+
+        Activity activity = activityRepository.findById(activityResponse.getActivityId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        Quiz defaultQuiz = Quiz.builder()
+                .quizId(activity.getActivityId())
+                .activity(activity)
+                .questionText(DEFAULT_QUESTION)
+                .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
+                .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
+                .quizAnswers(new ArrayList<>())
+                .build();
+
+        List<QuizAnswer> defaultAnswers = new ArrayList<>();
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION1)
+                .isCorrect(true)
+                .orderIndex(0)
+                .build());
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION2)
+                .isCorrect(false)
+                .orderIndex(1)
+                .build());
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION3)
+                .isCorrect(false)
+                .orderIndex(2)
+                .build());
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION4)
+                .isCorrect(false)
+                .orderIndex(3)
+                .build());
+
+        defaultQuiz.setQuizAnswers(defaultAnswers);
+        activity.setQuiz(defaultQuiz);
+
+        quizRepository.save(defaultQuiz);
     }
 }
