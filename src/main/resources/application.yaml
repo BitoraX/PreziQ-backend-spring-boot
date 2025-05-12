@@ -61,6 +61,10 @@ priziq:
             question: ${QUIZ_DEFAULT_QUESTION:Default question}
             time_limit_seconds: ${QUIZ_DEFAULT_TIME_LIMIT_SECONDS:30}
             point_type: ${QUIZ_DEFAULT_POINT_TYPE:STANDARD}
+        location:
+            default_longitude: ${QUIZ_DEFAULT_LONGITUDE:0.0}
+            default_latitude: ${QUIZ_DEFAULT_LATITUDE:0.0}
+            default_radius: ${QUIZ_DEFAULT_RADIUS:100.0}
         reorder:
             step1: ${QUIZ_REORDER_STEP1:Step 1}
             step2: ${QUIZ_REORDER_STEP2:Step 2}

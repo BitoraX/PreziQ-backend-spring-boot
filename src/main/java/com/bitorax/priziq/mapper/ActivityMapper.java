@@ -3,6 +3,7 @@ package com.bitorax.priziq.mapper;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -14,6 +15,7 @@ import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizAnswerResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizLocationAnswerResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
@@ -37,6 +39,8 @@ public interface ActivityMapper {
     QuizResponse quizToResponse(Quiz quiz);
 
     QuizAnswerResponse quizAnswerToResponse(QuizAnswer quizAnswer);
+
+    QuizLocationAnswerResponse quizLocationAnswerToResponse(QuizLocationAnswer quizLocationAnswer);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateActivityFromRequest(UpdateActivityRequest updateActivityRequest, @MappingTarget Activity activity);
