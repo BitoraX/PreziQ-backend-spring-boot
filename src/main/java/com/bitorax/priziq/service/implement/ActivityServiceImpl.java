@@ -49,7 +49,7 @@ public class ActivityServiceImpl implements ActivityService {
     ActivityMapper activityMapper;
     ActivityUtils activityUtils;
 
-    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE");
+    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION");
 
     @Override
     @Transactional
@@ -153,7 +153,14 @@ public class ActivityServiceImpl implements ActivityService {
 
         quizRepository.save(quiz);
         Quiz updatedQuiz = quizRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_NOT_FOUND));
-        updatedQuiz.getQuizAnswers().size();
+
+        // Load answer list based on activityType
+        if (activityType == ActivityType.QUIZ_LOCATION) {
+            Hibernate.initialize(updatedQuiz.getQuizLocationAnswers());
+        } else {
+            Hibernate.initialize(updatedQuiz.getQuizAnswers());
+        }
+
         return activityMapper.quizToResponse(updatedQuiz);
     }
 
