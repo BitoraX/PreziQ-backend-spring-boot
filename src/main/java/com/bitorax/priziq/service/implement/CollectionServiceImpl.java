@@ -57,7 +57,7 @@ public class CollectionServiceImpl implements CollectionService {
         Collection savedCollection = collectionRepository.save(collection);
 
         // Create default QUIZ_BUTTONS activity
-//        activityService.createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
+        activityService.createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
 
         return collectionMapper.collectionToDetailResponse(savedCollection);
     }

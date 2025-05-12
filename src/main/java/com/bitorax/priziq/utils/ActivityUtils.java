@@ -92,7 +92,7 @@ public class ActivityUtils {
 
     @NonFinal
     @Value("${priziq.quiz.default.time_limit_seconds}")
-    int DEFAULT_TIME_LIMIT_SECONDS;
+    Integer DEFAULT_TIME_LIMIT_SECONDS;
 
     @NonFinal
     @Value("${priziq.quiz.default.point_type}")
@@ -108,7 +108,7 @@ public class ActivityUtils {
 
     @NonFinal
     @Value("${priziq.quiz.default_activity.is_published}")
-    boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
+    Boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
 
     @NonFinal
     @Value("${priziq.slide.default.transition_duration}")
@@ -116,7 +116,7 @@ public class ActivityUtils {
 
     @NonFinal
     @Value("${priziq.slide.default.auto_advance_seconds}")
-    int DEFAULT_AUTO_ADVANCE_SECONDS;
+    Integer DEFAULT_AUTO_ADVANCE_SECONDS;
 
     public void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
         String requestType = request.getType().toUpperCase();
@@ -503,7 +503,7 @@ public class ActivityUtils {
                 .quiz(defaultQuiz)
                 .answerText(CHOICE_OPTION4)
                 .isCorrect(false)
-                .orderIndex(2)
+                .orderIndex(3)
                 .build());
 
         defaultQuiz.setQuizAnswers(defaultAnswers);
