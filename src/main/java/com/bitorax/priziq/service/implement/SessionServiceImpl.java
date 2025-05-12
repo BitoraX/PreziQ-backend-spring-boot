@@ -353,6 +353,7 @@ public class SessionServiceImpl implements SessionService {
                             .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
                     return SessionParticipantHistoryResponse.builder()
+                            .sessionParticipantId(summary.getSessionParticipantId())
                             .displayName(summary.getDisplayName())
                             .displayAvatar(summary.getDisplayAvatar())
                             .finalScore(summary.getFinalScore())
