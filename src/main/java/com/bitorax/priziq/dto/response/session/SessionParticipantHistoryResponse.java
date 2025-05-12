@@ -13,10 +13,12 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionParticipantHistoryResponse {
-    List<ActivitySubmissionHistoryResponse> activitySubmissions;
+    String sessionParticipantId;
 
     String displayName;
     String displayAvatar;
+
+    List<ActivitySubmissionHistoryResponse> activitySubmissions;
 
     Integer finalScore;
     Integer finalRanking;
