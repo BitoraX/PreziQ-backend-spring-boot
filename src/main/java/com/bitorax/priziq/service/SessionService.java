@@ -8,6 +8,7 @@ import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.session.*;
+import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 

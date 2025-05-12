@@ -17,6 +17,8 @@ import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.session.*;
+import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
+import com.bitorax.priziq.dto.response.session.SessionParticipantHistoryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
@@ -259,9 +261,9 @@ public class SessionServiceImpl implements SessionService {
             List<ActivitySubmission> submissions = activitySubmissionRepository
                     .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
 
-            List<ActivitySubmissionSummaryResponse> submissionResponses = submissions.stream()
-                    .map(submission -> ActivitySubmissionSummaryResponse.builder()
-                            .activitySubmissionId(submission.getActivitySubmissionId())
+            List<ActivitySubmissionHistoryResponse> submissionResponses = submissions.stream()
+                    .map(submission -> ActivitySubmissionHistoryResponse.builder()
+                            .activity(activityMapper.activityToDetailResponse((submission.getActivity())))
                             .answerContent(submission.getAnswerContent())
                             .isCorrect(submission.getIsCorrect())
                             .responseScore(submission.getResponseScore())
@@ -270,7 +272,6 @@ public class SessionServiceImpl implements SessionService {
 
             // Create SessionParticipantHistoryResponse
             SessionParticipantHistoryResponse participantResponse = SessionParticipantHistoryResponse.builder()
-                    .sessionParticipantId(participant.getSessionParticipantId())
                     .activitySubmissions(submissionResponses)
                     .displayName(summary.getDisplayName())
                     .displayAvatar(summary.getDisplayAvatar())
@@ -284,7 +285,7 @@ public class SessionServiceImpl implements SessionService {
         }
 
         return SessionHistoryResponse.builder()
-                .session(sessionMapper.sessionToDetailResponse(session))
+                .session(sessionMapper.sessionToSummaryResponse(session))
                 .participantHistoryResponses(participantHistoryResponses)
                 .build();
     }

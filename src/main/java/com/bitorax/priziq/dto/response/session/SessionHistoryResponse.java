@@ -13,6 +13,6 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionHistoryResponse {
-    SessionDetailResponse session;
+    SessionSummaryResponse session;
     List<SessionParticipantHistoryResponse> participantHistoryResponses;
 }
