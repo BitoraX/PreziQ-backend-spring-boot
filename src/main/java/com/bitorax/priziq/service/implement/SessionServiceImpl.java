@@ -325,7 +325,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public PaginationResponse getAllParticipantHistoryWithQuery(String sessionId, Specification<SessionParticipant> spec, Pageable pageable) {
-        sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         // Create specification to filter SessionParticipant by sessionId
         Specification<SessionParticipant> finalSpec = Specification.where(spec)
