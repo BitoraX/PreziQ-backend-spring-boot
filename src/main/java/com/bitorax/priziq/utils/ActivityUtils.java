@@ -98,6 +98,18 @@ public class ActivityUtils {
     @Value("${priziq.slide.default.auto_advance_seconds}")
     Integer DEFAULT_AUTO_ADVANCE_SECONDS;
 
+    @NonFinal
+    @Value("${priziq.quiz.location.default_longitude}")
+    Double DEFAULT_LONGITUDE;
+
+    @NonFinal
+    @Value("${priziq.quiz.location.default_latitude}")
+    Double DEFAULT_LATITUDE;
+
+    @NonFinal
+    @Value("${priziq.quiz.location.default_radius}")
+    Double DEFAULT_RADIUS;
+
     public void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
         String requestType = request.getType().toUpperCase();
         switch (activityType) {
@@ -290,6 +302,7 @@ public class ActivityUtils {
 
     public void convertQuizType(Quiz quiz, ActivityType oldType, ActivityType newType, StringBuilder warning) {
         List<QuizAnswer> answers = quiz.getQuizAnswers() != null ? quiz.getQuizAnswers() : new ArrayList<>();
+        List<QuizLocationAnswer> locationAnswers = quiz.getQuizLocationAnswers() != null ? quiz.getQuizLocationAnswers() : new ArrayList<>();
         String questionText = quiz.getQuestionText() != null ? quiz.getQuestionText() : DEFAULT_QUESTION;
 
         QuizAnswer correctAnswer = answers.stream().filter(QuizAnswer::getIsCorrect).findFirst().orElse(null);
@@ -310,6 +323,7 @@ public class ActivityUtils {
                     }
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, correctAnswer, quiz, warning);
+                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
                 }
                 break;
             case QUIZ_CHECKBOXES:
@@ -318,6 +332,7 @@ public class ActivityUtils {
                     case QUIZ_REORDER -> answers.forEach(answer -> answer.setIsCorrect(true));
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, correctAnswer, quiz, warning);
+                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
                 }
                 break;
             case QUIZ_REORDER:
@@ -326,6 +341,7 @@ public class ActivityUtils {
                     case QUIZ_CHECKBOXES -> {}
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, firstAnswer, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, firstAnswer, quiz, warning);
+                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
                 }
                 break;
             case QUIZ_TYPE_ANSWER:
@@ -333,6 +349,7 @@ public class ActivityUtils {
                     case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> addDefaultOptionsIfEmpty(answers, quiz, warning);
                     case QUIZ_REORDER -> ensureReorderCompatibility(answers, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, firstAnswer, quiz, warning);
+                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
                 }
                 break;
             case QUIZ_TRUE_OR_FALSE:
@@ -340,10 +357,72 @@ public class ActivityUtils {
                     case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {}
                     case QUIZ_REORDER -> answers.forEach(answer -> answer.setIsCorrect(true));
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
+                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                }
+                break;
+            case QUIZ_LOCATION:
+                answers.clear();
+                locationAnswers.clear();
+                switch (newType) {
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(CHOICE_OPTION1)
+                                .isCorrect(true)
+                                .orderIndex(0)
+                                .build());
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(CHOICE_OPTION2)
+                                .isCorrect(false)
+                                .orderIndex(1)
+                                .build());
+                        warning.append("Converted to multiple-choice question with default options");
+                    }
+                    case QUIZ_REORDER -> {
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(REORDER_STEP1)
+                                .isCorrect(true)
+                                .orderIndex(0)
+                                .build());
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(REORDER_STEP2)
+                                .isCorrect(true)
+                                .orderIndex(1)
+                                .build());
+                        warning.append("Converted to reorder question with default steps");
+                    }
+                    case QUIZ_TYPE_ANSWER -> {
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(TYPE_ANSWER_DEFAULT)
+                                .isCorrect(true)
+                                .orderIndex(0)
+                                .build());
+                        warning.append("Converted to type-answer question with default answer");
+                    }
+                    case QUIZ_TRUE_OR_FALSE -> {
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(CHOICE_TRUE)
+                                .isCorrect(true)
+                                .orderIndex(0)
+                                .build());
+                        answers.add(QuizAnswer.builder()
+                                .quiz(quiz)
+                                .answerText(CHOICE_FALSE)
+                                .isCorrect(false)
+                                .orderIndex(1)
+                                .build());
+                        warning.append("Converted to True/False question with default options");
+                    }
                 }
                 break;
             case INFO_SLIDE:
                 answers.clear();
+                locationAnswers.clear();
                 switch (newType) {
                     case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
                         answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_OPTION1).isCorrect(true).orderIndex(0).build());
@@ -364,6 +443,7 @@ public class ActivityUtils {
                         answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_FALSE).isCorrect(false).orderIndex(1).build());
                         warning.append("Created default True/False question");
                     }
+                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
                 }
                 break;
             default:
@@ -371,6 +451,7 @@ public class ActivityUtils {
         }
         quiz.setQuestionText(questionText);
         quiz.setQuizAnswers(answers);
+        quiz.setQuizLocationAnswers(locationAnswers);
     }
 
     public void reduceToSingleCorrect(List<QuizAnswer> answers, StringBuilder warning) {
@@ -395,11 +476,25 @@ public class ActivityUtils {
         }
     }
 
+    public void updateToLocationQuiz(List<QuizAnswer> answers, List<QuizLocationAnswer> locationAnswers, Quiz quiz, StringBuilder warning) {
+        answers.clear();
+        locationAnswers.clear();
+        locationAnswers.add(QuizLocationAnswer.builder()
+                .quiz(quiz)
+                .longitude(DEFAULT_LONGITUDE)
+                .latitude(DEFAULT_LATITUDE)
+                .radius(DEFAULT_RADIUS)
+                .build());
+        warning.append("Converted to location quiz with default location answer");
+    }
+
     public void updateToTrueFalse(List<QuizAnswer> answers, QuizAnswer answer, Quiz quiz, StringBuilder warning) {
         answers.clear();
+
         boolean isTrue = answer != null && answer.getAnswerText().toLowerCase().contains("true");
         answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_TRUE).isCorrect(isTrue).orderIndex(0).build());
         answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_FALSE).isCorrect(!isTrue).orderIndex(1).build());
+
         if (answer != null) warning.append("Converted to True/False based on first answer");
     }
 
