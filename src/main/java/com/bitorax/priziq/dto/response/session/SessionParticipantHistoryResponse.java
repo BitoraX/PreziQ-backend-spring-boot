@@ -13,9 +13,7 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SessionParticipantHistoryResponse {
-    String sessionParticipantId;
-
-    List<ActivitySubmissionSummaryResponse> activitySubmissions;
+    List<ActivitySubmissionHistoryResponse> activitySubmissions;
 
     String displayName;
     String displayAvatar;

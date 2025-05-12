@@ -44,79 +44,79 @@ public class ActivityUtils {
 
     @NonFinal
     @Value("${priziq.quiz.default.question}")
-    String defaultQuestion;
+    String DEFAULT_QUESTION;
 
     @NonFinal
     @Value("${priziq.quiz.reorder.step1}")
-    String reorderStep1;
+    String REORDER_STEP1;
 
     @NonFinal
     @Value("${priziq.quiz.reorder.step2}")
-    String reorderStep2;
+    String REORDER_STEP2;
 
     @NonFinal
     @Value("${priziq.quiz.reorder.default_step}")
-    String reorderDefaultStep;
+    String REORDER_DEFAULT_STEP;
 
     @NonFinal
     @Value("${priziq.quiz.choice.option1}")
-    String choiceOption1;
+    String CHOICE_OPTION1;
 
     @NonFinal
     @Value("${priziq.quiz.choice.option2}")
-    String choiceOption2;
+    String CHOICE_OPTION2;
 
     @NonFinal
     @Value("${priziq.quiz.choice.option3}")
-    String choiceOption3;
+    String CHOICE_OPTION3;
 
     @NonFinal
     @Value("${priziq.quiz.choice.option4}")
-    String choiceOption4;
+    String CHOICE_OPTION4;
 
     @NonFinal
     @Value("${priziq.quiz.choice.wrong_answer}")
-    String choiceWrongAnswer;
+    String CHOICE_WRONG_ANSWER;
 
     @NonFinal
     @Value("${priziq.quiz.type_answer.default}")
-    String typeAnswerDefault;
+    String TYPE_ANSWER_DEFAULT;
 
     @NonFinal
     @Value("${priziq.quiz.true_false.option_true}")
-    String choiceTrue;
+    String CHOICE_TRUE;
 
     @NonFinal
     @Value("${priziq.quiz.true_false.option_false}")
-    String choiceFalse;
+    String CHOICE_FALSE;
 
     @NonFinal
     @Value("${priziq.quiz.default.time_limit_seconds}")
-    int defaultTimeLimitSeconds;
+    int DEFAULT_TIME_LIMIT_SECONDS;
 
     @NonFinal
     @Value("${priziq.quiz.default.point_type}")
-    String defaultPointType;
+    String DEFAULT_POINT_TYPE;
 
     @NonFinal
     @Value("${priziq.quiz.default_activity.title}")
-    String defaultActivityTitle;
+    String DEFAULT_ACTIVITY_TITLE;
 
     @NonFinal
     @Value("${priziq.quiz.default_activity.description}")
-    String defaultActivityDescription;
+    String DEFAULT_ACTIVITY_DESCRIPTION;
 
     @NonFinal
     @Value("${priziq.quiz.default_activity.is_published}")
-    boolean defaultActivityIsPublished;
+    boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
 
     @NonFinal
     @Value("${priziq.slide.default.transition_duration}")
-    BigDecimal defaultTransitionDuration;
+    BigDecimal DEFAULT_TRANSITION_DURATION;
 
     @NonFinal
     @Value("${priziq.slide.default.auto_advance_seconds}")
-    int defaultAutoAdvanceSeconds;
+    int DEFAULT_AUTO_ADVANCE_SECONDS;
 
     public void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
         String requestType = request.getType().toUpperCase();
@@ -209,13 +209,13 @@ public class ActivityUtils {
     public void handleTrueFalseQuiz(Quiz quiz, UpdateTrueFalseQuizRequest request) {
         QuizAnswer trueAnswer = QuizAnswer.builder()
                 .quiz(quiz)
-                .answerText(choiceTrue)
+                .answerText(CHOICE_TRUE)
                 .isCorrect(request.getCorrectAnswer())
                 .orderIndex(0)
                 .build();
         QuizAnswer falseAnswer = QuizAnswer.builder()
                 .quiz(quiz)
-                .answerText(choiceFalse)
+                .answerText(CHOICE_FALSE)
                 .isCorrect(!request.getCorrectAnswer())
                 .orderIndex(1)
                 .build();
@@ -291,9 +291,9 @@ public class ActivityUtils {
         return Quiz.builder()
                 .quizId(activity.getActivityId())
                 .activity(activity)
-                .questionText(defaultQuestion)
-                .timeLimitSeconds(defaultTimeLimitSeconds)
-                .pointType(PointType.valueOf(defaultPointType))
+                .questionText(DEFAULT_QUESTION)
+                .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
+                .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
                 .quizAnswers(new ArrayList<>())
                 .build();
     }
@@ -303,14 +303,14 @@ public class ActivityUtils {
                 .slideId(activity.getActivityId())
                 .activity(activity)
                 .slideElements(new ArrayList<>())
-                .transitionDuration(defaultTransitionDuration)
-                .autoAdvanceSeconds(defaultAutoAdvanceSeconds)
+                .transitionDuration(DEFAULT_TRANSITION_DURATION)
+                .autoAdvanceSeconds(DEFAULT_AUTO_ADVANCE_SECONDS)
                 .build();
     }
 
     public void convertQuizType(Quiz quiz, ActivityType oldType, ActivityType newType, StringBuilder warning) {
         List<QuizAnswer> answers = quiz.getQuizAnswers() != null ? quiz.getQuizAnswers() : new ArrayList<>();
-        String questionText = quiz.getQuestionText() != null ? quiz.getQuestionText() : defaultQuestion;
+        String questionText = quiz.getQuestionText() != null ? quiz.getQuestionText() : DEFAULT_QUESTION;
 
         QuizAnswer correctAnswer = answers.stream().filter(QuizAnswer::getIsCorrect).findFirst().orElse(null);
         QuizAnswer firstAnswer = answers.isEmpty() ? null : answers.getFirst();
@@ -321,8 +321,8 @@ public class ActivityUtils {
                     case QUIZ_CHECKBOXES -> {}
                     case QUIZ_REORDER -> {
                         if (answers.isEmpty()) {
-                            answers.add(QuizAnswer.builder().quiz(quiz).answerText(reorderStep1).isCorrect(true).orderIndex(0).build());
-                            answers.add(QuizAnswer.builder().quiz(quiz).answerText(reorderStep2).isCorrect(true).orderIndex(1).build());
+                            answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP1).isCorrect(true).orderIndex(0).build());
+                            answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP2).isCorrect(true).orderIndex(1).build());
                             warning.append("Created default reorder answers");
                         } else {
                             answers.forEach(answer -> answer.setIsCorrect(true));
@@ -366,22 +366,22 @@ public class ActivityUtils {
                 answers.clear();
                 switch (newType) {
                     case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceOption1).isCorrect(true).orderIndex(0).build());
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceOption2).isCorrect(false).orderIndex(1).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_OPTION1).isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_OPTION2).isCorrect(false).orderIndex(1).build());
                         warning.append("Created default multiple-choice question with options");
                     }
                     case QUIZ_REORDER -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(reorderStep1).isCorrect(true).orderIndex(0).build());
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(reorderStep2).isCorrect(true).orderIndex(1).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP1).isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP2).isCorrect(true).orderIndex(1).build());
                         warning.append("Created default reorder question");
                     }
                     case QUIZ_TYPE_ANSWER -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(typeAnswerDefault).isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(TYPE_ANSWER_DEFAULT).isCorrect(true).orderIndex(0).build());
                         warning.append("Created default type-answer question");
                     }
                     case QUIZ_TRUE_OR_FALSE -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceTrue).isCorrect(true).orderIndex(0).build());
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceFalse).isCorrect(false).orderIndex(1).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_TRUE).isCorrect(true).orderIndex(0).build());
+                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_FALSE).isCorrect(false).orderIndex(1).build());
                         warning.append("Created default True/False question");
                     }
                 }
@@ -410,7 +410,7 @@ public class ActivityUtils {
         if (answer != null) {
             answers.add(QuizAnswer.builder().quiz(quiz).answerText(answer.getAnswerText()).isCorrect(true).orderIndex(0).build());
         } else {
-            answers.add(QuizAnswer.builder().quiz(quiz).answerText(typeAnswerDefault).isCorrect(true).orderIndex(0).build());
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText(TYPE_ANSWER_DEFAULT).isCorrect(true).orderIndex(0).build());
             warning.append("No correct answer found, using default answer");
         }
     }
@@ -418,22 +418,22 @@ public class ActivityUtils {
     public void updateToTrueFalse(List<QuizAnswer> answers, QuizAnswer answer, Quiz quiz, StringBuilder warning) {
         answers.clear();
         boolean isTrue = answer != null && answer.getAnswerText().toLowerCase().contains("true");
-        answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceTrue).isCorrect(isTrue).orderIndex(0).build());
-        answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceFalse).isCorrect(!isTrue).orderIndex(1).build());
+        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_TRUE).isCorrect(isTrue).orderIndex(0).build());
+        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_FALSE).isCorrect(!isTrue).orderIndex(1).build());
         if (answer != null) warning.append("Converted to True/False based on first answer");
     }
 
     public void addDefaultOptionsIfEmpty(List<QuizAnswer> answers, Quiz quiz, StringBuilder warning) {
         if (answers.isEmpty()) {
-            answers.add(QuizAnswer.builder().quiz(quiz).answerText(typeAnswerDefault).isCorrect(true).orderIndex(0).build());
-            answers.add(QuizAnswer.builder().quiz(quiz).answerText(choiceWrongAnswer).isCorrect(false).orderIndex(1).build());
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText(TYPE_ANSWER_DEFAULT).isCorrect(true).orderIndex(0).build());
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_WRONG_ANSWER).isCorrect(false).orderIndex(1).build());
             warning.append("Converted to multiple-choice question with default wrong answer");
         }
     }
 
     public void ensureReorderCompatibility(List<QuizAnswer> answers, Quiz quiz, StringBuilder warning) {
         if (answers.isEmpty()) {
-            answers.add(QuizAnswer.builder().quiz(quiz).answerText(reorderDefaultStep).isCorrect(true).orderIndex(0).build());
+            answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_DEFAULT_STEP).isCorrect(true).orderIndex(0).build());
             warning.append("Added default step");
         } else {
             answers.forEach(answer -> answer.setIsCorrect(true));
@@ -461,9 +461,9 @@ public class ActivityUtils {
         CreateActivityRequest request = CreateActivityRequest.builder()
                 .collectionId(collectionId)
                 .activityType("QUIZ_BUTTONS")
-                .title(defaultActivityTitle)
-                .description(defaultActivityDescription)
-                .isPublished(defaultActivityIsPublished)
+                .title(DEFAULT_ACTIVITY_TITLE)
+                .description(DEFAULT_ACTIVITY_DESCRIPTION)
+                .isPublished(DEFAULT_ACTIVITY_IS_PUBLISHED)
                 .build();
 
         ActivitySummaryResponse activityResponse = activityService.createActivity(request);
@@ -474,34 +474,34 @@ public class ActivityUtils {
         Quiz defaultQuiz = Quiz.builder()
                 .quizId(activity.getActivityId())
                 .activity(activity)
-                .questionText(defaultQuestion)
-                .timeLimitSeconds(defaultTimeLimitSeconds)
-                .pointType(PointType.valueOf(defaultPointType))
+                .questionText(DEFAULT_QUESTION)
+                .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
+                .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
                 .quizAnswers(new ArrayList<>())
                 .build();
 
         List<QuizAnswer> defaultAnswers = new ArrayList<>();
         defaultAnswers.add(QuizAnswer.builder()
                 .quiz(defaultQuiz)
-                .answerText(choiceOption1)
+                .answerText(CHOICE_OPTION1)
                 .isCorrect(true)
                 .orderIndex(0)
                 .build());
         defaultAnswers.add(QuizAnswer.builder()
                 .quiz(defaultQuiz)
-                .answerText(choiceOption2)
+                .answerText(CHOICE_OPTION2)
                 .isCorrect(false)
                 .orderIndex(1)
                 .build());
         defaultAnswers.add(QuizAnswer.builder()
                 .quiz(defaultQuiz)
-                .answerText(choiceOption3)
+                .answerText(CHOICE_OPTION3)
                 .isCorrect(false)
                 .orderIndex(2)
                 .build());
         defaultAnswers.add(QuizAnswer.builder()
                 .quiz(defaultQuiz)
-                .answerText(choiceOption4)
+                .answerText(CHOICE_OPTION4)
                 .isCorrect(false)
                 .orderIndex(2)
                 .build());

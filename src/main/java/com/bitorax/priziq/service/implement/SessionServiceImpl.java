@@ -14,7 +14,11 @@ import com.bitorax.priziq.dto.request.session.NextActivityRequest;
 import com.bitorax.priziq.dto.request.session.StartSessionRequest;
 import com.bitorax.priziq.dto.response.achievement.AchievementUpdateResponse;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
+import com.bitorax.priziq.dto.response.common.PaginationMeta;
+import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.dto.response.session.*;
+import com.bitorax.priziq.dto.response.session.SessionHistoryResponse;
+import com.bitorax.priziq.dto.response.session.SessionParticipantHistoryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
@@ -24,6 +28,8 @@ import com.bitorax.priziq.service.AchievementService;
 import com.bitorax.priziq.service.SessionService;
 import com.bitorax.priziq.utils.QRCodeUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +37,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -204,6 +213,37 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    public PaginationResponse getMySessions(Specification<Session> spec, Pageable pageable) {
+        User creator = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Filter sessions where the user is either the host or a participant
+        Specification<Session> userSpec = (root, query, criteriaBuilder) -> {
+            Join<Session, SessionParticipant> participantJoin = root.join("sessionParticipants", JoinType.LEFT);
+            // Condition: user is either the host (hostUser) or a participant (user in sessionParticipants)
+            return criteriaBuilder.or(
+                    criteriaBuilder.equal(root.get("hostUser").get("userId"), creator.getUserId()),
+                    criteriaBuilder.equal(participantJoin.get("user").get("userId"), creator.getUserId())
+            );
+        };
+
+        // Merge with client-provided specification if present and query
+        Specification<Session> finalSpec = spec != null ? Specification.where(spec).and(userSpec) : userSpec;
+        Page<Session> sessionPage = this.sessionRepository.findAll(finalSpec, pageable);
+        return PaginationResponse.builder()
+                .meta(PaginationMeta.builder()
+                        .currentPage(pageable.getPageNumber() + 1) // base-index = 0
+                        .pageSize(pageable.getPageSize())
+                        .totalPages(sessionPage.getTotalPages())
+                        .totalElements(sessionPage.getTotalElements())
+                        .hasNext(sessionPage.hasNext())
+                        .hasPrevious(sessionPage.hasPrevious())
+                        .build())
+                .content(this.sessionMapper.sessionsToDetailResponseList(sessionPage.getContent()))
+                .build();
+    }
+
+    @Override
     public SessionHistoryResponse getSessionHistory(String sessionId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
@@ -221,9 +261,9 @@ public class SessionServiceImpl implements SessionService {
             List<ActivitySubmission> submissions = activitySubmissionRepository
                     .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
 
-            List<ActivitySubmissionSummaryResponse> submissionResponses = submissions.stream()
-                    .map(submission -> ActivitySubmissionSummaryResponse.builder()
-                            .activitySubmissionId(submission.getActivitySubmissionId())
+            List<ActivitySubmissionHistoryResponse> submissionResponses = submissions.stream()
+                    .map(submission -> ActivitySubmissionHistoryResponse.builder()
+                            .activity(activityMapper.activityToDetailResponse((submission.getActivity())))
                             .answerContent(submission.getAnswerContent())
                             .isCorrect(submission.getIsCorrect())
                             .responseScore(submission.getResponseScore())
@@ -232,7 +272,6 @@ public class SessionServiceImpl implements SessionService {
 
             // Create SessionParticipantHistoryResponse
             SessionParticipantHistoryResponse participantResponse = SessionParticipantHistoryResponse.builder()
-                    .sessionParticipantId(participant.getSessionParticipantId())
                     .activitySubmissions(submissionResponses)
                     .displayName(summary.getDisplayName())
                     .displayAvatar(summary.getDisplayAvatar())
@@ -246,7 +285,7 @@ public class SessionServiceImpl implements SessionService {
         }
 
         return SessionHistoryResponse.builder()
-                .session(sessionMapper.sessionToDetailResponse(session))
+                .session(sessionMapper.sessionToSummaryResponse(session))
                 .participantHistoryResponses(participantHistoryResponses)
                 .build();
     }
