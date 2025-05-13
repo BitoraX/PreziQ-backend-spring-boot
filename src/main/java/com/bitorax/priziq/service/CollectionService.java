@@ -5,15 +5,17 @@ import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionDetailResponse;
+import com.bitorax.priziq.dto.response.collection.CollectionSummaryResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CollectionService {
-    CollectionDetailResponse createCollection(CreateCollectionRequest createCollectionRequest);
+    CollectionSummaryResponse createCollection(CreateCollectionRequest createCollectionRequest);
 
     CollectionDetailResponse getCollectionById(String collectionId);
 
@@ -21,9 +23,11 @@ public interface CollectionService {
 
     PaginationResponse getAllCollectionWithQuery(Specification<Collection> spec, Pageable pageable);
 
-    CollectionDetailResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest);
+    CollectionSummaryResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest);
 
     void deleteCollectionById(String collectionId);
 
     List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest);
+
+    Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(Pageable pageable);
 }

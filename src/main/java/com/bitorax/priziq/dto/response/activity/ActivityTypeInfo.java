@@ -1,4 +1,4 @@
-package com.bitorax.priziq.dto.response.common;
+package com.bitorax.priziq.dto.response.activity;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;

@@ -1,6 +1,6 @@
 package com.bitorax.priziq.constant;
 
-import com.bitorax.priziq.dto.response.common.ActivityTypeInfo;
+import com.bitorax.priziq.dto.response.activity.ActivityTypeInfo;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import lombok.AccessLevel;

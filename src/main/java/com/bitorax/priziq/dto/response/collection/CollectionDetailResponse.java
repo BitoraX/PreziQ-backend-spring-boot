@@ -23,5 +23,6 @@ public class CollectionDetailResponse extends AuditResponse {
     Boolean isPublished;
     String coverImage;
     String defaultBackgroundMusic;
+    String topic;
     List<ActivityDetailResponse> activities;
 }

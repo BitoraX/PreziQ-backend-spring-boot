@@ -20,4 +20,5 @@ public class CollectionSummaryResponse extends AuditResponse {
     Boolean isPublished;
     String coverImage;
     String defaultBackgroundMusic;
+    String topic;
 }

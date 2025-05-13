@@ -12,7 +12,7 @@ import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
-import com.bitorax.priziq.dto.response.common.ActivityTypeInfo;
+import com.bitorax.priziq.dto.response.activity.ActivityTypeInfo;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.service.ActivityService;
 import jakarta.servlet.http.HttpServletRequest;
