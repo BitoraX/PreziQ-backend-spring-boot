@@ -14,4 +14,5 @@ public class UpdateCollectionRequest {
     Boolean isPublished;
     String coverImage;
     String defaultBackgroundMusic;
+    String topic;
 }

@@ -1,13 +1,17 @@
 package com.bitorax.priziq.controller.rest;
 
+import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionDetailResponse;
+import com.bitorax.priziq.dto.response.collection.CollectionSummaryResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
+import com.bitorax.priziq.exception.ApplicationException;
+import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.CollectionService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,10 +21,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 
@@ -34,8 +42,8 @@ public class CollectionController {
     CollectionService collectionService;
 
     @PostMapping
-    ApiResponse<CollectionDetailResponse> createCollection(@RequestBody @Valid CreateCollectionRequest createCollectionRequest, HttpServletRequest servletRequest) {
-        return ApiResponse.<CollectionDetailResponse>builder()
+    ApiResponse<CollectionSummaryResponse> createCollection(@RequestBody @Valid CreateCollectionRequest createCollectionRequest, HttpServletRequest servletRequest) {
+        return ApiResponse.<CollectionSummaryResponse>builder()
                 .message("Collection created successfully")
                 .data(collectionService.createCollection(createCollectionRequest))
                 .meta(buildMetaInfo(servletRequest))
@@ -61,8 +69,8 @@ public class CollectionController {
     }
 
     @PatchMapping("/{collectionId}")
-    ApiResponse<CollectionDetailResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable String collectionId, HttpServletRequest servletRequest) {
-        return ApiResponse.<CollectionDetailResponse>builder()
+    ApiResponse<CollectionSummaryResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable String collectionId, HttpServletRequest servletRequest) {
+        return ApiResponse.<CollectionSummaryResponse>builder()
                 .message("Collection updated successfully")
                 .data(collectionService.updateCollectionById(collectionId, updateCollectionRequest))
                 .meta(buildMetaInfo(servletRequest))
@@ -92,6 +100,24 @@ public class CollectionController {
         return ApiResponse.<List<ReorderedActivityResponse>>builder()
                 .message("Activities reordered successfully")
                 .data(collectionService.reorderActivities(collectionId, activityReorderRequest))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/topics")
+    ApiResponse<List<String>> getAllCollectionTopics(HttpServletRequest servletRequest){
+        return ApiResponse.<List<String>>builder()
+                .message("Retrieved the list of collection topics successfully")
+                .data(CollectionTopicType.getAllKeys())
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/grouped/topics")
+    public ApiResponse<Map<String, List<CollectionSummaryResponse>>> getCollectionsGroupedByTopic(@PageableDefault(size = 12) Pageable pageable, HttpServletRequest servletRequest) {
+        return ApiResponse.<Map<String, List<CollectionSummaryResponse>>>builder()
+                .message("Collections grouped by topic retrieved successfully")
+                .data(collectionService.getCollectionsGroupedByTopic(pageable))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

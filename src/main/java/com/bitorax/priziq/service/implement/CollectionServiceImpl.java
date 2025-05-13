@@ -1,5 +1,6 @@
 package com.bitorax.priziq.service.implement;
 
+import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
@@ -12,6 +13,7 @@ import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.dto.response.collection.CollectionDetailResponse;
+import com.bitorax.priziq.dto.response.collection.CollectionSummaryResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.PaginationMeta;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
@@ -34,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -96,7 +99,8 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Transactional
-    public CollectionDetailResponse createCollection(CreateCollectionRequest createCollectionRequest) {
+    public CollectionSummaryResponse createCollection(CreateCollectionRequest createCollectionRequest) {
+        CollectionTopicType.validateCollectionTopicType(createCollectionRequest.getTopic());
         Collection collection = collectionMapper.createCollectionRequestToCollection(createCollectionRequest);
 
         User creator = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
@@ -108,7 +112,7 @@ public class CollectionServiceImpl implements CollectionService {
         // Create default QUIZ_BUTTONS activity
         createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
 
-        return collectionMapper.collectionToDetailResponse(savedCollection);
+        return collectionMapper.collectionToSummaryResponse(savedCollection);
     }
 
     @Override
@@ -147,13 +151,18 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public CollectionDetailResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
+    public CollectionSummaryResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
         // Check owner or admin to access and get current collection
         validateCollectionOwnership(collectionId);
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
+        String collectionTopic = updateCollectionRequest.getTopic();
+        if(collectionTopic != null){
+            CollectionTopicType.validateCollectionTopicType(collectionTopic);
+        }
+
         this.collectionMapper.updateCollectionRequestToCollection(currentCollection, updateCollectionRequest);
-        return this.collectionMapper.collectionToDetailResponse(collectionRepository.save(currentCollection));
+        return this.collectionMapper.collectionToSummaryResponse(collectionRepository.save(currentCollection));
     }
 
     @Override
@@ -245,6 +254,55 @@ public class CollectionServiceImpl implements CollectionService {
         }
 
         return updatedActivities;
+    }
+
+    @Override
+    public Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(Pageable pageable) {
+        List<Object[]> results = collectionRepository.findPublishedGroupedByTopic(pageable);
+
+        // Use LinkedHashMap to maintain order (PUBLISH comes first)
+        Map<String, List<CollectionSummaryResponse>> resultMap = new LinkedHashMap<>();
+
+        // Group data
+        Map<String, List<CollectionSummaryResponse>> grouped = results.stream()
+                .map(result -> {
+                    Collection collection = (Collection) result[1];
+                    // Group all isPublished = true into PUBLISH and base topic
+                    String groupKey = CollectionTopicType.PUBLISH.name(); // Always add to PUBLISH
+                    CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+                    return new AbstractMap.SimpleEntry<>(groupKey, summary);
+                })
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                ));
+
+        // Add other topic groups (isPublished = true) from results
+        Map<String, List<CollectionSummaryResponse>> topicGroups = results.stream()
+                .map(result -> {
+                    Collection collection = (Collection) result[1];
+                    String groupKey = ((CollectionTopicType) result[0]).name(); // Group by base topic
+                    CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+                    return new AbstractMap.SimpleEntry<>(groupKey, summary);
+                })
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                ));
+
+        // Put PUBLISH at the beginning
+        if (grouped.containsKey(CollectionTopicType.PUBLISH.name())) {
+            resultMap.put(CollectionTopicType.PUBLISH.name(), grouped.get(CollectionTopicType.PUBLISH.name()));
+        }
+
+        // Add other topics (do not sort keys, keep natural order)
+        topicGroups.forEach((key, value) -> {
+            if (!key.equals(CollectionTopicType.PUBLISH.name())) {
+                resultMap.put(key, value);
+            }
+        });
+
+        return resultMap;
     }
 
     private void validateCollectionOwnership(String collectionId) {

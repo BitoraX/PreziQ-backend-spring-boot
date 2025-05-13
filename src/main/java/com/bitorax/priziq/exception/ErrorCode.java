@@ -32,6 +32,7 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(1017, HttpStatus.NOT_FOUND, "Resource not found"),
     INVALID_OWNER_ID(1018, HttpStatus.BAD_REQUEST, "Invalid owner id"),
     UNAUTHORIZED_ACCESS(1019, HttpStatus.UNAUTHORIZED, "User does not have permission to access this resource"),
+    INVALID_SORT_FIELD(1020, HttpStatus.BAD_REQUEST, "Invalid sort field"),
 
     // Module auth errors
     EMAIL_NOT_BLANK(1101, HttpStatus.BAD_REQUEST, "Email must not be blank"),
@@ -127,6 +128,8 @@ public enum ErrorCode {
     DUPLICATE_ACTIVITY_ID(1604, HttpStatus.BAD_REQUEST, "Duplicate activity IDs found in request"),
     MISSING_ACTIVITY_ID(1605, HttpStatus.BAD_REQUEST, "Some activity IDs from the collection are missing in the request"),
     ACTIVITY_NOT_IN_COLLECTION(1606, HttpStatus.BAD_REQUEST, "Activity does not belong to the specified collection"),
+    INVALID_COLLECTION_TOPIC_TYPE(1607, HttpStatus.BAD_REQUEST, "Invalid collection topic type. Only the following types are supported: ART, SCIENCE, TECHNOLOGY, HISTORY, LITERATURE, ENTERTAINMENT, SPORTS, GEOGRAPHY, HEALTH, EDUCATION, NATURE, CULTURE, BUSINESS, PHILOSOPHY, FOOD, TRIVIA"),
+    COLLECTION_TOPIC_NOT_BLANK(1608, HttpStatus.BAD_REQUEST, "Collection topic must not be blank"),
 
     // Module activity errors
     COLLECTION_ID_REQUIRED(1701, HttpStatus.BAD_REQUEST, "Collection ID is required"),
@@ -172,23 +175,23 @@ public enum ErrorCode {
     INVALID_RADIUS(1737, HttpStatus.BAD_REQUEST, "Radius must be positive"),
 
     // Slide-related errors
-    SLIDE_NOT_FOUND(1730, HttpStatus.NOT_FOUND, "Slide not found"),
-    SLIDE_ELEMENT_NOT_FOUND(1731, HttpStatus.BAD_REQUEST, "Slide element not found"),
-    SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE(1732, HttpStatus.BAD_REQUEST, "Slide element does not belong to the slide"),
-    SLIDE_ELEMENT_TYPE_REQUIRED(1733, HttpStatus.BAD_REQUEST, "Slide element type is required"),
-    POSITION_X_REQUIRED(1734, HttpStatus.BAD_REQUEST, "Position X is required"),
-    POSITION_Y_REQUIRED(1735, HttpStatus.BAD_REQUEST, "Position Y is required"),
-    WIDTH_NON_NEGATIVE(1736, HttpStatus.BAD_REQUEST, "Width must be non-negative"),
-    HEIGHT_NON_NEGATIVE(1737, HttpStatus.BAD_REQUEST, "Height must be non-negative"),
-    TRANSITION_DURATION_REQUIRED(1738, HttpStatus.BAD_REQUEST, "Transition duration is required"),
-    TRANSITION_DURATION_NON_NEGATIVE(1739, HttpStatus.BAD_REQUEST, "Transition duration must be non-negative"),
-    AUTO_ADVANCE_SECONDS_REQUIRED(1740, HttpStatus.BAD_REQUEST, "Auto advance seconds is required"),
-    AUTO_ADVANCE_SECONDS_NON_NEGATIVE(1741, HttpStatus.BAD_REQUEST, "Auto advance seconds must be non-negative"),
-    ENTRY_ANIMATION_DURATION_NON_NEGATIVE(1742, HttpStatus.BAD_REQUEST, "Entry animation duration must be non-negative"),
-    ENTRY_ANIMATION_DELAY_NON_NEGATIVE(1743, HttpStatus.BAD_REQUEST, "Entry animation delay must be non-negative"),
-    EXIT_ANIMATION_DURATION_NON_NEGATIVE(1744, HttpStatus.BAD_REQUEST, "Exit animation duration must be non-negative"),
-    EXIT_ANIMATION_DELAY_NON_NEGATIVE(1745, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative"),
-    SAME_ACTIVITY_TYPE(1746, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
+    SLIDE_NOT_FOUND(1738, HttpStatus.NOT_FOUND, "Slide not found"),
+    SLIDE_ELEMENT_NOT_FOUND(1739, HttpStatus.BAD_REQUEST, "Slide element not found"),
+    SLIDE_ELEMENT_NOT_BELONG_TO_SLIDE(1740, HttpStatus.BAD_REQUEST, "Slide element does not belong to the slide"),
+    SLIDE_ELEMENT_TYPE_REQUIRED(1741, HttpStatus.BAD_REQUEST, "Slide element type is required"),
+    POSITION_X_REQUIRED(1742, HttpStatus.BAD_REQUEST, "Position X is required"),
+    POSITION_Y_REQUIRED(1743, HttpStatus.BAD_REQUEST, "Position Y is required"),
+    WIDTH_NON_NEGATIVE(1744, HttpStatus.BAD_REQUEST, "Width must be non-negative"),
+    HEIGHT_NON_NEGATIVE(1745, HttpStatus.BAD_REQUEST, "Height must be non-negative"),
+    TRANSITION_DURATION_REQUIRED(1746, HttpStatus.BAD_REQUEST, "Transition duration is required"),
+    TRANSITION_DURATION_NON_NEGATIVE(1747, HttpStatus.BAD_REQUEST, "Transition duration must be non-negative"),
+    AUTO_ADVANCE_SECONDS_REQUIRED(1748, HttpStatus.BAD_REQUEST, "Auto advance seconds is required"),
+    AUTO_ADVANCE_SECONDS_NON_NEGATIVE(1749, HttpStatus.BAD_REQUEST, "Auto advance seconds must be non-negative"),
+    ENTRY_ANIMATION_DURATION_NON_NEGATIVE(1750, HttpStatus.BAD_REQUEST, "Entry animation duration must be non-negative"),
+    ENTRY_ANIMATION_DELAY_NON_NEGATIVE(1751, HttpStatus.BAD_REQUEST, "Entry animation delay must be non-negative"),
+    EXIT_ANIMATION_DURATION_NON_NEGATIVE(1752, HttpStatus.BAD_REQUEST, "Exit animation duration must be non-negative"),
+    EXIT_ANIMATION_DELAY_NON_NEGATIVE(1753, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative"),
+    SAME_ACTIVITY_TYPE(1754, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),
