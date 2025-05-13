@@ -128,7 +128,7 @@ public enum ErrorCode {
     DUPLICATE_ACTIVITY_ID(1604, HttpStatus.BAD_REQUEST, "Duplicate activity IDs found in request"),
     MISSING_ACTIVITY_ID(1605, HttpStatus.BAD_REQUEST, "Some activity IDs from the collection are missing in the request"),
     ACTIVITY_NOT_IN_COLLECTION(1606, HttpStatus.BAD_REQUEST, "Activity does not belong to the specified collection"),
-    INVALID_COLLECTION_TOPIC_TYPE(1607, HttpStatus.BAD_REQUEST, "Invalid collection topic type. Only the following types are supported: ART, LITERATURE, ENTERTAINMENT, GEOGRAPHY, HISTORY, LANGUAGES, SCIENCE, NATURE, SPORTS, TRIVIA"),
+    INVALID_COLLECTION_TOPIC_TYPE(1607, HttpStatus.BAD_REQUEST, "Invalid collection topic type. Only the following types are supported: ART, SCIENCE, TECHNOLOGY, HISTORY, LITERATURE, ENTERTAINMENT, SPORTS, GEOGRAPHY, HEALTH, EDUCATION, NATURE, CULTURE, BUSINESS, PHILOSOPHY, FOOD, TRIVIA"),
     COLLECTION_TOPIC_NOT_BLANK(1608, HttpStatus.BAD_REQUEST, "Collection topic must not be blank"),
 
     // Module activity errors

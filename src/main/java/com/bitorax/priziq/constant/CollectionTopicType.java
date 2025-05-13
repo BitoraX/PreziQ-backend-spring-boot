@@ -17,20 +17,27 @@ import java.util.stream.Collectors;
 public enum CollectionTopicType {
     PUBLISH,
     ART,
+    SCIENCE,
+    TECHNOLOGY,
+    HISTORY,
     LITERATURE,
     ENTERTAINMENT,
-    GEOGRAPHY,
-    HISTORY,
-    LANGUAGES,
-    SCIENCE,
-    NATURE,
     SPORTS,
-    TRIVIA,
+    GEOGRAPHY,
+    HEALTH,
+    EDUCATION,
+    NATURE,
+    CULTURE,
+    BUSINESS,
+    PHILOSOPHY,
+    FOOD,
+    TRIVIA
 
     ;
 
     public static void validateCollectionTopicType(String type) {
-        boolean isValid = Arrays.stream(values()).anyMatch(topicType -> topicType.name().equalsIgnoreCase(type));
+        boolean isValid = Arrays.stream(values())
+                .anyMatch(topicType -> topicType.name().equalsIgnoreCase(type) && topicType != CollectionTopicType.PUBLISH);
         if (!isValid) {
             throw new ApplicationException(ErrorCode.INVALID_COLLECTION_TOPIC_TYPE);
         }
