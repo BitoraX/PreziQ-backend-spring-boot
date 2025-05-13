@@ -257,25 +257,18 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(CollectionTopicType topic, Pageable pageable) {
-        List<Object[]> results = collectionRepository.findAllGroupedByTopic(topic, pageable);
+    public Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(Pageable pageable) {
+        List<Object[]> results = collectionRepository.findPublishedGroupedByTopic(pageable);
 
-        // Specifies how to sort key topics (except PUBLISH)
-        Comparator<String> topicComparator = Comparator.naturalOrder(); // Default ascending
-        if (pageable.getSort().isSorted()) {
-            Sort.Order sortOrder = pageable.getSort().get().findFirst().orElse(null);
-            if (sortOrder != null && "topic".equals(sortOrder.getProperty())) {
-                topicComparator = sortOrder.isAscending() ? Comparator.naturalOrder() : Comparator.reverseOrder();
-            }
-        }
-
-        // Use LinkedHashMap to ensure ordering (PUBLISH comes first)
+        // Use LinkedHashMap to maintain order (PUBLISH comes first)
         Map<String, List<CollectionSummaryResponse>> resultMap = new LinkedHashMap<>();
+
+        // Group data
         Map<String, List<CollectionSummaryResponse>> grouped = results.stream()
                 .map(result -> {
                     Collection collection = (Collection) result[1];
-                    String groupKey = collection.getIsPublished() ? CollectionTopicType.PUBLISH.name()
-                            : ((CollectionTopicType) result[0]).name();
+                    // Group all isPublished = true into PUBLISH and base topic
+                    String groupKey = CollectionTopicType.PUBLISH.name(); // Always add to PUBLISH
                     CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
                     return new AbstractMap.SimpleEntry<>(groupKey, summary);
                 })
@@ -284,19 +277,30 @@ public class CollectionServiceImpl implements CollectionService {
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())
                 ));
 
-        // Sort PUBLISH group by createdAt desc and put on top
+        // Add other topic groups (isPublished = true) from results
+        Map<String, List<CollectionSummaryResponse>> topicGroups = results.stream()
+                .map(result -> {
+                    Collection collection = (Collection) result[1];
+                    String groupKey = ((CollectionTopicType) result[0]).name(); // Group by base topic
+                    CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+                    return new AbstractMap.SimpleEntry<>(groupKey, summary);
+                })
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                ));
+
+        // Put PUBLISH at the beginning
         if (grouped.containsKey(CollectionTopicType.PUBLISH.name())) {
-            List<CollectionSummaryResponse> publishList = grouped.get(CollectionTopicType.PUBLISH.name());
-            publishList.sort(Comparator.comparing(CollectionSummaryResponse::getCreatedAt).reversed());
-            resultMap.put(CollectionTopicType.PUBLISH.name(), publishList);
+            resultMap.put(CollectionTopicType.PUBLISH.name(), grouped.get(CollectionTopicType.PUBLISH.name()));
         }
 
-        // Sort other topics by key and add to resultMap
-        Comparator<String> finalTopicComparator = topicComparator;
-        grouped.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(CollectionTopicType.PUBLISH.name()))
-                .sorted((e1, e2) -> finalTopicComparator.compare(e1.getKey(), e2.getKey()))
-                .forEach(entry -> resultMap.put(entry.getKey(), entry.getValue()));
+        // Add other topics (do not sort keys, keep natural order)
+        topicGroups.forEach((key, value) -> {
+            if (!key.equals(CollectionTopicType.PUBLISH.name())) {
+                resultMap.put(key, value);
+            }
+        });
 
         return resultMap;
     }

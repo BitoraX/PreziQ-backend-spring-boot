@@ -114,13 +114,10 @@ public class CollectionController {
     }
 
     @GetMapping("/grouped/topics")
-    public ApiResponse<Map<String, List<CollectionSummaryResponse>>> getCollectionsGroupedByTopic(
-            @RequestParam(required = false) CollectionTopicType topic,
-            @PageableDefault(size = 7) Pageable pageable,
-            HttpServletRequest servletRequest) {
+    public ApiResponse<Map<String, List<CollectionSummaryResponse>>> getCollectionsGroupedByTopic(@PageableDefault(size = 12) Pageable pageable, HttpServletRequest servletRequest) {
         return ApiResponse.<Map<String, List<CollectionSummaryResponse>>>builder()
                 .message("Collections grouped by topic retrieved successfully")
-                .data(collectionService.getCollectionsGroupedByTopic(topic, pageable))
+                .data(collectionService.getCollectionsGroupedByTopic(pageable))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

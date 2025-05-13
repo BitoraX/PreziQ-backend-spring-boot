@@ -1,6 +1,5 @@
 package com.bitorax.priziq.service;
 
-import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -30,5 +29,5 @@ public interface CollectionService {
 
     List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest);
 
-    Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(CollectionTopicType topic, Pageable pageable);
+    Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(Pageable pageable);
 }
