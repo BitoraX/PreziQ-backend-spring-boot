@@ -1,5 +1,6 @@
 package com.bitorax.priziq.service;
 
+import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CollectionService {
     CollectionSummaryResponse createCollection(CreateCollectionRequest createCollectionRequest);
@@ -27,4 +29,6 @@ public interface CollectionService {
     void deleteCollectionById(String collectionId);
 
     List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest);
+
+    Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(CollectionTopicType topic, Pageable pageable);
 }

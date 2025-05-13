@@ -10,6 +10,8 @@ import com.bitorax.priziq.dto.response.collection.CollectionSummaryResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
+import com.bitorax.priziq.exception.ApplicationException;
+import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.service.CollectionService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,10 +21,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.bitorax.priziq.utils.MetaUtils.buildMetaInfo;
 
@@ -103,6 +109,18 @@ public class CollectionController {
         return ApiResponse.<List<String>>builder()
                 .message("Retrieved the list of collection topics successfully")
                 .data(CollectionTopicType.getAllKeys())
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/grouped/topics")
+    public ApiResponse<Map<String, List<CollectionSummaryResponse>>> getCollectionsGroupedByTopic(
+            @RequestParam(required = false) CollectionTopicType topic,
+            @PageableDefault(size = 7) Pageable pageable,
+            HttpServletRequest servletRequest) {
+        return ApiResponse.<Map<String, List<CollectionSummaryResponse>>>builder()
+                .message("Collections grouped by topic retrieved successfully")
+                .data(collectionService.getCollectionsGroupedByTopic(topic, pageable))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

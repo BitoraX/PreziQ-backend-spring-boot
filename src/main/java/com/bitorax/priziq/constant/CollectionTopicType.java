@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public enum CollectionTopicType {
+    PUBLISH,
     ART,
     LITERATURE,
     ENTERTAINMENT,
@@ -24,7 +25,7 @@ public enum CollectionTopicType {
     SCIENCE,
     NATURE,
     SPORTS,
-    TRIVIA
+    TRIVIA,
 
     ;
 

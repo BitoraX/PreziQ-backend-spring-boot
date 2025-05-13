@@ -147,6 +147,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Activities reorder", "/api/v1/collections/{collectionId}/activities/reorder", "PUT", "COLLECTIONS"),
                         new Permission("Retrieve my collections with query parameters", "/api/v1/collections/me", "GET", "COLLECTIONS"),
                         new Permission("Retrieve the list of collection topics", "/api/v1/collections/topics", "GET", "COLLECTIONS"),
+                        new Permission("Retrieve collections grouped by topic", "/api/v1/collections/grouped/topics", "GET", "COLLECTIONS"),
 
                         // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),

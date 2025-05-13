@@ -32,6 +32,7 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(1017, HttpStatus.NOT_FOUND, "Resource not found"),
     INVALID_OWNER_ID(1018, HttpStatus.BAD_REQUEST, "Invalid owner id"),
     UNAUTHORIZED_ACCESS(1019, HttpStatus.UNAUTHORIZED, "User does not have permission to access this resource"),
+    INVALID_SORT_FIELD(1020, HttpStatus.BAD_REQUEST, "Invalid sort field"),
 
     // Module auth errors
     EMAIL_NOT_BLANK(1101, HttpStatus.BAD_REQUEST, "Email must not be blank"),
