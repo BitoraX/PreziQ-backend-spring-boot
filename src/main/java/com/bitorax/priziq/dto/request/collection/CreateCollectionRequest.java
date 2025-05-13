@@ -17,4 +17,7 @@ public class CreateCollectionRequest {
     Boolean isPublished;
     String coverImage;
     String defaultBackgroundMusic;
+
+    @NotBlank(message = "COLLECTION_TOPIC_NOT_BLANK")
+    String topic;
 }

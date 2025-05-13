@@ -5,6 +5,7 @@ import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
 import com.bitorax.priziq.dto.request.collection.UpdateCollectionRequest;
 import com.bitorax.priziq.dto.response.collection.CollectionDetailResponse;
+import com.bitorax.priziq.dto.response.collection.CollectionSummaryResponse;
 import com.bitorax.priziq.dto.response.collection.ReorderedActivityResponse;
 import com.bitorax.priziq.dto.response.common.ApiResponse;
 import com.bitorax.priziq.dto.response.common.PaginationResponse;
@@ -34,8 +35,8 @@ public class CollectionController {
     CollectionService collectionService;
 
     @PostMapping
-    ApiResponse<CollectionDetailResponse> createCollection(@RequestBody @Valid CreateCollectionRequest createCollectionRequest, HttpServletRequest servletRequest) {
-        return ApiResponse.<CollectionDetailResponse>builder()
+    ApiResponse<CollectionSummaryResponse> createCollection(@RequestBody @Valid CreateCollectionRequest createCollectionRequest, HttpServletRequest servletRequest) {
+        return ApiResponse.<CollectionSummaryResponse>builder()
                 .message("Collection created successfully")
                 .data(collectionService.createCollection(createCollectionRequest))
                 .meta(buildMetaInfo(servletRequest))
@@ -61,8 +62,8 @@ public class CollectionController {
     }
 
     @PatchMapping("/{collectionId}")
-    ApiResponse<CollectionDetailResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable String collectionId, HttpServletRequest servletRequest) {
-        return ApiResponse.<CollectionDetailResponse>builder()
+    ApiResponse<CollectionSummaryResponse> updateCollectionById(@RequestBody UpdateCollectionRequest updateCollectionRequest, @PathVariable String collectionId, HttpServletRequest servletRequest) {
+        return ApiResponse.<CollectionSummaryResponse>builder()
                 .message("Collection updated successfully")
                 .data(collectionService.updateCollectionById(collectionId, updateCollectionRequest))
                 .meta(buildMetaInfo(servletRequest))

@@ -1,5 +1,6 @@
 package com.bitorax.priziq.domain;
 
+import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.session.Session;
 import jakarta.persistence.*;
@@ -42,4 +43,8 @@ public class Collection extends BaseEntity {
 
     String coverImage;
     String defaultBackgroundMusic;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    CollectionTopicType topic;
 }
