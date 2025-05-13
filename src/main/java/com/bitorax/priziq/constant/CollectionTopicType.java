@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public enum CollectionTopicType {
-    PUBLISH,
+    PUBLISH, // not show in validate and keys
+
     ART,
     SCIENCE,
     TECHNOLOGY,
@@ -45,6 +46,7 @@ public enum CollectionTopicType {
 
     public static List<String> getAllKeys() {
         return Arrays.stream(values())
+                .filter(topicType -> topicType != CollectionTopicType.PUBLISH)
                 .map(Enum::name)
                 .collect(Collectors.toList());
     }
