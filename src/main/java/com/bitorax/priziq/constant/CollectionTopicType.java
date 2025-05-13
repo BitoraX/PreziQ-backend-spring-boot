@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @RequiredArgsConstructor
@@ -31,5 +33,11 @@ public enum CollectionTopicType {
         if (!isValid) {
             throw new ApplicationException(ErrorCode.INVALID_COLLECTION_TOPIC_TYPE);
         }
+    }
+
+    public static List<String> getAllKeys() {
+        return Arrays.stream(values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
     }
 }

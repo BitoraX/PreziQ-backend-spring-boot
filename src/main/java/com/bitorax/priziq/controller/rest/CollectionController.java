@@ -1,5 +1,6 @@
 package com.bitorax.priziq.controller.rest;
 
+import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -93,6 +94,15 @@ public class CollectionController {
         return ApiResponse.<List<ReorderedActivityResponse>>builder()
                 .message("Activities reordered successfully")
                 .data(collectionService.reorderActivities(collectionId, activityReorderRequest))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/topics")
+    ApiResponse<List<String>> getAllCollectionTopics(HttpServletRequest servletRequest){
+        return ApiResponse.<List<String>>builder()
+                .message("Retrieved the list of collection topics successfully")
+                .data(CollectionTopicType.getAllKeys())
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
