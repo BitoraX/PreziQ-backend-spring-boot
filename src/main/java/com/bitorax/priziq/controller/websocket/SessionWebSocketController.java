@@ -80,13 +80,9 @@ public class SessionWebSocketController {
 
         List<SessionParticipantSummaryResponse> responses = sessionParticipantService.leaveSession(request, websocketSessionId);
 
-        if (responses.isEmpty()) {
-            throw new ApplicationException(ErrorCode.SESSION_NOT_FOUND);
-        }
-
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "A participant successfully left session with code: %s",
-                        responses, request.getSessionCode(), headerAccessor);
+                responses, request.getSessionCode(), headerAccessor);
 
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, apiResponse);

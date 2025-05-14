@@ -36,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -166,12 +165,13 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    @Transactional
     public void deleteCollectionById(String collectionId){
         // Check owner or admin to access and get current collection
         validateCollectionOwnership(collectionId);
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
-        this.collectionRepository.delete(currentCollection);
+        collectionRepository.delete(currentCollection);
     }
 
     @Override

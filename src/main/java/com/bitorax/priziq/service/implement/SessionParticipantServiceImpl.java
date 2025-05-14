@@ -97,24 +97,41 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
     public List<SessionParticipantSummaryResponse> leaveSession(LeaveSessionRequest request, String websocketSessionId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        SessionStatus sessionStatus = session.getSessionStatus();
 
         SessionParticipant participant = sessionParticipantRepository
                 .findBySessionAndWebsocketSessionId(session, websocketSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
-        // Delete all related ActivitySubmissions to avoid foreign key constraint violation
-        List<ActivitySubmission> submissions = activitySubmissionRepository
-                .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
-        if (!submissions.isEmpty()) {
-            activitySubmissionRepository.deleteAll(submissions);
+        if (sessionStatus == SessionStatus.PENDING) {
+            // Delete all related ActivitySubmissions to avoid foreign key constraint violation
+            List<ActivitySubmission> submissions = activitySubmissionRepository
+                    .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
+            if (!submissions.isEmpty()) {
+                activitySubmissionRepository.deleteAll(submissions);
+            }
+
+            // Delete the SessionParticipant
+            sessionParticipantRepository.delete(participant);
+
+            // Return updated participant list
+            return findParticipantsBySessionCode(GetParticipantsRequest.builder()
+                    .sessionCode(session.getSessionCode())
+                    .build());
+        } else if (sessionStatus == SessionStatus.STARTED) {
+            // Mark participant as inactive instead of deleting
+            participant.setIsConnected(false);
+            sessionParticipantRepository.save(participant);
+
+            // Return list of active participants
+            return sessionParticipantRepository
+                    .findBySession_SessionCodeAndIsConnectedTrue(session.getSessionCode())
+                    .stream()
+                    .map(sessionParticipantMapper::sessionParticipantToSummaryResponse)
+                    .collect(Collectors.toList());
+        } else {
+            throw new ApplicationException(ErrorCode.INVALID_SESSION_STATUS);
         }
-
-        // Delete the SessionParticipant
-        sessionParticipantRepository.delete(participant);
-
-        return findParticipantsBySessionCode(GetParticipantsRequest.builder()
-                .sessionCode(session.getSessionCode())
-                .build());
     }
 
     @Override
