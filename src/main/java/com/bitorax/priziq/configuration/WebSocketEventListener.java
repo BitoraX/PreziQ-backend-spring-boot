@@ -102,12 +102,12 @@ public class    WebSocketEventListener {
                             messagingTemplate.convertAndSend("/server/session/leave", leaveRequest, headerAccessor.getMessageHeaders());
                         } else if (sessionStatus == SessionStatus.STARTED) {
                             // Mark participant as inactive
-                            participant.setIsActive(false);
+                            participant.setIsConnected(false);
                             sessionParticipantRepository.save(participant);
 
                             // Send updated participant list (only active participants)
                             List<SessionParticipantSummaryResponse> activeParticipants = sessionParticipantRepository
-                                    .findBySession_SessionCodeAndIsActiveTrue(sessionCode)
+                                    .findBySession_SessionCodeAndIsConnectedTrue(sessionCode)
                                     .stream()
                                     .map(sessionParticipantMapper::sessionParticipantToSummaryResponse)
                                     .collect(Collectors.toList());

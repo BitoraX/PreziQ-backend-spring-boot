@@ -52,5 +52,5 @@ public class SessionParticipant extends BaseEntity {
 
     @Column(nullable = false)
     @Builder.Default
-    Boolean isActive = true;
+    Boolean isConnected = true;
 }

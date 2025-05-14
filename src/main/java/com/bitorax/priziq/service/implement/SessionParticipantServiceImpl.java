@@ -120,12 +120,12 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                     .build());
         } else if (sessionStatus == SessionStatus.STARTED) {
             // Mark participant as inactive instead of deleting
-            participant.setIsActive(false);
+            participant.setIsConnected(false);
             sessionParticipantRepository.save(participant);
 
             // Return list of active participants
             return sessionParticipantRepository
-                    .findBySession_SessionCodeAndIsActiveTrue(session.getSessionCode())
+                    .findBySession_SessionCodeAndIsConnectedTrue(session.getSessionCode())
                     .stream()
                     .map(sessionParticipantMapper::sessionParticipantToSummaryResponse)
                     .collect(Collectors.toList());
