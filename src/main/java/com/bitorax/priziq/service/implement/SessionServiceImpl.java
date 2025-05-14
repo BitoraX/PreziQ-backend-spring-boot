@@ -157,6 +157,7 @@ public class SessionServiceImpl implements SessionService {
     @Transactional
     public SessionEndResultResponse endSession(EndSessionRequest endSessionRequest) {
         Session currentSession = getSessionById(endSessionRequest.getSessionId());
+        String hostUserid = currentSession.getHostUser().getUserId();
 
         if (currentSession.getSessionStatus() == SessionStatus.ENDED) {
             throw new ApplicationException(ErrorCode.SESSION_ALREADY_ENDED);
@@ -187,20 +188,24 @@ public class SessionServiceImpl implements SessionService {
 
                 if (processedUserIds.add(userId)) {
                     int scoreToAdd = userScoreMap.get(userId);
-                    user.setTotalPoints(user.getTotalPoints() + scoreToAdd);
-                    userRepository.save(user);
 
-                    try {
-                        AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
-                                AssignAchievementToUserRequest.builder()
-                                        .userId(userId)
-                                        .totalPoints(user.getTotalPoints())
-                                        .build()
-                        );
+                    if (!user.getUserId().equals(hostUserid)) {
+                        user.setTotalPoints(user.getTotalPoints() + scoreToAdd);
+                        userRepository.save(user);
 
-                        achievementUpdates.add(updateResponse);
-                    } catch (Exception e) {
-                        log.error("Failed to assign achievements for userId {}: {}", userId, e.getMessage(), e);
+                        try {
+                            AchievementUpdateResponse updateResponse = achievementService.assignAchievementsToUser(
+                                    AssignAchievementToUserRequest.builder()
+                                            .userId(userId)
+                                            .totalPoints(user.getTotalPoints())
+                                            .build()
+                            );
+                            achievementUpdates.add(updateResponse);
+                        } catch (Exception e) {
+                            log.error("Failed to assign achievements for userId {}: {}", userId, e.getMessage(), e);
+                        }
+                    } else {
+                        log.info("Host user {} has realtimeScore {} but will not update totalPoints or receive achievements", userId, scoreToAdd);
                     }
                 }
             }
