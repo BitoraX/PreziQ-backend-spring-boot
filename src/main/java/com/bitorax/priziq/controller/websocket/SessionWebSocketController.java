@@ -82,7 +82,7 @@ public class SessionWebSocketController {
 
         ApiResponse<List<SessionParticipantSummaryResponse>> apiResponse = createApiResponse(
                 "A participant successfully left session with code: %s",
-                        responses, request.getSessionCode(), headerAccessor);
+                responses, request.getSessionCode(), headerAccessor);
 
         String destination = "/public/session/" + request.getSessionCode() + "/participants";
         messagingTemplate.convertAndSend(destination, apiResponse);
