@@ -31,14 +31,11 @@ public class Activity extends BaseEntity {
     @JsonIgnore
     Collection collection;
 
-    @OneToOne(mappedBy = "activity")
+    @OneToOne(mappedBy = "activity", cascade = CascadeType.ALL)
     Quiz quiz;
 
-    @OneToOne(mappedBy = "activity")
+    @OneToOne(mappedBy = "activity", cascade = CascadeType.ALL)
     Slide slide;
-
-    @OneToMany(mappedBy = "activity", fetch = FetchType.LAZY)
-    List<ActivitySubmission> activitySubmissions;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
