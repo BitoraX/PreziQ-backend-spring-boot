@@ -27,11 +27,8 @@ public class Collection extends BaseEntity {
     @JoinColumn(name = "creator_id", nullable = false)
     User creator;
 
-    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     List<Activity> activities = new ArrayList<>();
-
-    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
-    List<Session> sessions;
 
     String title;
 
