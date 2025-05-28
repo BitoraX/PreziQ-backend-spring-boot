@@ -151,7 +151,7 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     public CollectionSummaryResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
-        // Check owner or admin to access and get current collection
+        // Check owner or admin to access and get the current collection
         validateCollectionOwnership(collectionId);
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
@@ -167,7 +167,7 @@ public class CollectionServiceImpl implements CollectionService {
     @Override
     @Transactional
     public void deleteCollectionById(String collectionId){
-        // Check owner or admin to access and get current collection
+        // Check owner or admin to access and get the current collection
         validateCollectionOwnership(collectionId);
         Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
@@ -177,7 +177,7 @@ public class CollectionServiceImpl implements CollectionService {
     @Override
     @Transactional
     public List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest) {
-        // Check owner or admin to access and get current collection
+        // Check owner or admin to access and get the current collection
         validateCollectionOwnership(collectionId);
         Collection currentCollection = collectionRepository.findById(collectionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
@@ -303,6 +303,88 @@ public class CollectionServiceImpl implements CollectionService {
         });
 
         return resultMap;
+    }
+
+    @Override
+    @Transactional
+    public CollectionSummaryResponse copyCollection(String collectionId) {
+        // Get the current user
+        User currentUser = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
+
+        // Find the collection to be copied
+        Collection sourceCollection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+
+        // Check if the collection is published if it belongs to another user
+        if (!Objects.equals(sourceCollection.getCreator().getUserId(), currentUser.getUserId()) &&
+                !sourceCollection.getIsPublished()) {
+            throw new ApplicationException(ErrorCode.COLLECTION_NOT_PUBLISHED);
+        }
+
+        // Create a copy of the collection
+        Collection newCollection = Collection.builder()
+                .title(sourceCollection.getTitle())
+                .description(sourceCollection.getDescription())
+                .isPublished(false) // The copied collection is not published by default
+                .coverImage(sourceCollection.getCoverImage())
+                .defaultBackgroundMusic(sourceCollection.getDefaultBackgroundMusic())
+                .topic(sourceCollection.getTopic())
+                .creator(currentUser)
+                .activities(new ArrayList<>())
+                .build();
+
+        Collection savedCollection = collectionRepository.save(newCollection);
+
+        // Copy activities
+        List<Activity> sourceActivities = sourceCollection.getActivities();
+        for (Activity sourceActivity : sourceActivities) {
+            // Create a new activity
+            CreateActivityRequest activityRequest = CreateActivityRequest.builder()
+                    .collectionId(savedCollection.getCollectionId())
+                    .activityType(sourceActivity.getActivityType().name())
+                    .title(sourceActivity.getTitle())
+                    .description(sourceActivity.getDescription())
+                    .isPublished(sourceActivity.getIsPublished())
+                    .build();
+
+            ActivitySummaryResponse activityResponse = activityService.createActivity(activityRequest);
+            Activity newActivity = activityRepository.findById(activityResponse.getActivityId())
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+            // Copy quiz if present
+            if (sourceActivity.getQuiz() != null) {
+                Quiz sourceQuiz = sourceActivity.getQuiz();
+                Quiz newQuiz = Quiz.builder()
+                        .quizId(newActivity.getActivityId())
+                        .activity(newActivity)
+                        .questionText(sourceQuiz.getQuestionText())
+                        .timeLimitSeconds(sourceQuiz.getTimeLimitSeconds())
+                        .pointType(sourceQuiz.getPointType())
+                        .quizAnswers(new ArrayList<>())
+                        .build();
+
+                // Copy quiz answers
+                for (QuizAnswer sourceAnswer : sourceQuiz.getQuizAnswers()) {
+                    QuizAnswer newAnswer = QuizAnswer.builder()
+                            .quiz(newQuiz)
+                            .answerText(sourceAnswer.getAnswerText())
+                            .isCorrect(sourceAnswer.getIsCorrect())
+                            .orderIndex(sourceAnswer.getOrderIndex())
+                            .build();
+                    newQuiz.getQuizAnswers().add(newAnswer);
+                }
+
+                newActivity.setQuiz(newQuiz);
+                quizRepository.save(newQuiz);
+            }
+
+            // Set orderIndex
+            newActivity.setOrderIndex(sourceActivity.getOrderIndex());
+            activityRepository.save(newActivity);
+        }
+
+        return collectionMapper.collectionToSummaryResponse(savedCollection);
     }
 
     private void validateCollectionOwnership(String collectionId) {

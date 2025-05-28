@@ -104,6 +104,15 @@ public class CollectionController {
                 .build();
     }
 
+    @PostMapping("/{collectionId}/copy")
+    ApiResponse<CollectionSummaryResponse> copyCollection(@PathVariable String collectionId, HttpServletRequest servletRequest) {
+        return ApiResponse.<CollectionSummaryResponse>builder()
+                .message("Collection copied successfully")
+                .data(collectionService.copyCollection(collectionId))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
     @GetMapping("/topics")
     ApiResponse<List<String>> getAllCollectionTopics(HttpServletRequest servletRequest){
         return ApiResponse.<List<String>>builder()

@@ -29,5 +29,7 @@ public interface CollectionService {
 
     List<ReorderedActivityResponse> reorderActivities(String collectionId, ActivityReorderRequest activityReorderRequest);
 
+    CollectionSummaryResponse copyCollection(String collectionId);
+
     Map<String, List<CollectionSummaryResponse>> getCollectionsGroupedByTopic(Pageable pageable);
 }
