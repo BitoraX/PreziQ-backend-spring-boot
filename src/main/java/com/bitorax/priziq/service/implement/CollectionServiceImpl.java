@@ -7,6 +7,9 @@ import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
+import com.bitorax.priziq.domain.activity.slide.Slide;
+import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -317,8 +320,8 @@ public class CollectionServiceImpl implements CollectionService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         // Check if the collection is published if it belongs to another user
-        if (!Objects.equals(sourceCollection.getCreator().getUserId(), currentUser.getUserId()) &&
-                !sourceCollection.getIsPublished()) {
+        if (!Objects.equals(sourceCollection.getCreator().getUserId(), currentUser.getUserId())
+                && !sourceCollection.getIsPublished()) {
             throw new ApplicationException(ErrorCode.COLLECTION_NOT_PUBLISHED);
         }
 
@@ -362,6 +365,7 @@ public class CollectionServiceImpl implements CollectionService {
                         .timeLimitSeconds(sourceQuiz.getTimeLimitSeconds())
                         .pointType(sourceQuiz.getPointType())
                         .quizAnswers(new ArrayList<>())
+                        .quizLocationAnswers(new ArrayList<>())
                         .build();
 
                 // Copy quiz answers
@@ -370,17 +374,71 @@ public class CollectionServiceImpl implements CollectionService {
                             .quiz(newQuiz)
                             .answerText(sourceAnswer.getAnswerText())
                             .isCorrect(sourceAnswer.getIsCorrect())
+                            .explanation(sourceAnswer.getExplanation())
                             .orderIndex(sourceAnswer.getOrderIndex())
                             .build();
                     newQuiz.getQuizAnswers().add(newAnswer);
+                }
+
+                // Copy quiz location answers
+                for (QuizLocationAnswer sourceLocationAnswer : sourceQuiz.getQuizLocationAnswers()) {
+                    QuizLocationAnswer newLocationAnswer = QuizLocationAnswer.builder()
+                            .quiz(newQuiz)
+                            .longitude(sourceLocationAnswer.getLongitude())
+                            .latitude(sourceLocationAnswer.getLatitude())
+                            .radius(sourceLocationAnswer.getRadius())
+                            .build();
+                    newQuiz.getQuizLocationAnswers().add(newLocationAnswer);
                 }
 
                 newActivity.setQuiz(newQuiz);
                 quizRepository.save(newQuiz);
             }
 
-            // Set orderIndex
+            // Copy slide if present
+            if (sourceActivity.getSlide() != null) {
+                Slide sourceSlide = sourceActivity.getSlide();
+                Slide newSlide = Slide.builder()
+                        .slideId(newActivity.getActivityId())
+                        .activity(newActivity)
+                        .transitionEffect(sourceSlide.getTransitionEffect())
+                        .transitionDuration(sourceSlide.getTransitionDuration())
+                        .autoAdvanceSeconds(sourceSlide.getAutoAdvanceSeconds())
+                        .slideElements(new ArrayList<>())
+                        .build();
+
+                // Copy slide elements
+                for (SlideElement sourceElement : sourceSlide.getSlideElements()) {
+                    SlideElement newElement = SlideElement.builder()
+                            .slide(newSlide)
+                            .slideElementType(sourceElement.getSlideElementType())
+                            .positionX(sourceElement.getPositionX())
+                            .positionY(sourceElement.getPositionY())
+                            .width(sourceElement.getWidth())
+                            .height(sourceElement.getHeight())
+                            .rotation(sourceElement.getRotation())
+                            .layerOrder(sourceElement.getLayerOrder())
+                            .content(sourceElement.getContent())
+                            .sourceUrl(sourceElement.getSourceUrl())
+                            .entryAnimation(sourceElement.getEntryAnimation())
+                            .entryAnimationDuration(sourceElement.getEntryAnimationDuration())
+                            .entryAnimationDelay(sourceElement.getEntryAnimationDelay())
+                            .exitAnimation(sourceElement.getExitAnimation())
+                            .exitAnimationDuration(sourceElement.getExitAnimationDuration())
+                            .exitAnimationDelay(sourceElement.getExitAnimationDelay())
+                            .build();
+                    newSlide.getSlideElements().add(newElement);
+                }
+
+                newActivity.setSlide(newSlide);
+                // Save slide (cascade will save slide elements)
+                activityRepository.save(newActivity);
+            }
+
+            // Set orderIndex and other activity properties
             newActivity.setOrderIndex(sourceActivity.getOrderIndex());
+            newActivity.setBackgroundColor(sourceActivity.getBackgroundColor());
+            newActivity.setBackgroundImage(sourceActivity.getBackgroundImage());
             activityRepository.save(newActivity);
         }
 
