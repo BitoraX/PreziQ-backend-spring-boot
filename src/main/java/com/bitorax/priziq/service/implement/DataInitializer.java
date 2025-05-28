@@ -278,12 +278,13 @@ public class DataInitializer implements ApplicationRunner {
 
         private List<User> getDefaultUsers() {
                 return List.of(
-                        createUser("priziq.admin@gmail.com", "Admin", "PriziQ", RoleType.ADMIN_ROLE),
-                        createUser("priziq.user@gmail.com", "User", "PriziQ", RoleType.USER_ROLE),
+                        createUser("preziq.admin@gmail.com", "Admin", "PriziQ", RoleType.ADMIN_ROLE),
+                        createUser("preziq.user@gmail.com", "User", "PriziQ", RoleType.USER_ROLE),
                         createUser("thuanmobile1111@gmail.com", "Quách Phú", "Thuận", RoleType.ADMIN_ROLE),
                         createUser("thuyy566@gmail.com", "Lê Trần Hoàng", "Kiên", RoleType.ADMIN_ROLE),
                         createUser("tdmg1809@gmail.com", "Lê Phạm Thanh", "Duy", RoleType.ADMIN_ROLE),
-                        createUser("tranquanmikaz@gmail.com", "Trần Nguyễn Minh", "Quân", RoleType.ADMIN_ROLE)
+                        createUser("tranquanmikaz@gmail.com", "Trần Nguyễn Minh", "Quân", RoleType.ADMIN_ROLE),
+                        createUser("gialuat2004vk@gmail.com", "Cao Bảo Gia", "Luật", RoleType.ADMIN_ROLE)
                 );
         }
 
