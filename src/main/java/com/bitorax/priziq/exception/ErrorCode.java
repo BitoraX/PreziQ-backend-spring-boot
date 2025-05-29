@@ -130,6 +130,7 @@ public enum ErrorCode {
     ACTIVITY_NOT_IN_COLLECTION(1606, HttpStatus.BAD_REQUEST, "Activity does not belong to the specified collection"),
     INVALID_COLLECTION_TOPIC_TYPE(1607, HttpStatus.BAD_REQUEST, "Invalid collection topic type. Only the following types are supported: ART, SCIENCE, TECHNOLOGY, HISTORY, LITERATURE, ENTERTAINMENT, SPORTS, GEOGRAPHY, HEALTH, EDUCATION, NATURE, CULTURE, BUSINESS, PHILOSOPHY, FOOD, TRIVIA"),
     COLLECTION_TOPIC_NOT_BLANK(1608, HttpStatus.BAD_REQUEST, "Collection topic must not be blank"),
+    COLLECTION_NOT_PUBLISHED(1609, HttpStatus.BAD_REQUEST, "Cannot copy unpublished collection"),
 
     // Module activity errors
     COLLECTION_ID_REQUIRED(1701, HttpStatus.BAD_REQUEST, "Collection ID is required"),

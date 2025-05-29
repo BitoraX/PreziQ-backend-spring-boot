@@ -32,7 +32,7 @@ import static com.bitorax.priziq.utils.MetaUtils.buildWebSocketMetaInfo;
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-public class    WebSocketEventListener {
+public class WebSocketEventListener {
     SimpMessagingTemplate messagingTemplate;
     SessionParticipantRepository sessionParticipantRepository;
     SessionParticipantMapper sessionParticipantMapper;

@@ -55,5 +55,4 @@ public class Activity extends BaseEntity {
 
     String backgroundColor;
     String backgroundImage;
-    String customBackgroundMusic;
 }
