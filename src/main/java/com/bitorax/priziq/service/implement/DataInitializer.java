@@ -148,6 +148,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve my collections with query parameters", "/api/v1/collections/me", "GET", "COLLECTIONS"),
                         new Permission("Retrieve the list of collection topics", "/api/v1/collections/topics", "GET", "COLLECTIONS"),
                         new Permission("Retrieve collections grouped by topic", "/api/v1/collections/grouped/topics", "GET", "COLLECTIONS"),
+                        new Permission("Copy a collection", "/api/v1/collections/{collectionId}/copy", "POST", "COLLECTIONS"),
 
                         // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
@@ -216,6 +217,7 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/collections/{collectionId}", "PATCH"),
                         findPermissionOrThrow("/api/v1/collections/{collectionId}", "DELETE"),
                         findPermissionOrThrow("/api/v1/collections/{collectionId}/activities/reorder", "PUT"),
+                        findPermissionOrThrow("/api/v1/collections/{collectionId}/copy", "POST"),
 
                         findPermissionOrThrow("/api/v1/activities", "POST"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}", "GET"),
@@ -278,12 +280,13 @@ public class DataInitializer implements ApplicationRunner {
 
         private List<User> getDefaultUsers() {
                 return List.of(
-                        createUser("priziq.admin@gmail.com", "Admin", "PriziQ", RoleType.ADMIN_ROLE),
-                        createUser("priziq.user@gmail.com", "User", "PriziQ", RoleType.USER_ROLE),
+                        createUser("preziq.admin@gmail.com", "Admin", "PriziQ", RoleType.ADMIN_ROLE),
+                        createUser("preziq.user@gmail.com", "User", "PriziQ", RoleType.USER_ROLE),
                         createUser("thuanmobile1111@gmail.com", "Quách Phú", "Thuận", RoleType.ADMIN_ROLE),
                         createUser("thuyy566@gmail.com", "Lê Trần Hoàng", "Kiên", RoleType.ADMIN_ROLE),
                         createUser("tdmg1809@gmail.com", "Lê Phạm Thanh", "Duy", RoleType.ADMIN_ROLE),
-                        createUser("tranquanmikaz@gmail.com", "Trần Nguyễn Minh", "Quân", RoleType.ADMIN_ROLE)
+                        createUser("tranquanmikaz@gmail.com", "Trần Nguyễn Minh", "Quân", RoleType.ADMIN_ROLE),
+                        createUser("gialuat2004vk@gmail.com", "Cao Bảo Gia", "Luật", RoleType.ADMIN_ROLE)
                 );
         }
 
