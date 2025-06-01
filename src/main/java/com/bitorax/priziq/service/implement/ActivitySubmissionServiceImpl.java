@@ -141,15 +141,23 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
     private QuizResult processQuizCheckboxes(CreateActivitySubmissionRequest request, Quiz quiz) {
         // Expect answerContent to be comma-separated quizAnswerIds
-        List<String> selectedIds = Arrays.asList(request.getAnswerContent().split(","));
+        String[] selectedIds = request.getAnswerContent().split(",");
         List<QuizAnswer> correctAnswers = quiz.getQuizAnswers().stream()
                 .filter(QuizAnswer::getIsCorrect)
                 .toList();
-        // Check if selected answers match exactly with correct answers
-        boolean isCorrect = selectedIds.size() == correctAnswers.size() &&
-                selectedIds.stream().allMatch(id -> correctAnswers.stream()
-                        .anyMatch(a -> a.getQuizAnswerId().equals(id)));
-        int responseScore = isCorrect ? baseScore : 0; // Use baseScore from an environment
+
+        // Count correct matches
+        int correctCount = 0;
+        for (String selectedId : selectedIds) {
+            if (correctAnswers.stream().anyMatch(a -> a.getQuizAnswerId().equals(selectedId))) {
+                correctCount++;
+            }
+        }
+
+        // Calculate score based on the proportion of correct answers
+        boolean isCorrect = correctCount == correctAnswers.size();
+        double proportionCorrect = (double) correctCount / correctAnswers.size();
+        int responseScore = (int) Math.floor(baseScore * proportionCorrect); // Round down
         return new QuizResult(isCorrect, responseScore);
     }
 
