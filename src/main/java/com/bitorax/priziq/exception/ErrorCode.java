@@ -193,6 +193,8 @@ public enum ErrorCode {
     EXIT_ANIMATION_DURATION_NON_NEGATIVE(1752, HttpStatus.BAD_REQUEST, "Exit animation duration must be non-negative"),
     EXIT_ANIMATION_DELAY_NON_NEGATIVE(1753, HttpStatus.BAD_REQUEST, "Exit animation delay must be non-negative"),
     SAME_ACTIVITY_TYPE(1754, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
+    SLIDE_ELEMENT_DISPLAY_ORDER_REQUIRED(1755, HttpStatus.BAD_REQUEST, "Slide element display order is required"),
+    SLIDE_ELEMENT_DISPLAY_ORDER_NON_NEGATIVE(1756, HttpStatus.BAD_REQUEST, "Slide element display order must be non-negative"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),

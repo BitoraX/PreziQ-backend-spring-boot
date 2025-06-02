@@ -188,14 +188,14 @@ public class SessionWebSocketController {
         String endDestination = "/public/session/" + endSessionResponse.getSessionCode() + "/end";
         messagingTemplate.convertAndSend(endDestination, endApiResponse);
 
-        // Send summary to each participant
+        // Send a summary to each participant
         List<Map.Entry<String, Object>> summaryDetails = sessionService.getSessionSummaryDetails(request.getSessionId());
         for (Map.Entry<String, Object> entry : summaryDetails) {
             String stompClientId = entry.getKey();
             Object summaryData = entry.getValue();
 
             if (summaryData instanceof List) {
-                // Host get full list
+                // Host get the full list
                 @SuppressWarnings("unchecked")
                 List<SessionEndSummaryResponse> summaries = (List<SessionEndSummaryResponse>) summaryData;
                 ApiResponse<List<SessionEndSummaryResponse>> hostSummaryApiResponse = createApiResponse(
@@ -213,7 +213,7 @@ public class SessionWebSocketController {
             }
         }
 
-        // Get achievement update details from service
+        // Get achievement update details from the service
         List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = sessionParticipantService.getAchievementUpdateDetails(
                 endSessionResult.getAchievementUpdates(),
                 request.getSessionId()
