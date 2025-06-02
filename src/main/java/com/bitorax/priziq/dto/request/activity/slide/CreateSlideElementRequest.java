@@ -37,7 +37,7 @@ public class CreateSlideElementRequest {
 
     String sourceUrl;
 
-    @NotBlank(message = "SLIDE_ELEMENT_DISPLAY_ORDER_REQUIRED")
+    @NotNull(message = "SLIDE_ELEMENT_DISPLAY_ORDER_REQUIRED")
     @PositiveOrZero(message = "SLIDE_ELEMENT_DISPLAY_ORDER_NON_NEGATIVE")
     Integer displayOrder = 0;
 

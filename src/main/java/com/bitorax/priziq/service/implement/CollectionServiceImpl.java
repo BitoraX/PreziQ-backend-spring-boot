@@ -431,7 +431,6 @@ public class CollectionServiceImpl implements CollectionService {
                 }
 
                 newActivity.setSlide(newSlide);
-                // Save slide (cascade will save slide elements)
                 activityRepository.save(newActivity);
             }
 
