@@ -104,7 +104,7 @@ aws:
         region: ${AWS_REGION}
 
 file:
-    allowedTypes: ${FILE_ALLOWED_TYPES:image/jpeg,image/png,image/jpg}
+    allowedTypes: ${FILE_ALLOWED_TYPES:image/jpeg,image/png,image/jpg,audio/mpeg}
     maxSize: ${FILE_MAX_SIZE:5242880} # 5 MB
     minSize: ${FILE_MIN_SIZE:1024} # 1 KB
 
