@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 public class SlideElementResponse {
     String slideElementId;
     SlideElementType slideElementType;
+    Integer displayOrder;
     BigDecimal positionX;
     BigDecimal positionY;
     BigDecimal width;

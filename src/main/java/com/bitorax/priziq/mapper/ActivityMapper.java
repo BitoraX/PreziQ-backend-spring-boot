@@ -21,6 +21,10 @@ import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
 import org.mapstruct.*;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Mapper(componentModel = "spring")
 public interface ActivityMapper {
     @Mapping(target = "collection", ignore = true)
@@ -55,5 +59,17 @@ public interface ActivityMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateSlideFromRequest(UpdateSlideRequest request, @MappingTarget Slide slide);
 
+    @Mapping(target = "slideElements", source = "slideElements", qualifiedByName = "sortedSlideElements")
     SlideResponse slideToResponse(Slide slide);
+
+    @Named("sortedSlideElements")
+    default List<SlideElementResponse> sortedSlideElements(List<SlideElement> slideElements) {
+        if (slideElements == null) {
+            return null;
+        }
+        return slideElements.stream()
+                .sorted(Comparator.comparingInt(se -> se.getDisplayOrder() != null ? se.getDisplayOrder() : 0)) // UPDATED HERE
+                .map(this::slideElementToResponse)
+                .collect(Collectors.toList());
+    }
 }

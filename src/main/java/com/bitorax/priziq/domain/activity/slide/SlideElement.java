@@ -56,6 +56,10 @@ public class SlideElement extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     String sourceUrl;
 
+    @Column(nullable = false)
+    @Builder.Default
+    Integer displayOrder = 0;
+
     String entryAnimation;
 
     @Builder.Default
