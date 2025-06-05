@@ -176,7 +176,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
         List<QuizAnswer> sortedAnswers = quiz.getQuizAnswers().stream()
                 .sorted(Comparator.comparingInt(QuizAnswer::getOrderIndex))
                 .toList();
-        // Check if user order matches correct order
+        // Check if user order matches the correct order
         boolean isCorrect = userOrderIds.size() == sortedAnswers.size() &&
                 userOrderIds.stream()
                         .map(id -> sortedAnswers.get(userOrderIds.indexOf(id)).getQuizAnswerId())
@@ -187,20 +187,32 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
     }
 
     private QuizResult processQuizLocation(CreateActivitySubmissionRequest request, Quiz quiz) {
+        // Handle empty answerContent (no answers submitted)
+        if (request.getAnswerContent() == null || request.getAnswerContent().trim().isEmpty()) {
+            return new QuizResult(false, 0);
+        }
+
         // Expect answerContent to be "lng1,lat1,lng2,lat2,...,lngN,latN"
         String[] coordinates = request.getAnswerContent().split(",");
         if (coordinates.length % 2 != 0 || coordinates.length < 2) {
-            throw new ApplicationException(ErrorCode.INVALID_REQUEST_DATA,
-                    "Answer content must contain at least one pair of longitude and latitude, e.g., 'lng1,lat1'");
+            throw new ApplicationException(ErrorCode.MISSING_LAT_LNG_PAIR);
         }
 
         List<QuizLocationAnswer> correctLocations = quiz.getQuizLocationAnswers();
+        // Check if number of coordinates exceeds correct locations
         if (coordinates.length / 2 > correctLocations.size()) {
-            throw new ApplicationException(ErrorCode.INVALID_REQUEST_DATA,
-                    "Number of coordinate pairs cannot exceed the number of correct locations");
+            throw new ApplicationException(ErrorCode.TOO_MANY_COORDINATE_PAIRS);
         }
 
         try {
+            // Validate 6 decimal places for each coordinate
+            String decimalPattern = "^-?\\d+\\.\\d{6}$";
+            for (String coord : coordinates) {
+                if (!coord.matches(decimalPattern)) {
+                    throw new ApplicationException(ErrorCode.INVALID_COORDINATE_PRECISION);
+                }
+            }
+
             // Parse user coordinates into pairs
             List<double[]> userCoordinates = new ArrayList<>();
             for (int i = 0; i < coordinates.length; i += 2) {
@@ -214,42 +226,54 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 if (latitude < -90 || latitude > 90) {
                     throw new ApplicationException(ErrorCode.INVALID_LATITUDE);
                 }
-
                 userCoordinates.add(new double[]{longitude, latitude});
             }
 
-            // Count correct matches
+            // Check for duplicate coordinate pairs
+            Set<String> uniqueCoords = new HashSet<>();
+            for (double[] coord : userCoordinates) {
+                String coordKey = coord[0] + "," + coord[1];
+                if (!uniqueCoords.add(coordKey)) {
+                    throw new ApplicationException(ErrorCode.DUPLICATE_COORDINATE_PAIR);
+                }
+            }
+
+            // Match each user coordinate to a unique correct location
             List<QuizLocationAnswer> unmatchedLocations = new ArrayList<>(correctLocations);
             int correctCount = 0;
 
             for (double[] userCoord : userCoordinates) {
                 double userLong = userCoord[0];
                 double userLat = userCoord[1];
+                QuizLocationAnswer matchedLocation = null;
+                double minDistance = Double.MAX_VALUE;
 
-                // Find a matching location
-                Iterator<QuizLocationAnswer> iterator = unmatchedLocations.iterator();
-                while (iterator.hasNext()) {
-                    QuizLocationAnswer location = iterator.next();
+                // Find the closest unmatched correct location within radius
+                for (QuizLocationAnswer location : unmatchedLocations) {
                     double distance = calculateHaversineDistance(
                             userLat, userLong,
                             location.getLatitude(), location.getLongitude()
                     );
-                    if (distance <= location.getRadius()) {
-                        correctCount++;
-                        iterator.remove(); // Remove the matched location to prevent reuse
-                        break;
+                    if (distance <= location.getRadius() && distance < minDistance) {
+                        minDistance = distance;
+                        matchedLocation = location;
                     }
+                }
+
+                if (matchedLocation != null) {
+                    correctCount++;
+                    unmatchedLocations.remove(matchedLocation); // Remove matched location
                 }
             }
 
-            // Calculate score based on the proportion of correct locations
+            // isCorrect is true only if all correct locations are matched
             boolean isCorrect = correctCount == correctLocations.size();
-            double proportionCorrect = (double) correctCount / correctLocations.size();
+            // Score based on a proportion of correct matches
+            double proportionCorrect = correctLocations.isEmpty() ? 0 : (double) correctCount / correctLocations.size();
             int responseScore = (int) Math.floor(baseScore * proportionCorrect); // Round down
             return new QuizResult(isCorrect, responseScore);
         } catch (NumberFormatException e) {
-            throw new ApplicationException(ErrorCode.INVALID_REQUEST_DATA,
-                    "Invalid longitude or latitude format");
+            throw new ApplicationException(ErrorCode.INVALID_LAT_LNG_FORMAT);
         }
     }
 

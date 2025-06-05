@@ -1,4 +1,4 @@
-package com.bitorax.priziq.service.implement;
+package com.bitorax.priziq.configuration;
 
 import com.bitorax.priziq.constant.RoleType;
 import com.bitorax.priziq.domain.Permission;
