@@ -220,6 +220,11 @@ public enum ErrorCode {
     // Module activity submission errors
     ANSWER_CONTENT_REQUIRED(2001, HttpStatus.BAD_REQUEST, "Answer content is required"),
     ACTIVITY_SUBMISSION_NOT_FOUND(2002, HttpStatus.NOT_FOUND, "Activity submission not found"),
+    MISSING_LAT_LNG_PAIR(2003, HttpStatus.BAD_REQUEST, "Answer content must contain at least one pair of longitude and latitude, e.g., '2.000000,48.000000'"),
+    TOO_MANY_COORDINATE_PAIRS(2004, HttpStatus.BAD_REQUEST, "Number of coordinate pairs cannot exceed the number of correct locations"),
+    INVALID_COORDINATE_PRECISION (2005, HttpStatus.BAD_REQUEST, "Coordinates must have exactly 6 decimal places, e.g., '2.294500,48.858400'"),
+    DUPLICATE_COORDINATE_PAIR(2006, HttpStatus.BAD_REQUEST, "Duplicate coordinate pairs are not allowed"),
+    INVALID_LAT_LNG_FORMAT(2007, HttpStatus.BAD_REQUEST, "Invalid longitude or latitude format"),
 
     // Module achievement errors
     ACHIEVEMENT_NOT_FOUND(2101, HttpStatus.NOT_FOUND, "Achievement not found"),
