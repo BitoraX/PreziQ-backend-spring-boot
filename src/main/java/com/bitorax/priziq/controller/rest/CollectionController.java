@@ -1,5 +1,6 @@
 package com.bitorax.priziq.controller.rest;
 
+import com.bitorax.priziq.constant.CollectionBackgroundMusic;
 import com.bitorax.priziq.constant.CollectionTopicType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
@@ -127,6 +128,15 @@ public class CollectionController {
         return ApiResponse.<Map<String, List<CollectionSummaryResponse>>>builder()
                 .message("Collections grouped by topic retrieved successfully")
                 .data(collectionService.getCollectionsGroupedByTopic(pageable))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+    @GetMapping("/background-music")
+    ApiResponse<List<Map<String, String>>> getAllBackgroundMusic(HttpServletRequest servletRequest) {
+        return ApiResponse.<List<Map<String, String>>>builder()
+                .message("Background music retrieved successfully")
+                .data(CollectionBackgroundMusic.getAllBackgroundMusic())
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
