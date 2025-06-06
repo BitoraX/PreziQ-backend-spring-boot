@@ -149,6 +149,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Retrieve the list of collection topics", "/api/v1/collections/topics", "GET", "COLLECTIONS"),
                         new Permission("Retrieve collections grouped by topic", "/api/v1/collections/grouped/topics", "GET", "COLLECTIONS"),
                         new Permission("Copy a collection", "/api/v1/collections/{collectionId}/copy", "POST", "COLLECTIONS"),
+                        new Permission("Retrieve the list of background music collections", "/api/v1/collections/background-music", "GET", "COLLECTIONS"),
 
                         // Module Activities
                         new Permission("Create a new activity", "/api/v1/activities", "POST", "ACTIVITIES"),
@@ -218,6 +219,7 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/collections/{collectionId}", "DELETE"),
                         findPermissionOrThrow("/api/v1/collections/{collectionId}/activities/reorder", "PUT"),
                         findPermissionOrThrow("/api/v1/collections/{collectionId}/copy", "POST"),
+                        findPermissionOrThrow("/api/v1/collections/background-music", "GET"),
 
                         findPermissionOrThrow("/api/v1/activities", "POST"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}", "GET"),
