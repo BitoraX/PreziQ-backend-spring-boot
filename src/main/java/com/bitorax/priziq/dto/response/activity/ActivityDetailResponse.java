@@ -24,7 +24,6 @@ public class ActivityDetailResponse extends AuditResponse {
     Integer orderIndex;
     String backgroundColor;
     String backgroundImage;
-    String customBackgroundMusic;
 
     QuizResponse quiz;
     SlideResponse slide;
