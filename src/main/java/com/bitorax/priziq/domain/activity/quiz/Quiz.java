@@ -34,6 +34,9 @@ public class Quiz extends BaseEntity {
     @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     List<QuizLocationAnswer> quizLocationAnswers;
 
+    @OneToOne(mappedBy = "quiz", cascade = CascadeType.ALL)
+    QuizMatchingPair quizMatchingPair;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     String questionText;
 

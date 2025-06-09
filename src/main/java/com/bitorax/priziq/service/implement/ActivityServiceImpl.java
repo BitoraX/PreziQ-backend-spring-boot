@@ -49,7 +49,7 @@ public class ActivityServiceImpl implements ActivityService {
     ActivityMapper activityMapper;
     ActivityUtils activityUtils;
 
-    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION");
+    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION", "MATCHING_PAIRS");
 
     @Override
     @Transactional
