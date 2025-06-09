@@ -99,8 +99,8 @@ public class ActivityServiceImpl implements ActivityService {
                     .quiz(quiz)
                     .leftColumnName("Left Column")
                     .rightColumnName("Right Column")
-                    .quizMatchingPairItems(new ArrayList<>())
-                    .quizMatchingPairConnections(new ArrayList<>())
+                    .items(new ArrayList<>())
+                    .connections(new ArrayList<>())
                     .build();
             quiz.setQuizMatchingPairAnswer(matchingPairAnswer);
 
@@ -116,15 +116,15 @@ public class ActivityServiceImpl implements ActivityService {
                     .isLeftColumn(false)
                     .orderIndex(0)
                     .build();
-            matchingPairAnswer.getQuizMatchingPairItems().add(leftItem);
-            matchingPairAnswer.getQuizMatchingPairItems().add(rightItem);
+            matchingPairAnswer.getItems().add(leftItem);
+            matchingPairAnswer.getItems().add(rightItem);
 
             QuizMatchingPairConnection connection = QuizMatchingPairConnection.builder()
                     .quizMatchingPairAnswer(matchingPairAnswer)
                     .leftItem(leftItem)
                     .rightItem(rightItem)
                     .build();
-            matchingPairAnswer.getQuizMatchingPairConnections().add(connection);
+            matchingPairAnswer.getConnections().add(connection);
 
             quizRepository.save(quiz);
             savedActivity.setQuiz(quiz);

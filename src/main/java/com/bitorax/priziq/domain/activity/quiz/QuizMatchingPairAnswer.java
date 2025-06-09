@@ -32,8 +32,8 @@ public class QuizMatchingPairAnswer {
     String rightColumnName;
 
     @OneToMany(mappedBy = "quizMatchingPairAnswer", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<QuizMatchingPairItem> quizMatchingPairItems = new ArrayList<>();
+    List<QuizMatchingPairItem> items = new ArrayList<>();
 
     @OneToMany(mappedBy = "quizMatchingPairAnswer", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<QuizMatchingPairConnection> quizMatchingPairConnections = new ArrayList<>();
+    List<QuizMatchingPairConnection> connections = new ArrayList<>();
 }

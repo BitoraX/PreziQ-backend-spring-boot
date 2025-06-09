@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
         @JsonSubTypes.Type(value = UpdateReorderQuizRequest.class, name = "REORDER"),
         @JsonSubTypes.Type(value = UpdateTypeAnswerQuizRequest.class, name = "TYPE_ANSWER"),
         @JsonSubTypes.Type(value = UpdateTrueFalseQuizRequest.class, name = "TRUE_FALSE"),
-        @JsonSubTypes.Type(value = UpdateMatchingPairQuizRequest.class, name = "MATCHING_PAIRS"),
+//        @JsonSubTypes.Type(value = UpdateMatchingPairQuizRequest.class, name = "MATCHING_PAIRS"),
         @JsonSubTypes.Type(value = UpdateLocationQuizRequest.class, name = "LOCATION")
 })
 public abstract class UpdateQuizRequest {
