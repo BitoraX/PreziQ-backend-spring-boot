@@ -28,15 +28,6 @@ public class Quiz extends BaseEntity {
     @JsonIgnore
     Activity activity;
 
-    @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    List<QuizAnswer> quizAnswers;
-
-    @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    List<QuizLocationAnswer> quizLocationAnswers;
-
-    @OneToOne(mappedBy = "quiz", cascade = CascadeType.ALL)
-    QuizMatchingPair quizMatchingPair;
-
     @Column(columnDefinition = "TEXT", nullable = false)
     String questionText;
 
@@ -47,4 +38,16 @@ public class Quiz extends BaseEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     PointType pointType;
+
+    // Quiz buttons, checkboxes, true/false, reorder, type answer
+    @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    List<QuizAnswer> quizAnswers;
+
+    // Quiz locations
+    @OneToMany(mappedBy = "quiz", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    List<QuizLocationAnswer> quizLocationAnswers;
+
+    // Quiz matching pairs
+    @OneToOne(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    QuizMatchingPairAnswer quizMatchingPairAnswer;
 }

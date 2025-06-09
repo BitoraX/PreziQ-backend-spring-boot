@@ -6,6 +6,9 @@ import com.bitorax.priziq.constant.SlideElementType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairConnection;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairItem;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -33,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
 
@@ -81,6 +85,49 @@ public class ActivityServiceImpl implements ActivityService {
                     .build();
             slideRepository.save(slide);
             savedActivity.setSlide(slide);
+        } else if (savedActivity.getActivityType() == ActivityType.QUIZ_MATCHING_PAIRS) {
+            // Default value
+            Quiz quiz = Quiz.builder()
+                    .quizId(savedActivity.getActivityId())
+                    .activity(savedActivity)
+                    .questionText("Match each item correctly")
+                    .timeLimitSeconds(60)
+                    .pointType(PointType.STANDARD)
+                    .build();
+
+            QuizMatchingPairAnswer matchingPairAnswer = QuizMatchingPairAnswer.builder()
+                    .quiz(quiz)
+                    .leftColumnName("Left Column")
+                    .rightColumnName("Right Column")
+                    .quizMatchingPairItems(new ArrayList<>())
+                    .quizMatchingPairConnections(new ArrayList<>())
+                    .build();
+            quiz.setQuizMatchingPairAnswer(matchingPairAnswer);
+
+            QuizMatchingPairItem leftItem = QuizMatchingPairItem.builder()
+                    .quizMatchingPairAnswer(matchingPairAnswer)
+                    .content("Item 1")
+                    .isLeftColumn(true)
+                    .orderIndex(0)
+                    .build();
+            QuizMatchingPairItem rightItem = QuizMatchingPairItem.builder()
+                    .quizMatchingPairAnswer(matchingPairAnswer)
+                    .content("Match 1")
+                    .isLeftColumn(false)
+                    .orderIndex(0)
+                    .build();
+            matchingPairAnswer.getQuizMatchingPairItems().add(leftItem);
+            matchingPairAnswer.getQuizMatchingPairItems().add(rightItem);
+
+            QuizMatchingPairConnection connection = QuizMatchingPairConnection.builder()
+                    .quizMatchingPairAnswer(matchingPairAnswer)
+                    .leftItem(leftItem)
+                    .rightItem(rightItem)
+                    .build();
+            matchingPairAnswer.getQuizMatchingPairConnections().add(connection);
+
+            quizRepository.save(quiz);
+            savedActivity.setQuiz(quiz);
         }
 
         return activityMapper.activityToSummaryResponse(savedActivity);
