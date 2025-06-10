@@ -17,7 +17,6 @@ import java.util.List;
 @Table(name = "quiz_matching_pair_answers")
 public class QuizMatchingPairAnswer {
     @Id
-    @Column(name = "quiz_matching_pair_answer_id")
     String quizMatchingPairAnswerId;
 
     @OneToOne(fetch = FetchType.LAZY)

@@ -136,7 +136,7 @@ public enum ErrorCode {
     COLLECTION_ID_REQUIRED(1701, HttpStatus.BAD_REQUEST, "Collection ID is required"),
     ACTIVITY_TYPE_ID_REQUIRED(1702, HttpStatus.BAD_REQUEST, "Activity type ID is required"),
     ACTIVITY_ID_REQUIRED(1703, HttpStatus.BAD_REQUEST, "Activity ID is required"),
-    INVALID_ACTIVITY_TYPE(1704, HttpStatus.BAD_REQUEST, "Invalid activity type. Only the following types are supported: QUIZ_BUTTONS, QUIZ_CHECKBOXES, QUIZ_TRUE_OR_FALSE, QUIZ_TYPE_ANSWER, QUIZ_REORDER, INFO_SLIDE"),
+    INVALID_ACTIVITY_TYPE(1704, HttpStatus.BAD_REQUEST, "Invalid activity type. Only the following types are supported: QUIZ_BUTTONS, QUIZ_CHECKBOXES, QUIZ_TRUE_OR_FALSE, QUIZ_TYPE_ANSWER, QUIZ_REORDER, QUIZ_LOCATION, QUIZ_MATCHING_PAIRS, INFO_SLIDE"),
     INVALID_POINT_TYPE(1705, HttpStatus.BAD_REQUEST, "Invalid point type. Only the following types are supported: NO_POINTS, STANDARD, DOUBLE_POINTS"),
     ACTIVITY_TYPE_NOT_BLANK(1706, HttpStatus.BAD_REQUEST, "Activity type must not be blank"),
     ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
@@ -174,6 +174,10 @@ public enum ErrorCode {
     INVALID_LONGITUDE(1735, HttpStatus.BAD_REQUEST, "Longitude must be between -180 and 180"),
     INVALID_LATITUDE(1736, HttpStatus.BAD_REQUEST, "Latitude must be between -90 and 90"),
     INVALID_RADIUS(1737, HttpStatus.BAD_REQUEST, "Radius must be positive"),
+
+    LEFT_COLUMN_NAME_REQUIRED(1738, HttpStatus.BAD_REQUEST, "Left column name is required"),
+    RIGHT_COLUMN_NAME_REQUIRED(1739, HttpStatus.BAD_REQUEST, "Right column name is required"),
+
 
     // Slide-related errors
     SLIDE_NOT_FOUND(1738, HttpStatus.NOT_FOUND, "Slide not found"),

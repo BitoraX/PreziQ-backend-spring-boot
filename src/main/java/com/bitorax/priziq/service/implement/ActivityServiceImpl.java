@@ -194,6 +194,10 @@ public class ActivityServiceImpl implements ActivityService {
                 UpdateLocationQuizRequest locationRequest = (UpdateLocationQuizRequest) updateQuizRequest;
                 activityUtils.handleLocationQuiz(quiz, locationRequest);
                 break;
+            case QUIZ_MATCHING_PAIRS:
+                UpdateMatchingPairQuizRequest matchingRequest = (UpdateMatchingPairQuizRequest) updateQuizRequest;
+                activityUtils.handleMatchingPairQuiz(quiz, matchingRequest);
+                break;
             default:
                 throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
@@ -204,6 +208,8 @@ public class ActivityServiceImpl implements ActivityService {
         // Load answer list based on activityType
         if (activityType == ActivityType.QUIZ_LOCATION) {
             Hibernate.initialize(updatedQuiz.getQuizLocationAnswers());
+        } else if (activityType == ActivityType.QUIZ_MATCHING_PAIRS) {
+            Hibernate.initialize(updatedQuiz.getQuizMatchingPairAnswer());
         } else {
             Hibernate.initialize(updatedQuiz.getQuizAnswers());
         }

@@ -7,6 +7,7 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
 import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairAnswer;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -139,6 +140,11 @@ public class ActivityUtils {
                     throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
+            case QUIZ_MATCHING_PAIRS:
+                if (!requestType.equals("MATCHING_PAIRS") || !(request instanceof UpdateMatchingPairQuizRequest)) {
+                    throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
+                }
+                break;
             default:
                 throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
@@ -212,6 +218,19 @@ public class ActivityUtils {
                 .orderIndex(1)
                 .build();
         updateQuizAnswers(quiz, List.of(trueAnswer, falseAnswer));
+    }
+
+    public void handleMatchingPairQuiz(Quiz quiz, UpdateMatchingPairQuizRequest request) {
+        QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer() != null ?
+                quiz.getQuizMatchingPairAnswer() :
+                QuizMatchingPairAnswer.builder()
+                        .quiz(quiz)
+                        .build();
+
+        answer.setLeftColumnName(request.getLeftColumnName());
+        answer.setRightColumnName(request.getRightColumnName());
+
+        quiz.setQuizMatchingPairAnswer(answer);
     }
 
     public void handleLocationQuiz(Quiz quiz, UpdateLocationQuizRequest request) {
