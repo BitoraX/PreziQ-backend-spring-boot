@@ -387,7 +387,7 @@ public class ActivityServiceImpl implements ActivityService {
         boolean isLeftColumnUnchanged = newIsLeftColumn != null && newIsLeftColumn.equals(currentIsLeftColumn);
         boolean isDisplayOrderUnchanged = newDisplayOrder != null && newDisplayOrder.equals(currentDisplayOrder);
         if(isLeftColumnUnchanged || isDisplayOrderUnchanged){
-            throw new ApplicationException(ErrorCode.ITEM_ALREADY_IN_COLUMN_AND_POSITION);
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_ALREADY_IN_COLUMN_AND_POSITION);
         }
 
         // Get target value isLeftColumn, displayOrder
@@ -400,7 +400,7 @@ public class ActivityServiceImpl implements ActivityService {
                     .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, targetIsLeftColumn)
                     .orElse(0);
             if (newDisplayOrder > maxDisplayOrder + 1) {
-                throw new ApplicationException(ErrorCode.INVALID_DISPLAY_ORDER);
+                throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER);
             }
         }
 
@@ -465,11 +465,11 @@ public class ActivityServiceImpl implements ActivityService {
 
         // Check column validity and duplicate connection
         if (!leftItem.getIsLeftColumn() || rightItem.getIsLeftColumn()) {
-            throw new ApplicationException(ErrorCode.INVALID_ITEM_COLUMN);
+            throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN);
         }
 
         if (quizMatchingPairConnectionRepository.existsByQuizIdAndLeftItemIdAndRightItemId(quizId, request.getLeftItemId(), request.getRightItemId())) {
-            throw new ApplicationException(ErrorCode.DUPLICATE_CONNECTION);
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_DUPLICATE_CONNECTION);
         }
 
         // Create connection
@@ -478,6 +478,71 @@ public class ActivityServiceImpl implements ActivityService {
                 .leftItem(leftItem)
                 .rightItem(rightItem)
                 .build();
+
+        quizMatchingPairConnectionRepository.save(connection);
+        return activityMapper.quizMatchingPairConnectionToResponse(connection);
+    }
+
+    @Override
+    @Transactional
+    public QuizMatchingPairConnectionResponse updateMatchingPairConnection(String quizId, String connectionId, UpdateMatchingPairConnectionRequest request) {
+        // Validate quiz, connection existed and belonged to quiz
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+        QuizMatchingPairConnection connection = quizMatchingPairConnectionRepository
+                .findById(connectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND));
+
+        if (!connection.getQuizMatchingPairAnswer().getQuiz().getQuizId().equals(quiz.getQuizId())) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ);
+        }
+
+        // Get current and new values left/right item
+        String currentLeftItemId = connection.getLeftItem().getQuizMatchingPairItemId();
+        String currentRightItemId = connection.getRightItem().getQuizMatchingPairItemId();
+        String newLeftItemId = request.getLeftItemId();
+        String newRightItemId = request.getRightItemId();
+
+        // Check no changes left/right item
+        boolean isLeftUnchanged = newLeftItemId == null || newLeftItemId.equals(currentLeftItemId);
+        boolean isRightUnchanged = newRightItemId == null || newRightItemId.equals(currentRightItemId);
+        if (isLeftUnchanged && isRightUnchanged) {
+            throw new ApplicationException(ErrorCode.NO_UPDATE_PROVIDED);
+        }
+
+        // Validate new items
+        QuizMatchingPairItem leftItem = connection.getLeftItem();
+        QuizMatchingPairItem rightItem = connection.getRightItem();
+        if (newLeftItemId != null) {
+            Pair<Quiz, QuizMatchingPairItem> leftValidated = validateQuizAndItem(quizId, newLeftItemId);
+            leftItem = leftValidated.getRight();
+            if (!leftItem.getIsLeftColumn()) {
+                throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN);
+            }
+        }
+        if (newRightItemId != null) {
+            Pair<Quiz, QuizMatchingPairItem> rightValidated = validateQuizAndItem(quizId, newRightItemId);
+            rightItem = rightValidated.getRight();
+            if (rightItem.getIsLeftColumn()) {
+                throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN);
+            }
+        }
+
+        // Check duplicate connection
+        if (quizMatchingPairConnectionRepository.existsByQuizIdAndLeftItemIdAndRightItemIdExcludingSelf(quizId,
+                leftItem.getQuizMatchingPairItemId(),
+                rightItem.getQuizMatchingPairItemId(),
+                connectionId)
+        ) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_DUPLICATE_CONNECTION);
+        }
+
+        // Update connection
+        if (newLeftItemId != null) {
+            connection.setLeftItem(leftItem);
+        }
+        if (newRightItemId != null) {
+            connection.setRightItem(rightItem);
+        }
 
         quizMatchingPairConnectionRepository.save(connection);
         return activityMapper.quizMatchingPairConnectionToResponse(connection);

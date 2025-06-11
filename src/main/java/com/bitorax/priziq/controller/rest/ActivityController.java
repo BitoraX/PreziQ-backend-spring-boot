@@ -179,4 +179,18 @@ public class ActivityController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @PatchMapping("/quizzes/{quizId}/matching-pairs/connections/{connectionId}")
+    ApiResponse<QuizMatchingPairConnectionResponse> updateMatchingPairConnection(
+            @PathVariable String quizId,
+            @PathVariable String connectionId,
+            @RequestBody @Valid UpdateMatchingPairConnectionRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.<QuizMatchingPairConnectionResponse>builder()
+                .message("Matching pair connection updated successfully")
+                .data(activityService.updateMatchingPairConnection(quizId, connectionId, request))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
 }

@@ -40,4 +40,8 @@ public interface ActivityService {
     void deleteMatchingPairItem(String quizId, String itemId);
 
     QuizMatchingPairConnectionResponse addMatchingPairConnection(String quizId, CreateMatchingPairConnectionRequest request);
+
+    QuizMatchingPairConnectionResponse updateMatchingPairConnection(String quizId, String connectionId, UpdateMatchingPairConnectionRequest request);
+
+
 }

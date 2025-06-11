@@ -10,4 +10,9 @@ import org.springframework.stereotype.Repository;
 public interface QuizMatchingPairConnectionRepository extends JpaRepository<QuizMatchingPairConnection, String>, JpaSpecificationExecutor<QuizMatchingPairConnection> {
     @Query("SELECT COUNT(c) > 0 FROM QuizMatchingPairConnection c WHERE c.quizMatchingPairAnswer.quiz.quizId = :quizId AND c.leftItem.quizMatchingPairItemId = :leftItemId AND c.rightItem.quizMatchingPairItemId = :rightItemId")
     boolean existsByQuizIdAndLeftItemIdAndRightItemId(String quizId, String leftItemId, String rightItemId);
+
+    @Query("SELECT COUNT(c) > 0 FROM QuizMatchingPairConnection c " + "WHERE c.quizMatchingPairAnswer.quiz.quizId = :quizId " +
+            "AND c.leftItem.quizMatchingPairItemId = :leftItemId AND c.rightItem.quizMatchingPairItemId = :rightItemId " +
+            "AND c.quizMatchingPairConnectionId != :excludeConnectionId")
+    boolean existsByQuizIdAndLeftItemIdAndRightItemIdExcludingSelf(String quizId, String leftItemId, String rightItemId, String excludeConnectionId);
 }

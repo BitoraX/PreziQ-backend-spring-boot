@@ -1,6 +1,6 @@
 package com.bitorax.priziq.dto.request.activity.quiz;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -10,9 +10,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class UpdateMatchingPairConnectionRequest {
-    @NotBlank(message = "LEFT_ITEM_ID_REQUIRED")
+    @Size(min = 1, message = "LEFT_ITEM_ID_INVALID")
     String leftItemId;
 
-    @NotBlank(message = "RIGHT_ITEM_ID_REQUIRED")
+    @Size(min = 1, message = "RIGHT_ITEM_ID_INVALID")
     String rightItemId;
 }
