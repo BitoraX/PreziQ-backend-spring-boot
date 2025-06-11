@@ -166,4 +166,17 @@ public class ActivityController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @PostMapping("/quizzes/{quizId}/matching-pairs/connections")
+    ApiResponse<QuizMatchingPairConnectionResponse> addMatchingPairConnection(
+            @PathVariable String quizId,
+            @RequestBody @Valid CreateMatchingPairConnectionRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.<QuizMatchingPairConnectionResponse>builder()
+                .message("Matching pair connection added successfully")
+                .data(activityService.addMatchingPairConnection(quizId, request))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
 }

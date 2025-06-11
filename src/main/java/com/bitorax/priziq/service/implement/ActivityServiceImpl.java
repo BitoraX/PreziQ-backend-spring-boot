@@ -19,6 +19,7 @@ import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairConnectionResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairItemResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
@@ -445,6 +446,41 @@ public class ActivityServiceImpl implements ActivityService {
         // Decrement the displayOrder of the later items in the same column and delete the item
         quizMatchingPairItemRepository.decrementDisplayOrder(answer, isLeftColumn, displayOrder);
         quizMatchingPairItemRepository.delete(item);
+    }
+
+    @Override
+    @Transactional
+    public QuizMatchingPairConnectionResponse addMatchingPairConnection(String quizId, CreateMatchingPairConnectionRequest request) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+        QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer();
+        if (answer == null) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND);
+        }
+
+        // Validate items
+        Pair<Quiz, QuizMatchingPairItem> leftValidated = validateQuizAndItem(quizId, request.getLeftItemId());
+        Pair<Quiz, QuizMatchingPairItem> rightValidated = validateQuizAndItem(quizId, request.getRightItemId());
+        QuizMatchingPairItem leftItem = leftValidated.getRight();
+        QuizMatchingPairItem rightItem = rightValidated.getRight();
+
+        // Check column validity and duplicate connection
+        if (!leftItem.getIsLeftColumn() || rightItem.getIsLeftColumn()) {
+            throw new ApplicationException(ErrorCode.INVALID_ITEM_COLUMN);
+        }
+
+        if (quizMatchingPairConnectionRepository.existsByQuizIdAndLeftItemIdAndRightItemId(quizId, request.getLeftItemId(), request.getRightItemId())) {
+            throw new ApplicationException(ErrorCode.DUPLICATE_CONNECTION);
+        }
+
+        // Create connection
+        QuizMatchingPairConnection connection = QuizMatchingPairConnection.builder()
+                .quizMatchingPairAnswer(answer)
+                .leftItem(leftItem)
+                .rightItem(rightItem)
+                .build();
+
+        quizMatchingPairConnectionRepository.save(connection);
+        return activityMapper.quizMatchingPairConnectionToResponse(connection);
     }
 
     private Pair<Quiz, QuizMatchingPairItem> validateQuizAndItem(String quizId, String itemId) {

@@ -211,6 +211,8 @@ public enum ErrorCode {
     QUIZ_MATCHING_PAIR_ITEM_NOT_BELONG_TO_QUIZ(1768, HttpStatus.BAD_REQUEST, "Matching pair item is not part of the quiz"),
     ITEM_ALREADY_IN_COLUMN_AND_POSITION(1769, HttpStatus.BAD_REQUEST, "Item is already in the specified column and position"),
     INVALID_DISPLAY_ORDER(1770, HttpStatus.BAD_REQUEST, "Display order must be positive or within valid range"),
+    INVALID_ITEM_COLUMN(1771, HttpStatus.BAD_REQUEST, "Invalid column for items: left item must be in left column, right item in right column"),
+    DUPLICATE_CONNECTION(1772, HttpStatus.BAD_REQUEST, "Connection already exists"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),

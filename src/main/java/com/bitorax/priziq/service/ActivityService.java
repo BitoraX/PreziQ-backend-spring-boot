@@ -8,6 +8,7 @@ import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairConnectionResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairItemResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
@@ -37,4 +38,6 @@ public interface ActivityService {
     QuizMatchingPairItemResponse updateAndReorderMatchingPairItem(String quizId, String itemId, UpdateAndReorderMatchingPairItemRequest request);
 
     void deleteMatchingPairItem(String quizId, String itemId);
+
+    QuizMatchingPairConnectionResponse addMatchingPairConnection(String quizId, CreateMatchingPairConnectionRequest request);
 }
