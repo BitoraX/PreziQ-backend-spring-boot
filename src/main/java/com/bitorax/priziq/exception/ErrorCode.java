@@ -207,6 +207,10 @@ public enum ErrorCode {
     DISPLAY_ORDER_POSITIVE(1764, HttpStatus.BAD_REQUEST, "Display order must be positive"),
     ACTIVITY_NOT_MATCHING_PAIRS(1765, HttpStatus.BAD_REQUEST, "Activity type isn't quiz matching pairs"),
     QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND(1766, HttpStatus.NOT_FOUND, "Quiz matching pair answer not found"),
+    QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND(1767, HttpStatus.NOT_FOUND, "Quiz matching pair item not found"),
+    QUIZ_MATCHING_PAIR_ITEM_NOT_BELONG_TO_QUIZ(1768, HttpStatus.BAD_REQUEST, "Matching pair item is not part of the quiz"),
+    ITEM_ALREADY_IN_COLUMN_AND_POSITION(1769, HttpStatus.BAD_REQUEST, "Item is already in the specified column and position"),
+    INVALID_DISPLAY_ORDER(1770, HttpStatus.BAD_REQUEST, "Display order must be positive or within valid range"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),

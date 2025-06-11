@@ -364,4 +364,75 @@ public class ActivityServiceImpl implements ActivityService {
 
         return activityMapper.quizMatchingPairItemToResponse(quizMatchingPairItemRepository.save(item));
     }
+
+    @Override
+    @Transactional
+    public QuizMatchingPairItemResponse updateAndReorderMatchingPairItem(String quizId, String itemId, UpdateAndReorderMatchingPairItemRequest request) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+
+        // Check quiz matching pair item
+        QuizMatchingPairItem item = quizMatchingPairItemRepository.findById(itemId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND));
+        if (!item.getQuizMatchingPairAnswer().getQuiz().getQuizId().equals(quiz.getQuizId())) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_NOT_BELONG_TO_QUIZ);
+        }
+
+        QuizMatchingPairAnswer answer = item.getQuizMatchingPairAnswer();
+        Boolean currentIsLeftColumn = item.getIsLeftColumn();
+        Integer currentDisplayOrder = item.getDisplayOrder();
+
+        // Get the new value from the request (null if not provided)
+        String newContent = request.getContent();
+        Boolean newIsLeftColumn = request.getIsLeftColumn();
+        Integer newDisplayOrder = request.getDisplayOrder();
+
+        // Validate no changes in isLeftColumn and displayOrder
+        boolean isLeftColumnUnchanged = newIsLeftColumn != null && newIsLeftColumn.equals(currentIsLeftColumn);
+        boolean isDisplayOrderUnchanged = newDisplayOrder != null && newDisplayOrder.equals(currentDisplayOrder);
+        if(isLeftColumnUnchanged || isDisplayOrderUnchanged){
+            throw new ApplicationException(ErrorCode.ITEM_ALREADY_IN_COLUMN_AND_POSITION);
+        }
+
+        // Get target value isLeftColumn, displayOrder
+        Boolean targetIsLeftColumn = newIsLeftColumn != null ? newIsLeftColumn : currentIsLeftColumn;
+        Integer targetDisplayOrder = newDisplayOrder != null ? newDisplayOrder : currentDisplayOrder;
+
+        // Validate displayOrder range
+        if (newDisplayOrder != null) {
+            int maxDisplayOrder = quizMatchingPairItemRepository
+                    .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, targetIsLeftColumn)
+                    .orElse(0);
+            if (newDisplayOrder > maxDisplayOrder + 1) {
+                throw new ApplicationException(ErrorCode.INVALID_DISPLAY_ORDER);
+            }
+        }
+
+        // Logic to handle change
+        if (targetIsLeftColumn != currentIsLeftColumn) {
+            // Column changed: decrement in old column, increment in new column
+            quizMatchingPairItemRepository.decrementDisplayOrder(answer, currentIsLeftColumn, currentDisplayOrder);
+            quizMatchingPairItemRepository.incrementDisplayOrder(answer, targetIsLeftColumn, targetDisplayOrder);
+        } else if (newDisplayOrder != null) {
+            // Move within the same column
+            int start = Math.min(currentDisplayOrder, newDisplayOrder);
+            int end = Math.max(currentDisplayOrder, newDisplayOrder);
+            int offset = newDisplayOrder > currentDisplayOrder ? -1 : 1;
+            quizMatchingPairItemRepository.adjustDisplayOrderInRange(answer, currentIsLeftColumn, start, end, offset);
+        }
+
+        // Update item
+        if (newContent != null) {
+            item.setContent(newContent);
+        }
+        if (newIsLeftColumn != null) {
+            item.setIsLeftColumn(newIsLeftColumn);
+        }
+        if (newDisplayOrder != null) {
+            item.setDisplayOrder(newDisplayOrder);
+        }
+
+        // Delete connection if isLeftColumn, displayOrder changed (call API delete connection here)
+
+        return activityMapper.quizMatchingPairItemToResponse(quizMatchingPairItemRepository.save(item));
+    }
 }
