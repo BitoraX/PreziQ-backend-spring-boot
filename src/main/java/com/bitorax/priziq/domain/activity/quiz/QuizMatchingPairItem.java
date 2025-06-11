@@ -28,5 +28,5 @@ public class QuizMatchingPairItem {
     Boolean isLeftColumn;
 
     @Column(nullable = false)
-    Integer orderIndex;
+    Integer displayOrder;
 }

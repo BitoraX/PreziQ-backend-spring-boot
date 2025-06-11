@@ -3,12 +3,14 @@ package com.bitorax.priziq.controller.rest;
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.UpdateActivityRequest;
-import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
+import com.bitorax.priziq.dto.request.activity.quiz.*;
 import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairConnectionResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairItemResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
@@ -124,4 +126,81 @@ public class ActivityController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @PostMapping("/quizzes/{quizId}/matching-pairs/items")
+    ApiResponse<QuizMatchingPairItemResponse> addMatchingPairItem(
+            @PathVariable String quizId,
+            @RequestBody @Valid CreateMatchingPairItemRequest request,
+            HttpServletRequest servletRequest
+    ) {
+        return ApiResponse.<QuizMatchingPairItemResponse>builder()
+                .message("Matching pair item added successfully")
+                .data(activityService.addMatchingPairItem(quizId, request))
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
+
+//    @PutMapping("/quizzes/{quizId}/matching-pairs/items/{itemId}")
+//    ApiResponse<QuizMatchingPairItemResponse> updateMatchingPairItem(
+//            @PathVariable String quizId,
+//            @PathVariable String itemId,
+//            @RequestBody @Valid UpdateMatchingPairItemRequest request,
+//            HttpServletRequest servletRequest
+//    ) {
+//        return ApiResponse.<QuizMatchingPairItemResponse>builder()
+//                .message("Matching pair item updated successfully")
+//                .data(activityService.updateMatchingPairItem(quizId, itemId, request))
+//                .meta(buildMetaInfo(servletRequest))
+//                .build();
+//    }
+//
+//    @DeleteMapping("/quizzes/{quizId}/matching-pairs/items/{itemId}")
+//    ApiResponse<Void> deleteMatchingPairItem(
+//            @PathVariable String quizId,
+//            @PathVariable String itemId,
+//            HttpServletRequest servletRequest
+//    ) {
+//        activityService.deleteMatchingPairItem(quizId, itemId);
+//        return ApiResponse.<Void>builder()
+//                .message("Matching pair item deleted successfully")
+//                .meta(buildMetaInfo(servletRequest))
+//                .build();
+//    }
+//
+//    @PostMapping("/quizzes/{quizId}/matching-pairs/connections")
+//    ApiResponse<QuizMatchingPairConnectionResponse> addMatchingPairConnection(
+//            @PathVariable String quizId,
+//            @RequestBody @Valid CreateMatchingPairConnectionRequest request,
+//            HttpServletRequest servletRequest) {
+//        return ApiResponse.<QuizMatchingPairConnectionResponse>builder()
+//                .message("Matching pair connection added successfully")
+//                .data(activityService.addMatchingPairConnection(quizId, request))
+//                .meta(buildMetaInfo(servletRequest))
+//                .build();
+//    }
+//
+//    @PutMapping("/quizzes/{quizId}/matching-pairs/connections/{connectionId}")
+//    ApiResponse<QuizMatchingPairConnectionResponse> updateMatchingPairConnection(
+//            @PathVariable String quizId,
+//            @PathVariable String connectionId,
+//            @RequestBody @Valid UpdateMatchingPairConnectionRequest request,
+//            HttpServletRequest servletRequest) {
+//        return ApiResponse.<QuizMatchingPairConnectionResponse>builder()
+//                .message("Matching pair connection updated successfully")
+//                .data(activityService.updateMatchingPairConnection(quizId, connectionId, request))
+//                .meta(buildMetaInfo(servletRequest))
+//                .build();
+//    }
+//
+//    @DeleteMapping("/quizzes/{quizId}/matching-pairs/connections/{connectionId}")
+//    ApiResponse<Void> deleteMatchingPairConnection(
+//            @PathVariable String quizId,
+//            @PathVariable String connectionId,
+//            HttpServletRequest servletRequest) {
+//        activityService.deleteMatchingPairConnection(quizId, connectionId);
+//        return ApiResponse.<Void>builder()
+//                .message("Matching pair connection deleted successfully")
+//                .meta(buildMetaInfo(servletRequest))
+//                .build();
+//    }
 }

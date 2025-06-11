@@ -142,7 +142,7 @@ public enum ErrorCode {
     ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
     INVALID_SLIDE_ELEMENT_TYPE(1708, HttpStatus.BAD_REQUEST, "Invalid slide element type. Only the following types are supported: TEXT, IMAGE"),
 
-    // Quiz-related errors
+    // Quiz-related (buttons, checkboxes, true/false, type answer, location, reorder) errors
     QUESTION_TEXT_REQUIRED(1709, HttpStatus.BAD_REQUEST, "Question text is required"),
     TIME_LIMIT_REQUIRED(1710, HttpStatus.BAD_REQUEST, "Time limit is required"),
     TIME_LIMIT_POSITIVE(1711, HttpStatus.BAD_REQUEST, "Time limit must be positive"),
@@ -175,10 +175,6 @@ public enum ErrorCode {
     INVALID_LATITUDE(1736, HttpStatus.BAD_REQUEST, "Latitude must be between -90 and 90"),
     INVALID_RADIUS(1737, HttpStatus.BAD_REQUEST, "Radius must be positive"),
 
-    LEFT_COLUMN_NAME_REQUIRED(1738, HttpStatus.BAD_REQUEST, "Left column name is required"),
-    RIGHT_COLUMN_NAME_REQUIRED(1739, HttpStatus.BAD_REQUEST, "Right column name is required"),
-
-
     // Slide-related errors
     SLIDE_NOT_FOUND(1738, HttpStatus.NOT_FOUND, "Slide not found"),
     SLIDE_ELEMENT_NOT_FOUND(1739, HttpStatus.BAD_REQUEST, "Slide element not found"),
@@ -199,6 +195,18 @@ public enum ErrorCode {
     SAME_ACTIVITY_TYPE(1754, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
     SLIDE_ELEMENT_DISPLAY_ORDER_REQUIRED(1755, HttpStatus.BAD_REQUEST, "Slide element display order is required"),
     SLIDE_ELEMENT_DISPLAY_ORDER_NON_NEGATIVE(1756, HttpStatus.BAD_REQUEST, "Slide element display order must be non-negative"),
+
+    // Quiz matching pair errors
+    LEFT_COLUMN_NAME_REQUIRED(1757, HttpStatus.BAD_REQUEST, "Left column name is required"),
+    RIGHT_COLUMN_NAME_REQUIRED(1758, HttpStatus.BAD_REQUEST, "Right column name is required"),
+    LEFT_ITEM_ID_REQUIRED(1759, HttpStatus.BAD_REQUEST, "Left item ID is required"),
+    RIGHT_ITEM_ID_REQUIRED(1760, HttpStatus.BAD_REQUEST, "Right item ID is required"),
+    CONTENT_REQUIRED(1761, HttpStatus.BAD_REQUEST, "Content is required"),
+    IS_LEFT_COLUMN_REQUIRED(1762, HttpStatus.BAD_REQUEST, "ifLeftColumn is required"),
+    DISPLAY_ORDER_REQUIRED(1763, HttpStatus.BAD_REQUEST, "Display order is required"),
+    DISPLAY_ORDER_POSITIVE(1764, HttpStatus.BAD_REQUEST, "Display order must be positive"),
+    ACTIVITY_NOT_MATCHING_PAIRS(1765, HttpStatus.BAD_REQUEST, "Activity type isn't quiz matching pairs"),
+    QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND(1766, HttpStatus.NOT_FOUND, "Quiz matching pair answer not found"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),

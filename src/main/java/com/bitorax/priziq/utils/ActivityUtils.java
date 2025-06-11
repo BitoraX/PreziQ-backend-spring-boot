@@ -564,4 +564,15 @@ public class ActivityUtils {
 
         return slideElement;
     }
+
+    public Quiz validateMatchingPairQuiz(String quizId) {
+        validateActivityOwnership(quizId);
+
+        Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_NOT_FOUND));
+        if (quiz.getActivity().getActivityType() != ActivityType.QUIZ_MATCHING_PAIRS) {
+            throw new ApplicationException(ErrorCode.ACTIVITY_NOT_MATCHING_PAIRS);
+        }
+
+        return quiz;
+    }
 }

@@ -19,6 +19,7 @@ import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairItemResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
@@ -50,6 +51,9 @@ public class ActivityServiceImpl implements ActivityService {
     QuizRepository quizRepository;
     SlideRepository slideRepository;
     SlideElementRepository slideElementRepository;
+    QuizMatchingPairAnswerRepository quizMatchingPairAnswerRepository;
+    QuizMatchingPairItemRepository quizMatchingPairItemRepository;
+    QuizMatchingPairConnectionRepository quizMatchingPairConnectionRepository;
     ActivityMapper activityMapper;
     ActivityUtils activityUtils;
 
@@ -108,13 +112,13 @@ public class ActivityServiceImpl implements ActivityService {
                     .quizMatchingPairAnswer(matchingPairAnswer)
                     .content("Item 1")
                     .isLeftColumn(true)
-                    .orderIndex(0)
+                    .displayOrder(1)
                     .build();
             QuizMatchingPairItem rightItem = QuizMatchingPairItem.builder()
                     .quizMatchingPairAnswer(matchingPairAnswer)
                     .content("Match 1")
                     .isLeftColumn(false)
-                    .orderIndex(0)
+                    .displayOrder(1)
                     .build();
             matchingPairAnswer.getItems().add(leftItem);
             matchingPairAnswer.getItems().add(rightItem);
@@ -333,5 +337,31 @@ public class ActivityServiceImpl implements ActivityService {
     public ActivityDetailResponse getActivityById(String activityId){
         Activity currentActivity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
         return activityMapper.activityToDetailResponse(currentActivity);
+    }
+
+    // Quiz matching pairs (logic item, connection)
+    @Override
+    @Transactional
+    public QuizMatchingPairItemResponse addMatchingPairItem(String quizId, CreateMatchingPairItemRequest request) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+
+        QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer();
+        if (answer == null) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND);
+        }
+
+        // Auto increase display order +1 with ifLeftColumn
+        int displayOrder = quizMatchingPairItemRepository
+                .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, request.getIsLeftColumn())
+                .orElse(0) + 1;
+
+        QuizMatchingPairItem item = QuizMatchingPairItem.builder()
+                .quizMatchingPairAnswer(answer)
+                .content(request.getContent())
+                .isLeftColumn(request.getIsLeftColumn())
+                .displayOrder(displayOrder)
+                .build();
+
+        return activityMapper.quizMatchingPairItemToResponse(quizMatchingPairItemRepository.save(item));
     }
 }

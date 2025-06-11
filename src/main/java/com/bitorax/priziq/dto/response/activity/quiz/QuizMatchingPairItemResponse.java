@@ -15,5 +15,5 @@ public class QuizMatchingPairItemResponse {
     String quizMatchingPairItemId;
     String content;
     Boolean isLeftColumn;
-    Integer orderIndex;
+    Integer displayOrder;
 }

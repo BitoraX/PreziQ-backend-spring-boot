@@ -162,6 +162,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Add a slide element", "/api/v1/slides/{slideId}/elements", "POST", "ACTIVITIES"),
                         new Permission("Update a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "PUT", "ACTIVITIES"),
                         new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
+                        new Permission("Add matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items", "POST", "ACTIVITIES"),
 
                         // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
@@ -230,6 +231,7 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements", "POST"),
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "PUT"),
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "DELETE"),
+                        findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/items", "POST"),
 
                         findPermissionOrThrow("/api/v1/sessions", "POST"),
                         findPermissionOrThrow("/api/v1/sessions/me", "GET"),
