@@ -153,4 +153,17 @@ public class ActivityController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @DeleteMapping("/quizzes/{quizId}/matching-pairs/items/{itemId}")
+    ApiResponse<Void> deleteMatchingPairItem(
+            @PathVariable String quizId,
+            @PathVariable String itemId,
+            HttpServletRequest servletRequest
+    ) {
+        activityService.deleteMatchingPairItem(quizId, itemId);
+        return ApiResponse.<Void>builder()
+                .message("Matching pair item deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
 }

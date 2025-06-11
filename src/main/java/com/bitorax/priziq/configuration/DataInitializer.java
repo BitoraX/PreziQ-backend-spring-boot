@@ -164,6 +164,7 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
                         new Permission("Add matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items", "POST", "ACTIVITIES"),
                         new Permission("Update and reorder matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "PATCH", "ACTIVITIES"),
+                        new Permission("Delete matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "DELETE", "ACTIVITIES"),
 
                         // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),

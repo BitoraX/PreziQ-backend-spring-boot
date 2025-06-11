@@ -35,4 +35,6 @@ public interface ActivityService {
     QuizMatchingPairItemResponse addMatchingPairItem(String quizId, CreateMatchingPairItemRequest request);
 
     QuizMatchingPairItemResponse updateAndReorderMatchingPairItem(String quizId, String itemId, UpdateAndReorderMatchingPairItemRequest request);
+
+    void deleteMatchingPairItem(String quizId, String itemId);
 }
