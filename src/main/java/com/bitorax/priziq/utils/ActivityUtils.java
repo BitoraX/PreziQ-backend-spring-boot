@@ -8,20 +8,20 @@ import com.bitorax.priziq.domain.activity.quiz.Quiz;
 import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
 import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
 import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairItem;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairConnection;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
-import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.*;
-import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.repository.*;
-import com.bitorax.priziq.service.implement.ActivityServiceImpl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -111,6 +111,22 @@ public class ActivityUtils {
     @Value("${priziq.quiz.location.default_radius}")
     Double DEFAULT_RADIUS;
 
+    @NonFinal
+    @Value("${priziq.quiz.matching_pairs.left_column}")
+    String DEFAULT_LEFT_COLUMN;
+
+    @NonFinal
+    @Value("${priziq.quiz.matching_pairs.right_column}")
+    String DEFAULT_RIGHT_COLUMN;
+
+    @NonFinal
+    @Value("${priziq.quiz.matching_pairs.item1}")
+    String DEFAULT_ITEM1;
+
+    @NonFinal
+    @Value("${priziq.quiz.matching_pairs.match1}")
+    String DEFAULT_MATCH1;
+
     public void validateRequestType(UpdateQuizRequest request, ActivityType activityType) {
         String requestType = request.getType().toUpperCase();
         switch (activityType) {
@@ -141,7 +157,7 @@ public class ActivityUtils {
                 }
                 break;
             case QUIZ_MATCHING_PAIRS:
-                if (!requestType.equals("MATCHING_PAIRS") || !(request instanceof UpdateMatchingPairQuizRequest)) {
+                if (!requestType.equals("MATCHING_PAIR") || !(request instanceof UpdateMatchingPairQuizRequest)) {
                     throw new ApplicationException(ErrorCode.INVALID_REQUEST_TYPE);
                 }
                 break;
@@ -205,19 +221,10 @@ public class ActivityUtils {
     }
 
     public void handleTrueFalseQuiz(Quiz quiz, UpdateTrueFalseQuizRequest request) {
-        QuizAnswer trueAnswer = QuizAnswer.builder()
-                .quiz(quiz)
-                .answerText(CHOICE_TRUE)
-                .isCorrect(request.getCorrectAnswer())
-                .orderIndex(0)
-                .build();
-        QuizAnswer falseAnswer = QuizAnswer.builder()
-                .quiz(quiz)
-                .answerText(CHOICE_FALSE)
-                .isCorrect(!request.getCorrectAnswer())
-                .orderIndex(1)
-                .build();
-        updateQuizAnswers(quiz, List.of(trueAnswer, falseAnswer));
+        List<QuizAnswer> answers = createDefaultBinaryAnswers(quiz, CHOICE_TRUE, CHOICE_FALSE);
+        answers.get(0).setIsCorrect(request.getCorrectAnswer());
+        answers.get(1).setIsCorrect(!request.getCorrectAnswer());
+        updateQuizAnswers(quiz, answers);
     }
 
     public void handleMatchingPairQuiz(Quiz quiz, UpdateMatchingPairQuizRequest request) {
@@ -319,158 +326,303 @@ public class ActivityUtils {
                 .build();
     }
 
+    // Reusable method for binary answers (Choice or True/False)
+    private List<QuizAnswer> createDefaultBinaryAnswers(Quiz quiz, String correctText, String incorrectText) {
+        List<QuizAnswer> answers = new ArrayList<>();
+        answers.add(QuizAnswer.builder()
+                .quiz(quiz)
+                .answerText(correctText)
+                .isCorrect(true)
+                .orderIndex(0)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .quiz(quiz)
+                .answerText(incorrectText)
+                .isCorrect(false)
+                .orderIndex(1)
+                .build());
+        return answers;
+    }
+
+    private List<QuizAnswer> createDefaultReorderAnswers(Quiz quiz) {
+        List<QuizAnswer> answers = new ArrayList<>();
+        answers.add(QuizAnswer.builder()
+                .quiz(quiz)
+                .answerText(REORDER_STEP1)
+                .isCorrect(true)
+                .orderIndex(0)
+                .build());
+        answers.add(QuizAnswer.builder()
+                .quiz(quiz)
+                .answerText(REORDER_STEP2)
+                .isCorrect(true)
+                .orderIndex(1)
+                .build());
+        return answers;
+    }
+
+    private List<QuizAnswer> createDefaultTypeAnswer(Quiz quiz) {
+        List<QuizAnswer> answers = new ArrayList<>();
+        answers.add(QuizAnswer.builder()
+                .quiz(quiz)
+                .answerText(TYPE_ANSWER_DEFAULT)
+                .isCorrect(true)
+                .orderIndex(0)
+                .build());
+        return answers;
+    }
+
+    private List<QuizLocationAnswer> createDefaultLocationAnswers(Quiz quiz) {
+        List<QuizLocationAnswer> locationAnswers = new ArrayList<>();
+        locationAnswers.add(QuizLocationAnswer.builder()
+                .quiz(quiz)
+                .longitude(DEFAULT_LONGITUDE)
+                .latitude(DEFAULT_LATITUDE)
+                .radius(DEFAULT_RADIUS)
+                .build());
+        return locationAnswers;
+    }
+
+    public QuizMatchingPairAnswer createDefaultMatchingPairAnswer(Quiz quiz) {
+        QuizMatchingPairAnswer matchingPairAnswer = QuizMatchingPairAnswer.builder()
+                .quiz(quiz)
+                .leftColumnName(DEFAULT_LEFT_COLUMN)
+                .rightColumnName(DEFAULT_RIGHT_COLUMN)
+                .items(new ArrayList<>())
+                .connections(new ArrayList<>())
+                .build();
+
+        QuizMatchingPairItem leftItem = QuizMatchingPairItem.builder()
+                .quizMatchingPairAnswer(matchingPairAnswer)
+                .content(DEFAULT_ITEM1)
+                .isLeftColumn(true)
+                .displayOrder(1)
+                .build();
+        QuizMatchingPairItem rightItem = QuizMatchingPairItem.builder()
+                .quizMatchingPairAnswer(matchingPairAnswer)
+                .content(DEFAULT_MATCH1)
+                .isLeftColumn(false)
+                .displayOrder(1)
+                .build();
+        matchingPairAnswer.getItems().add(leftItem);
+        matchingPairAnswer.getItems().add(rightItem);
+
+        QuizMatchingPairConnection connection = QuizMatchingPairConnection.builder()
+                .quizMatchingPairAnswer(matchingPairAnswer)
+                .leftItem(leftItem)
+                .rightItem(rightItem)
+                .build();
+        matchingPairAnswer.getConnections().add(connection);
+
+        return matchingPairAnswer;
+    }
+
+    private void clearQuizData(Quiz quiz) {
+        if (quiz.getQuizAnswers() != null) {
+            quiz.getQuizAnswers().clear();
+        }
+        if (quiz.getQuizLocationAnswers() != null) {
+            quiz.getQuizLocationAnswers().clear();
+        }
+        quiz.setQuizMatchingPairAnswer(null);
+    }
+
     public void convertQuizType(Quiz quiz, ActivityType oldType, ActivityType newType, StringBuilder warning) {
         List<QuizAnswer> answers = quiz.getQuizAnswers() != null ? quiz.getQuizAnswers() : new ArrayList<>();
-        List<QuizLocationAnswer> locationAnswers = quiz.getQuizLocationAnswers() != null ? quiz.getQuizLocationAnswers() : new ArrayList<>();
         String questionText = quiz.getQuestionText() != null ? quiz.getQuestionText() : DEFAULT_QUESTION;
 
         QuizAnswer correctAnswer = answers.stream().filter(QuizAnswer::getIsCorrect).findFirst().orElse(null);
         QuizAnswer firstAnswer = answers.isEmpty() ? null : answers.getFirst();
 
+        clearQuizData(quiz);
+
         switch (oldType) {
             case QUIZ_BUTTONS:
                 switch (newType) {
-                    case QUIZ_CHECKBOXES -> {}
+                    case QUIZ_CHECKBOXES -> {
+                        quiz.setQuizAnswers(answers);
+                    }
                     case QUIZ_REORDER -> {
                         if (answers.isEmpty()) {
-                            answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP1).isCorrect(true).orderIndex(0).build());
-                            answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP2).isCorrect(true).orderIndex(1).build());
+                            quiz.setQuizAnswers(createDefaultReorderAnswers(quiz));
                             warning.append("Created default reorder answers");
                         } else {
                             answers.forEach(answer -> answer.setIsCorrect(true));
+                            quiz.setQuizAnswers(answers);
                         }
                     }
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, correctAnswer, quiz, warning);
-                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Converted to location quiz with default location answer");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Converted to matching pairs with default pair");
+                    }
                 }
                 break;
             case QUIZ_CHECKBOXES:
                 switch (newType) {
-                    case QUIZ_BUTTONS -> reduceToSingleCorrect(answers, warning);
-                    case QUIZ_REORDER -> answers.forEach(answer -> answer.setIsCorrect(true));
+                    case QUIZ_BUTTONS -> {
+                        reduceToSingleCorrect(answers, warning);
+                        quiz.setQuizAnswers(answers);
+                    }
+                    case QUIZ_REORDER -> {
+                        answers.forEach(answer -> answer.setIsCorrect(true));
+                        quiz.setQuizAnswers(answers);
+                    }
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, correctAnswer, quiz, warning);
-                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Converted to location quiz with default location answer");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Converted to matching pairs with default pair");
+                    }
                 }
                 break;
             case QUIZ_REORDER:
                 switch (newType) {
-                    case QUIZ_BUTTONS -> reduceToSingleCorrect(answers, warning);
-                    case QUIZ_CHECKBOXES -> {}
+                    case QUIZ_BUTTONS -> {
+                        reduceToSingleCorrect(answers, warning);
+                        quiz.setQuizAnswers(answers);
+                    }
+                    case QUIZ_CHECKBOXES -> quiz.setQuizAnswers(answers);
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, firstAnswer, quiz, warning);
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, firstAnswer, quiz, warning);
-                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Converted to location quiz with default location answer");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Converted to matching pairs with default pair");
+                    }
                 }
                 break;
             case QUIZ_TYPE_ANSWER:
                 switch (newType) {
-                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> addDefaultOptionsIfEmpty(answers, quiz, warning);
-                    case QUIZ_REORDER -> ensureReorderCompatibility(answers, quiz, warning);
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
+                        addDefaultOptionsIfEmpty(answers, quiz, warning);
+                        quiz.setQuizAnswers(answers);
+                    }
+                    case QUIZ_REORDER -> {
+                        ensureReorderCompatibility(answers, quiz, warning);
+                        quiz.setQuizAnswers(answers);
+                    }
                     case QUIZ_TRUE_OR_FALSE -> updateToTrueFalse(answers, firstAnswer, quiz, warning);
-                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Converted to location quiz with default location answer");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Converted to matching pairs with default pair");
+                    }
                 }
                 break;
             case QUIZ_TRUE_OR_FALSE:
                 switch (newType) {
-                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {}
-                    case QUIZ_REORDER -> answers.forEach(answer -> answer.setIsCorrect(true));
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> quiz.setQuizAnswers(answers);
+                    case QUIZ_REORDER -> {
+                        answers.forEach(answer -> answer.setIsCorrect(true));
+                        quiz.setQuizAnswers(answers);
+                    }
                     case QUIZ_TYPE_ANSWER -> updateToSingleAnswer(answers, correctAnswer, quiz, warning);
-                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Converted to location quiz with default location answer");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Converted to matching pairs with default pair");
+                    }
                 }
                 break;
             case QUIZ_LOCATION:
-                answers.clear();
-                locationAnswers.clear();
                 switch (newType) {
                     case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(CHOICE_OPTION1)
-                                .isCorrect(true)
-                                .orderIndex(0)
-                                .build());
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(CHOICE_OPTION2)
-                                .isCorrect(false)
-                                .orderIndex(1)
-                                .build());
+                        quiz.setQuizAnswers(createDefaultBinaryAnswers(quiz, CHOICE_OPTION1, CHOICE_OPTION2));
                         warning.append("Converted to multiple-choice question with default options");
                     }
                     case QUIZ_REORDER -> {
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(REORDER_STEP1)
-                                .isCorrect(true)
-                                .orderIndex(0)
-                                .build());
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(REORDER_STEP2)
-                                .isCorrect(true)
-                                .orderIndex(1)
-                                .build());
+                        quiz.setQuizAnswers(createDefaultReorderAnswers(quiz));
                         warning.append("Converted to reorder question with default steps");
                     }
                     case QUIZ_TYPE_ANSWER -> {
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(TYPE_ANSWER_DEFAULT)
-                                .isCorrect(true)
-                                .orderIndex(0)
-                                .build());
+                        quiz.setQuizAnswers(createDefaultTypeAnswer(quiz));
                         warning.append("Converted to type-answer question with default answer");
                     }
                     case QUIZ_TRUE_OR_FALSE -> {
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(CHOICE_TRUE)
-                                .isCorrect(true)
-                                .orderIndex(0)
-                                .build());
-                        answers.add(QuizAnswer.builder()
-                                .quiz(quiz)
-                                .answerText(CHOICE_FALSE)
-                                .isCorrect(false)
-                                .orderIndex(1)
-                                .build());
+                        quiz.setQuizAnswers(createDefaultBinaryAnswers(quiz, CHOICE_TRUE, CHOICE_FALSE));
                         warning.append("Converted to True/False question with default options");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Converted to matching pairs with default pair");
+                    }
+                }
+                break;
+            case QUIZ_MATCHING_PAIRS:
+                switch (newType) {
+                    case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
+                        quiz.setQuizAnswers(createDefaultBinaryAnswers(quiz, CHOICE_OPTION1, CHOICE_OPTION2));
+                        warning.append("Converted to multiple-choice question with default options");
+                    }
+                    case QUIZ_REORDER -> {
+                        quiz.setQuizAnswers(createDefaultReorderAnswers(quiz));
+                        warning.append("Converted to reorder question with default steps");
+                    }
+                    case QUIZ_TYPE_ANSWER -> {
+                        quiz.setQuizAnswers(createDefaultTypeAnswer(quiz));
+                        warning.append("Converted to type-answer question with default answer");
+                    }
+                    case QUIZ_TRUE_OR_FALSE -> {
+                        quiz.setQuizAnswers(createDefaultBinaryAnswers(quiz, CHOICE_TRUE, CHOICE_FALSE));
+                        warning.append("Converted to True/False question with default options");
+                    }
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Converted to location quiz with default location answer");
                     }
                 }
                 break;
             case INFO_SLIDE:
-                answers.clear();
-                locationAnswers.clear();
                 switch (newType) {
                     case QUIZ_BUTTONS, QUIZ_CHECKBOXES -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_OPTION1).isCorrect(true).orderIndex(0).build());
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_OPTION2).isCorrect(false).orderIndex(1).build());
+                        quiz.setQuizAnswers(createDefaultBinaryAnswers(quiz, CHOICE_OPTION1, CHOICE_OPTION2));
                         warning.append("Created default multiple-choice question with options");
                     }
                     case QUIZ_REORDER -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP1).isCorrect(true).orderIndex(0).build());
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(REORDER_STEP2).isCorrect(true).orderIndex(1).build());
+                        quiz.setQuizAnswers(createDefaultReorderAnswers(quiz));
                         warning.append("Created default reorder question");
                     }
                     case QUIZ_TYPE_ANSWER -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(TYPE_ANSWER_DEFAULT).isCorrect(true).orderIndex(0).build());
+                        quiz.setQuizAnswers(createDefaultTypeAnswer(quiz));
                         warning.append("Created default type-answer question");
                     }
                     case QUIZ_TRUE_OR_FALSE -> {
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_TRUE).isCorrect(true).orderIndex(0).build());
-                        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_FALSE).isCorrect(false).orderIndex(1).build());
+                        quiz.setQuizAnswers(createDefaultBinaryAnswers(quiz, CHOICE_TRUE, CHOICE_FALSE));
                         warning.append("Created default True/False question");
                     }
-                    case QUIZ_LOCATION -> updateToLocationQuiz(answers, locationAnswers, quiz, warning);
+                    case QUIZ_LOCATION -> {
+                        quiz.setQuizLocationAnswers(createDefaultLocationAnswers(quiz));
+                        warning.append("Created default location quiz");
+                    }
+                    case QUIZ_MATCHING_PAIRS -> {
+                        quiz.setQuizMatchingPairAnswer(createDefaultMatchingPairAnswer(quiz));
+                        warning.append("Created default matching pair");
+                    }
                 }
                 break;
             default:
                 throw new IllegalStateException("The previous activity type is undefined: " + oldType);
         }
         quiz.setQuestionText(questionText);
-        quiz.setQuizAnswers(answers);
-        quiz.setQuizLocationAnswers(locationAnswers);
     }
 
     public void reduceToSingleCorrect(List<QuizAnswer> answers, StringBuilder warning) {
@@ -493,34 +645,23 @@ public class ActivityUtils {
             answers.add(QuizAnswer.builder().quiz(quiz).answerText(TYPE_ANSWER_DEFAULT).isCorrect(true).orderIndex(0).build());
             warning.append("No correct answer found, using default answer");
         }
-    }
-
-    public void updateToLocationQuiz(List<QuizAnswer> answers, List<QuizLocationAnswer> locationAnswers, Quiz quiz, StringBuilder warning) {
-        answers.clear();
-        locationAnswers.clear();
-        locationAnswers.add(QuizLocationAnswer.builder()
-                .quiz(quiz)
-                .longitude(DEFAULT_LONGITUDE)
-                .latitude(DEFAULT_LATITUDE)
-                .radius(DEFAULT_RADIUS)
-                .build());
-        warning.append("Converted to location quiz with default location answer");
+        quiz.setQuizAnswers(answers);
     }
 
     public void updateToTrueFalse(List<QuizAnswer> answers, QuizAnswer answer, Quiz quiz, StringBuilder warning) {
         answers.clear();
-
         boolean isTrue = answer != null && answer.getAnswerText().toLowerCase().contains("true");
-        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_TRUE).isCorrect(isTrue).orderIndex(0).build());
-        answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_FALSE).isCorrect(!isTrue).orderIndex(1).build());
-
+        List<QuizAnswer> newAnswers = createDefaultBinaryAnswers(quiz, CHOICE_TRUE, CHOICE_FALSE);
+        newAnswers.get(0).setIsCorrect(isTrue);
+        newAnswers.get(1).setIsCorrect(!isTrue);
+        quiz.setQuizAnswers(newAnswers);
         if (answer != null) warning.append("Converted to True/False based on first answer");
     }
 
     public void addDefaultOptionsIfEmpty(List<QuizAnswer> answers, Quiz quiz, StringBuilder warning) {
         if (answers.isEmpty()) {
-            answers.add(QuizAnswer.builder().quiz(quiz).answerText(TYPE_ANSWER_DEFAULT).isCorrect(true).orderIndex(0).build());
-            answers.add(QuizAnswer.builder().quiz(quiz).answerText(CHOICE_WRONG_ANSWER).isCorrect(false).orderIndex(1).build());
+            List<QuizAnswer> newAnswers = createDefaultBinaryAnswers(quiz, TYPE_ANSWER_DEFAULT, CHOICE_WRONG_ANSWER);
+            quiz.setQuizAnswers(newAnswers);
             warning.append("Converted to multiple-choice question with default wrong answer");
         }
     }
@@ -538,11 +679,11 @@ public class ActivityUtils {
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
-        User currentUser = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
+        User user = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
-        boolean isAdmin = securityUtils.isAdmin(currentUser);
-        if (!isAdmin && !Objects.equals(activity.getCollection().getCreator().getUserId(), currentUser.getUserId())) {
+        boolean isAdmin = securityUtils.isAdmin(user);
+        if (!isAdmin && !Objects.equals(activity.getCollection().getCreator().getUserId(), user.getUserId())) {
             throw new ApplicationException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
     }
@@ -574,5 +715,16 @@ public class ActivityUtils {
         }
 
         return quiz;
+    }
+
+    public void initializeActivityComponents(Activity activity) {
+        if (activity.getQuiz() != null) {
+            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
+            Hibernate.initialize(activity.getQuiz().getQuizLocationAnswers());
+            Hibernate.initialize(activity.getQuiz().getQuizMatchingPairAnswer());
+        }
+        if (activity.getSlide() != null) {
+            Hibernate.initialize(activity.getSlide());
+        }
     }
 }

@@ -35,11 +35,12 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -58,6 +59,14 @@ public class ActivityServiceImpl implements ActivityService {
     QuizMatchingPairConnectionRepository quizMatchingPairConnectionRepository;
     ActivityMapper activityMapper;
     ActivityUtils activityUtils;
+
+    @NonFinal
+    @Value("${priziq.quiz.default.time_limit_seconds}")
+    Integer DEFAULT_TIME_LIMIT_SECONDS;
+
+    @NonFinal
+    @Value("${priziq.quiz.default.point_type}")
+    String DEFAULT_POINT_TYPE;
 
     private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION", "MATCHING_PAIRS");
 
@@ -97,40 +106,12 @@ public class ActivityServiceImpl implements ActivityService {
                     .quizId(savedActivity.getActivityId())
                     .activity(savedActivity)
                     .questionText("Match each item correctly")
-                    .timeLimitSeconds(60)
-                    .pointType(PointType.STANDARD)
+                    .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
+                    .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
                     .build();
 
-            QuizMatchingPairAnswer matchingPairAnswer = QuizMatchingPairAnswer.builder()
-                    .quiz(quiz)
-                    .leftColumnName("Left Column")
-                    .rightColumnName("Right Column")
-                    .items(new ArrayList<>())
-                    .connections(new ArrayList<>())
-                    .build();
+            QuizMatchingPairAnswer matchingPairAnswer = activityUtils.createDefaultMatchingPairAnswer(quiz);
             quiz.setQuizMatchingPairAnswer(matchingPairAnswer);
-
-            QuizMatchingPairItem leftItem = QuizMatchingPairItem.builder()
-                    .quizMatchingPairAnswer(matchingPairAnswer)
-                    .content("Item 1")
-                    .isLeftColumn(true)
-                    .displayOrder(1)
-                    .build();
-            QuizMatchingPairItem rightItem = QuizMatchingPairItem.builder()
-                    .quizMatchingPairAnswer(matchingPairAnswer)
-                    .content("Match 1")
-                    .isLeftColumn(false)
-                    .displayOrder(1)
-                    .build();
-            matchingPairAnswer.getItems().add(leftItem);
-            matchingPairAnswer.getItems().add(rightItem);
-
-            QuizMatchingPairConnection connection = QuizMatchingPairConnection.builder()
-                    .quizMatchingPairAnswer(matchingPairAnswer)
-                    .leftItem(leftItem)
-                    .rightItem(rightItem)
-                    .build();
-            matchingPairAnswer.getConnections().add(connection);
 
             quizRepository.save(quiz);
             savedActivity.setQuiz(quiz);
@@ -290,12 +271,8 @@ public class ActivityServiceImpl implements ActivityService {
         activityUtils.validateActivityOwnership(activityId);
         Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
-        if (activity.getQuiz() != null) {
-            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
-        }
-        if (activity.getSlide() != null) {
-            Hibernate.initialize(activity.getSlide());
-        }
+        // Initialize quiz answer, location answer, matching pair answer (Hibernate)
+        activityUtils.initializeActivityComponents(activity);
 
         ActivityType oldType = activity.getActivityType();
 
@@ -323,12 +300,8 @@ public class ActivityServiceImpl implements ActivityService {
 
         activityRepository.save(activity);
 
-        if (activity.getQuiz() != null) {
-            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
-        }
-        if (activity.getSlide() != null) {
-            Hibernate.initialize(activity.getSlide());
-        }
+        // Initialize quiz answer, location answer, matching pair answer (Hibernate)
+        activityUtils.initializeActivityComponents(activity);
 
         ActivitySummaryResponse response = activityMapper.activityToSummaryResponse(activity);
         response.setConversionWarning(!conversionWarning.isEmpty() ? conversionWarning.toString() : null);
