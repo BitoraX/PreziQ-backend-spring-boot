@@ -33,6 +33,7 @@ public enum ErrorCode {
     INVALID_OWNER_ID(1018, HttpStatus.BAD_REQUEST, "Invalid owner id"),
     UNAUTHORIZED_ACCESS(1019, HttpStatus.UNAUTHORIZED, "User does not have permission to access this resource"),
     INVALID_SORT_FIELD(1020, HttpStatus.BAD_REQUEST, "Invalid sort field"),
+    NO_UPDATE_PROVIDED(1021, HttpStatus.BAD_REQUEST, "No changes provided for update"),
 
     // Module auth errors
     EMAIL_NOT_BLANK(1101, HttpStatus.BAD_REQUEST, "Email must not be blank"),
@@ -136,13 +137,13 @@ public enum ErrorCode {
     COLLECTION_ID_REQUIRED(1701, HttpStatus.BAD_REQUEST, "Collection ID is required"),
     ACTIVITY_TYPE_ID_REQUIRED(1702, HttpStatus.BAD_REQUEST, "Activity type ID is required"),
     ACTIVITY_ID_REQUIRED(1703, HttpStatus.BAD_REQUEST, "Activity ID is required"),
-    INVALID_ACTIVITY_TYPE(1704, HttpStatus.BAD_REQUEST, "Invalid activity type. Only the following types are supported: QUIZ_BUTTONS, QUIZ_CHECKBOXES, QUIZ_TRUE_OR_FALSE, QUIZ_TYPE_ANSWER, QUIZ_REORDER, INFO_SLIDE"),
+    INVALID_ACTIVITY_TYPE(1704, HttpStatus.BAD_REQUEST, "Invalid activity type. Only the following types are supported: QUIZ_BUTTONS, QUIZ_CHECKBOXES, QUIZ_TRUE_OR_FALSE, QUIZ_TYPE_ANSWER, QUIZ_REORDER, QUIZ_LOCATION, QUIZ_MATCHING_PAIRS, INFO_SLIDE"),
     INVALID_POINT_TYPE(1705, HttpStatus.BAD_REQUEST, "Invalid point type. Only the following types are supported: NO_POINTS, STANDARD, DOUBLE_POINTS"),
     ACTIVITY_TYPE_NOT_BLANK(1706, HttpStatus.BAD_REQUEST, "Activity type must not be blank"),
     ACTIVITY_NOT_FOUND(1707, HttpStatus.NOT_FOUND, "Activity not found"),
     INVALID_SLIDE_ELEMENT_TYPE(1708, HttpStatus.BAD_REQUEST, "Invalid slide element type. Only the following types are supported: TEXT, IMAGE"),
 
-    // Quiz-related errors
+    // Quiz-related (buttons, checkboxes, true/false, type answer, location, reorder) errors
     QUESTION_TEXT_REQUIRED(1709, HttpStatus.BAD_REQUEST, "Question text is required"),
     TIME_LIMIT_REQUIRED(1710, HttpStatus.BAD_REQUEST, "Time limit is required"),
     TIME_LIMIT_POSITIVE(1711, HttpStatus.BAD_REQUEST, "Time limit must be positive"),
@@ -195,6 +196,28 @@ public enum ErrorCode {
     SAME_ACTIVITY_TYPE(1754, HttpStatus.BAD_REQUEST, "Old activity type and new activity type must be different"),
     SLIDE_ELEMENT_DISPLAY_ORDER_REQUIRED(1755, HttpStatus.BAD_REQUEST, "Slide element display order is required"),
     SLIDE_ELEMENT_DISPLAY_ORDER_NON_NEGATIVE(1756, HttpStatus.BAD_REQUEST, "Slide element display order must be non-negative"),
+
+    // Quiz matching pair errors
+    LEFT_COLUMN_NAME_REQUIRED(1757, HttpStatus.BAD_REQUEST, "Left column name is required"),
+    RIGHT_COLUMN_NAME_REQUIRED(1758, HttpStatus.BAD_REQUEST, "Right column name is required"),
+    LEFT_ITEM_ID_REQUIRED(1759, HttpStatus.BAD_REQUEST, "Left item ID is required"),
+    RIGHT_ITEM_ID_REQUIRED(1760, HttpStatus.BAD_REQUEST, "Right item ID is required"),
+    CONTENT_REQUIRED(1761, HttpStatus.BAD_REQUEST, "Content is required"),
+    IS_LEFT_COLUMN_REQUIRED(1762, HttpStatus.BAD_REQUEST, "ifLeftColumn is required"),
+    DISPLAY_ORDER_REQUIRED(1763, HttpStatus.BAD_REQUEST, "Display order is required"),
+    DISPLAY_ORDER_POSITIVE(1764, HttpStatus.BAD_REQUEST, "Display order must be positive"),
+    ACTIVITY_NOT_MATCHING_PAIRS(1765, HttpStatus.BAD_REQUEST, "Activity type isn't quiz matching pairs"),
+    QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND(1766, HttpStatus.NOT_FOUND, "Quiz matching pair answer not found"),
+    QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND(1767, HttpStatus.NOT_FOUND, "Quiz matching pair item not found"),
+    QUIZ_MATCHING_PAIR_ITEM_NOT_BELONG_TO_QUIZ(1768, HttpStatus.BAD_REQUEST, "Matching pair item is not part of the quiz"),
+    QUIZ_MATCHING_PAIR_ITEM_ALREADY_IN_COLUMN_AND_POSITION(1769, HttpStatus.BAD_REQUEST, "Item is already in the specified column and position"),
+    INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER(1770, HttpStatus.BAD_REQUEST, "Display order must be positive or within valid range"),
+    INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN(1771, HttpStatus.BAD_REQUEST, "Invalid column for items: left item must be in left column, right item in right column"),
+    QUIZ_MATCHING_PAIR_DUPLICATE_CONNECTION(1772, HttpStatus.BAD_REQUEST, "Connection already exists"),
+    QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND(1773, HttpStatus.NOT_FOUND, "Quiz matching pair connection not found"),
+    QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ(1774, HttpStatus.BAD_REQUEST, "Connection does not belong to the specified quiz"),
+    QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS(1775, HttpStatus.BAD_REQUEST, "Quiz matching pair item has multiple connections"),
+    QUIZ_MATCHING_PAIR_ITEM_ALREADY_CONNECTED(1776, HttpStatus.BAD_REQUEST, "This quiz matching pair item has already been connected to another item"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),

@@ -22,6 +22,5 @@ public class ActivitySummaryResponse extends AuditResponse {
     Integer orderIndex;
     String backgroundColor;
     String backgroundImage;
-    String customBackgroundMusic;
     String conversionWarning;
 }
