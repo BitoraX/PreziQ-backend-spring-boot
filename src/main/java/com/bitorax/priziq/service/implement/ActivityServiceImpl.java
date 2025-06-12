@@ -40,7 +40,6 @@ import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -54,7 +53,6 @@ public class ActivityServiceImpl implements ActivityService {
     QuizRepository quizRepository;
     SlideRepository slideRepository;
     SlideElementRepository slideElementRepository;
-    QuizMatchingPairAnswerRepository quizMatchingPairAnswerRepository;
     QuizMatchingPairItemRepository quizMatchingPairItemRepository;
     QuizMatchingPairConnectionRepository quizMatchingPairConnectionRepository;
     ActivityMapper activityMapper;
@@ -345,7 +343,7 @@ public class ActivityServiceImpl implements ActivityService {
     // Quiz matching pairs (logic item, connection)
     @Override
     @Transactional
-    public QuizMatchingPairItemResponse addMatchingPairItem(String quizId, CreateMatchingPairItemRequest request) {
+    public QuizMatchingPairItemResponse addMatchingPairItem(String quizId) {
         Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
 
         QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer();
@@ -353,19 +351,38 @@ public class ActivityServiceImpl implements ActivityService {
             throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND);
         }
 
-        // Auto increase display order +1 with ifLeftColumn
-        int displayOrder = quizMatchingPairItemRepository
-                .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, request.getIsLeftColumn())
+        // Auto increase display order +1 for left column
+        int leftDisplayOrder = quizMatchingPairItemRepository
+                .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, true)
                 .orElse(0) + 1;
 
-        QuizMatchingPairItem item = QuizMatchingPairItem.builder()
+        // Auto increase display order +1 for right column
+        int rightDisplayOrder = quizMatchingPairItemRepository
+                .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, false)
+                .orElse(0) + 1;
+
+        // Create the left item
+        QuizMatchingPairItem leftItem = QuizMatchingPairItem.builder()
                 .quizMatchingPairAnswer(answer)
-                .content(request.getContent())
-                .isLeftColumn(request.getIsLeftColumn())
-                .displayOrder(displayOrder)
+                .content("Left Item")
+                .isLeftColumn(true)
+                .displayOrder(leftDisplayOrder)
                 .build();
 
-        return activityMapper.quizMatchingPairItemToResponse(quizMatchingPairItemRepository.save(item));
+        // Create the right item
+        QuizMatchingPairItem rightItem = QuizMatchingPairItem.builder()
+                .quizMatchingPairAnswer(answer)
+                .content("Right Item")
+                .isLeftColumn(false)
+                .displayOrder(rightDisplayOrder)
+                .build();
+
+        // Save both items
+        quizMatchingPairItemRepository.save(leftItem);
+        quizMatchingPairItemRepository.save(rightItem);
+
+        // Return response for left item
+        return activityMapper.quizMatchingPairItemToResponse(leftItem);
     }
 
     @Override

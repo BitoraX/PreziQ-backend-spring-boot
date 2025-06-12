@@ -33,7 +33,7 @@ public interface ActivityService {
 
     void deleteSlideElement(String slideId, String elementId);
 
-    QuizMatchingPairItemResponse addMatchingPairItem(String quizId, CreateMatchingPairItemRequest request);
+    QuizMatchingPairItemResponse addMatchingPairItem(String quizId);
 
     QuizMatchingPairItemResponse updateAndReorderMatchingPairItem(String quizId, String itemId, UpdateAndReorderMatchingPairItemRequest request);
 
