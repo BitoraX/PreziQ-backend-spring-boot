@@ -217,6 +217,7 @@ public enum ErrorCode {
     QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND(1773, HttpStatus.NOT_FOUND, "Quiz matching pair connection not found"),
     QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ(1774, HttpStatus.BAD_REQUEST, "Connection does not belong to the specified quiz"),
     QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS(1775, HttpStatus.BAD_REQUEST, "Quiz matching pair item has multiple connections"),
+    QUIZ_MATCHING_PAIR_ITEM_ALREADY_CONNECTED(1776, HttpStatus.BAD_REQUEST, "This quiz matching pair item has already been connected to another item"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),

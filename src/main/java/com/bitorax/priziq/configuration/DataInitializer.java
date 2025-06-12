@@ -168,7 +168,6 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update and reorder matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "PATCH", "ACTIVITIES"),
                         new Permission("Delete matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "DELETE", "ACTIVITIES"),
                         new Permission("Add matching pair connection", "/api/v1/quizzes/{quizId}/matching-pairs/connections", "POST", "ACTIVITIES"),
-                        new Permission("Update matching pair connection", "/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "PATCH", "ACTIVITIES"),
                         new Permission("Delete matching pair connection", "/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "DELETE", "ACTIVITIES"),
 
                         // Module Sessions
@@ -244,7 +243,6 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "PATCH"),
                         findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "DELETE"),
                         findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/connections", "POST"),
-                        findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "PATCH"),
                         findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "DELETE"),
 
                         findPermissionOrThrow("/api/v1/sessions", "POST"),

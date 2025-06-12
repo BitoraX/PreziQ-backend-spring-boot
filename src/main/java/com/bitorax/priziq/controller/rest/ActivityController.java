@@ -9,6 +9,7 @@ import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairAnswerResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairConnectionResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairItemResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
@@ -128,25 +129,25 @@ public class ActivityController {
     }
 
     @PostMapping("/quizzes/{quizId}/matching-pairs/items")
-    ApiResponse<QuizMatchingPairItemResponse> addMatchingPairItem(
+    ApiResponse<Void> addMatchingPairItem(
             @PathVariable String quizId,
             HttpServletRequest servletRequest
     ) {
-        return ApiResponse.<QuizMatchingPairItemResponse>builder()
+        activityService.addMatchingPairItem(quizId);
+        return ApiResponse.<Void>builder()
                 .message("Matching pair item added successfully")
-                .data(activityService.addMatchingPairItem(quizId))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
 
     @PatchMapping("/quizzes/{quizId}/matching-pairs/items/{itemId}")
-    ApiResponse<QuizMatchingPairItemResponse> updateAndReorderMatchingPairItem(
+    ApiResponse<QuizMatchingPairAnswerResponse> updateAndReorderMatchingPairItem(
             @PathVariable String quizId,
             @PathVariable String itemId,
             @RequestBody @Valid UpdateAndReorderMatchingPairItemRequest request,
             HttpServletRequest servletRequest
     ) {
-        return ApiResponse.<QuizMatchingPairItemResponse>builder()
+        return ApiResponse.<QuizMatchingPairAnswerResponse>builder()
                 .message("Matching pair item updated and reordered successfully")
                 .data(activityService.updateAndReorderMatchingPairItem(quizId, itemId, request))
                 .meta(buildMetaInfo(servletRequest))
@@ -175,20 +176,6 @@ public class ActivityController {
         return ApiResponse.<QuizMatchingPairConnectionResponse>builder()
                 .message("Matching pair connection added successfully")
                 .data(activityService.addMatchingPairConnection(quizId, request))
-                .meta(buildMetaInfo(servletRequest))
-                .build();
-    }
-
-    @PatchMapping("/quizzes/{quizId}/matching-pairs/connections/{connectionId}")
-    ApiResponse<QuizMatchingPairConnectionResponse> updateMatchingPairConnection(
-            @PathVariable String quizId,
-            @PathVariable String connectionId,
-            @RequestBody @Valid UpdateMatchingPairConnectionRequest request,
-            HttpServletRequest servletRequest
-    ) {
-        return ApiResponse.<QuizMatchingPairConnectionResponse>builder()
-                .message("Matching pair connection updated successfully")
-                .data(activityService.updateMatchingPairConnection(quizId, connectionId, request))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
