@@ -193,4 +193,17 @@ public class ActivityController {
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }
+
+    @DeleteMapping("/quizzes/{quizId}/matching-pairs/connections/{connectionId}")
+    ApiResponse<Void> deleteMatchingPairConnection(
+            @PathVariable String quizId,
+            @PathVariable String connectionId,
+            HttpServletRequest servletRequest
+    ) {
+        activityService.deleteMatchingPairConnection(quizId, connectionId);
+        return ApiResponse.<Void>builder()
+                .message("Matching pair connection deleted successfully")
+                .meta(buildMetaInfo(servletRequest))
+                .build();
+    }
 }

@@ -40,6 +40,7 @@ import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -404,6 +405,8 @@ public class ActivityServiceImpl implements ActivityService {
             }
         }
 
+        // Delete connection if isLeftColumn, displayOrder changed (call API delete connection here)
+
         // Logic to handle change
         if (targetIsLeftColumn != currentIsLeftColumn) {
             // Column changed: decrement in old column, increment in new column
@@ -427,8 +430,6 @@ public class ActivityServiceImpl implements ActivityService {
         if (newDisplayOrder != null) {
             item.setDisplayOrder(newDisplayOrder);
         }
-
-        // Delete connection if isLeftColumn, displayOrder changed (call API delete connection here)
 
         return activityMapper.quizMatchingPairItemToResponse(quizMatchingPairItemRepository.save(item));
     }
@@ -546,6 +547,22 @@ public class ActivityServiceImpl implements ActivityService {
 
         quizMatchingPairConnectionRepository.save(connection);
         return activityMapper.quizMatchingPairConnectionToResponse(connection);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMatchingPairConnection(String quizId, String connectionId) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+
+        QuizMatchingPairConnection connection = quizMatchingPairConnectionRepository
+                .findById(connectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND));
+
+        if (!connection.getQuizMatchingPairAnswer().getQuiz().getQuizId().equals(quiz.getQuizId())) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ);
+        }
+
+        quizMatchingPairConnectionRepository.delete(connection);
     }
 
     private Pair<Quiz, QuizMatchingPairItem> validateQuizAndItem(String quizId, String itemId) {

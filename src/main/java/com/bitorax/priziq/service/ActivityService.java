@@ -43,5 +43,5 @@ public interface ActivityService {
 
     QuizMatchingPairConnectionResponse updateMatchingPairConnection(String quizId, String connectionId, UpdateMatchingPairConnectionRequest request);
 
-
+    void deleteMatchingPairConnection(String quizId, String connectionId);
 }

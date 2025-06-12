@@ -158,14 +158,18 @@ public class DataInitializer implements ApplicationRunner {
                         new Permission("Update quiz for activity", "/api/v1/activities/{activityId}/quiz", "PUT", "ACTIVITIES"),
                         new Permission("Delete a activity", "/api/v1/activities/{activityId}", "DELETE", "ACTIVITIES"),
                         new Permission("Update a activity", "/api/v1/activities/{activityId}", "PUT", "ACTIVITIES"),
+
                         new Permission("Update a slide", "/api/v1/slides/{slideId}", "PUT", "ACTIVITIES"),
                         new Permission("Add a slide element", "/api/v1/slides/{slideId}/elements", "POST", "ACTIVITIES"),
                         new Permission("Update a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "PUT", "ACTIVITIES"),
                         new Permission("Delete a slide element", "/api/v1/slides/{slideId}/elements/{elementId}", "DELETE", "ACTIVITIES"),
+
                         new Permission("Add matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items", "POST", "ACTIVITIES"),
                         new Permission("Update and reorder matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "PATCH", "ACTIVITIES"),
                         new Permission("Delete matching pair item", "/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "DELETE", "ACTIVITIES"),
                         new Permission("Add matching pair connection", "/api/v1/quizzes/{quizId}/matching-pairs/connections", "POST", "ACTIVITIES"),
+                        new Permission("Update matching pair connection", "/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "PATCH", "ACTIVITIES"),
+                        new Permission("Delete matching pair connection", "/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "DELETE", "ACTIVITIES"),
 
                         // Module Sessions
                         new Permission("Create a new session", "/api/v1/sessions", "POST", "SESSIONS"),
@@ -230,12 +234,18 @@ public class DataInitializer implements ApplicationRunner {
                         findPermissionOrThrow("/api/v1/activities/{activityId}/quiz", "PUT"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}", "DELETE"),
                         findPermissionOrThrow("/api/v1/activities/{activityId}", "PUT"),
+
                         findPermissionOrThrow("/api/v1/slides/{slideId}", "PUT"),
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements", "POST"),
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "PUT"),
                         findPermissionOrThrow("/api/v1/slides/{slideId}/elements/{elementId}", "DELETE"),
+
                         findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/items", "POST"),
                         findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "PATCH"),
+                        findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/items/{itemId}", "DELETE"),
+                        findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/connections", "POST"),
+                        findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "PATCH"),
+                        findPermissionOrThrow("/api/v1/quizzes/{quizId}/matching-pairs/connections/{connectionId}", "DELETE"),
 
                         findPermissionOrThrow("/api/v1/sessions", "POST"),
                         findPermissionOrThrow("/api/v1/sessions/me", "GET"),
