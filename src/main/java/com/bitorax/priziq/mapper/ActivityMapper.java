@@ -6,7 +6,6 @@ import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.activity.UpdateActivityRequest;
-import com.bitorax.priziq.dto.request.activity.quiz.CreateMatchingPairItemRequest;
 import com.bitorax.priziq.dto.request.activity.quiz.UpdateQuizRequest;
 import com.bitorax.priziq.dto.request.activity.slide.CreateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;

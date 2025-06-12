@@ -40,6 +40,7 @@ import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -401,10 +402,11 @@ public class ActivityServiceImpl implements ActivityService {
         Boolean newIsLeftColumn = request.getIsLeftColumn();
         Integer newDisplayOrder = request.getDisplayOrder();
 
-        // Validate no changes in isLeftColumn and displayOrder
-        boolean isLeftColumnUnchanged = newIsLeftColumn != null && newIsLeftColumn.equals(currentIsLeftColumn);
-        boolean isDisplayOrderUnchanged = newDisplayOrder != null && newDisplayOrder.equals(currentDisplayOrder);
-        if(isLeftColumnUnchanged || isDisplayOrderUnchanged){
+        // Validate no changes
+        boolean isLeftColumnUnchanged = newIsLeftColumn == null || newIsLeftColumn.equals(currentIsLeftColumn);
+        boolean isDisplayOrderUnchanged = newDisplayOrder == null || newDisplayOrder.equals(currentDisplayOrder);
+        boolean isContentUnchanged = newContent == null || newContent.equals(item.getContent());
+        if (isLeftColumnUnchanged && isDisplayOrderUnchanged && isContentUnchanged) {
             throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_ALREADY_IN_COLUMN_AND_POSITION);
         }
 
@@ -417,12 +419,23 @@ public class ActivityServiceImpl implements ActivityService {
             int maxDisplayOrder = quizMatchingPairItemRepository
                     .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, targetIsLeftColumn)
                     .orElse(0);
-            if (newDisplayOrder > maxDisplayOrder + 1) {
+            if (newDisplayOrder < 1 || newDisplayOrder > maxDisplayOrder + 1) {
                 throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER);
             }
         }
 
-        // Delete connection if isLeftColumn, displayOrder changed (call API delete connection here)
+        // Delete connection if isLeftColumn or displayOrder changed
+        if (!isLeftColumnUnchanged || !isDisplayOrderUnchanged) {
+            List<QuizMatchingPairConnection> connections = quizMatchingPairConnectionRepository
+                    .findByQuizIdAndLeftItemIdOrRightItemId(quizId, itemId);
+            if (connections.size() > 1) {
+                throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS);
+            }
+            if (!connections.isEmpty()) {
+                QuizMatchingPairConnection connection = connections.getFirst();
+                deleteMatchingPairConnection(quizId, connection.getQuizMatchingPairConnectionId());
+            }
+        }
 
         // Logic to handle change
         if (targetIsLeftColumn != currentIsLeftColumn) {
