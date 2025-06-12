@@ -15,13 +15,12 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class QuizResponse extends AuditResponse {
-    String quizId;
-    String questionText;
-    Integer timeLimitSeconds;
-    String pointType;
+public class QuizMatchingPairAnswerResponse extends AuditResponse {
+    String quizMatchingPairAnswerId;
 
-    List<QuizAnswerResponse> quizAnswers;
-    List<QuizLocationAnswerResponse> quizLocationAnswers;
-    QuizMatchingPairAnswerResponse quizMatchingPairAnswer;
+    String leftColumnName;
+    String rightColumnName;
+
+    List<QuizMatchingPairItemResponse> items;
+    List<QuizMatchingPairConnectionResponse> connections;
 }

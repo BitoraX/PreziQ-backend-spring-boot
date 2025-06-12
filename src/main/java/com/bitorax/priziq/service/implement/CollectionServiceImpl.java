@@ -5,9 +5,7 @@ import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
-import com.bitorax.priziq.domain.activity.quiz.Quiz;
-import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
-import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
+import com.bitorax.priziq.domain.activity.quiz.*;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -270,7 +268,7 @@ public class CollectionServiceImpl implements CollectionService {
         Map<String, List<CollectionSummaryResponse>> grouped = results.stream()
                 .map(result -> {
                     Collection collection = (Collection) result[1];
-                    // Group all isPublished = true into PUBLISH and base topic
+                    // Group all isPublished = true into a PUBLISH and base topic
                     String groupKey = CollectionTopicType.PUBLISH.name(); // Always add to PUBLISH
                     CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
                     return new AbstractMap.SimpleEntry<>(groupKey, summary);
@@ -391,6 +389,51 @@ public class CollectionServiceImpl implements CollectionService {
                     newQuiz.getQuizLocationAnswers().add(newLocationAnswer);
                 }
 
+                // Copy quiz matching pair answer if present
+                if (sourceQuiz.getQuizMatchingPairAnswer() != null) {
+                    QuizMatchingPairAnswer sourceMatchingPairAnswer = sourceQuiz.getQuizMatchingPairAnswer();
+                    // Create a new QuizMatchingPairAnswer with copied column names
+                    QuizMatchingPairAnswer newMatchingPairAnswer = QuizMatchingPairAnswer.builder()
+                            .quiz(newQuiz)
+                            .leftColumnName(sourceMatchingPairAnswer.getLeftColumnName())
+                            .rightColumnName(sourceMatchingPairAnswer.getRightColumnName())
+                            .items(new ArrayList<>())
+                            .connections(new ArrayList<>())
+                            .build();
+
+                    // Map to track old item IDs to new items for connection copying
+                    Map<String, QuizMatchingPairItem> itemMap = new HashMap<>();
+
+                    // Copy all QuizMatchingPairItems
+                    for (QuizMatchingPairItem sourceItem : sourceMatchingPairAnswer.getItems()) {
+                        QuizMatchingPairItem newItem = QuizMatchingPairItem.builder()
+                                .quizMatchingPairAnswer(newMatchingPairAnswer)
+                                .content(sourceItem.getContent())
+                                .isLeftColumn(sourceItem.getIsLeftColumn())
+                                .displayOrder(sourceItem.getDisplayOrder())
+                                .build();
+                        newMatchingPairAnswer.getItems().add(newItem);
+                        itemMap.put(sourceItem.getQuizMatchingPairItemId(), newItem);
+                    }
+
+                    // Copy all QuizMatchingPairConnections using the item map
+                    for (QuizMatchingPairConnection sourceConnection : sourceMatchingPairAnswer.getConnections()) {
+                        QuizMatchingPairItem newLeftItem = itemMap.get(sourceConnection.getLeftItem().getQuizMatchingPairItemId());
+                        QuizMatchingPairItem newRightItem = itemMap.get(sourceConnection.getRightItem().getQuizMatchingPairItemId());
+                        if (newLeftItem != null && newRightItem != null) {
+                            QuizMatchingPairConnection newConnection = QuizMatchingPairConnection.builder()
+                                    .quizMatchingPairAnswer(newMatchingPairAnswer)
+                                    .leftItem(newLeftItem)
+                                    .rightItem(newRightItem)
+                                    .build();
+                            newMatchingPairAnswer.getConnections().add(newConnection);
+                        }
+                    }
+
+                    // Set the new matching pair answer to the quiz
+                    newQuiz.setQuizMatchingPairAnswer(newMatchingPairAnswer);
+                }
+
                 newActivity.setQuiz(newQuiz);
                 quizRepository.save(newQuiz);
             }
@@ -451,7 +494,7 @@ public class CollectionServiceImpl implements CollectionService {
         User currentUser = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
-        // Check if user has ADMIN role. If not admin, verify ownership
+        // Check if a user has an ADMIN role. If not admin, verify ownership
         boolean isAdmin = securityUtils.isAdmin(currentUser);
         if (!isAdmin && !Objects.equals(collection.getCreator().getUserId(), currentUser.getUserId())) {
             throw new ApplicationException(ErrorCode.UNAUTHORIZED_ACCESS);

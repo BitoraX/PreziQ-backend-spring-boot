@@ -6,6 +6,9 @@ import com.bitorax.priziq.constant.SlideElementType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.activity.quiz.Quiz;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairAnswer;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairConnection;
+import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairItem;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -16,6 +19,8 @@ import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideElementRequest;
 import com.bitorax.priziq.dto.request.activity.slide.UpdateSlideRequest;
 import com.bitorax.priziq.dto.response.activity.ActivityDetailResponse;
 import com.bitorax.priziq.dto.response.activity.ActivitySummaryResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairAnswerResponse;
+import com.bitorax.priziq.dto.response.activity.quiz.QuizMatchingPairConnectionResponse;
 import com.bitorax.priziq.dto.response.activity.quiz.QuizResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideElementResponse;
 import com.bitorax.priziq.dto.response.activity.slide.SlideResponse;
@@ -25,14 +30,18 @@ import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.ActivityService;
 import com.bitorax.priziq.utils.ActivityUtils;
+import com.nimbusds.jose.util.Pair;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -46,10 +55,20 @@ public class ActivityServiceImpl implements ActivityService {
     QuizRepository quizRepository;
     SlideRepository slideRepository;
     SlideElementRepository slideElementRepository;
+    QuizMatchingPairItemRepository quizMatchingPairItemRepository;
+    QuizMatchingPairConnectionRepository quizMatchingPairConnectionRepository;
     ActivityMapper activityMapper;
     ActivityUtils activityUtils;
 
-    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION");
+    @NonFinal
+    @Value("${priziq.quiz.default.time_limit_seconds}")
+    Integer DEFAULT_TIME_LIMIT_SECONDS;
+
+    @NonFinal
+    @Value("${priziq.quiz.default.point_type}")
+    String DEFAULT_POINT_TYPE;
+
+    private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION", "MATCHING_PAIRS");
 
     @Override
     @Transactional
@@ -81,6 +100,21 @@ public class ActivityServiceImpl implements ActivityService {
                     .build();
             slideRepository.save(slide);
             savedActivity.setSlide(slide);
+        } else if (savedActivity.getActivityType() == ActivityType.QUIZ_MATCHING_PAIRS) {
+            // Default value
+            Quiz quiz = Quiz.builder()
+                    .quizId(savedActivity.getActivityId())
+                    .activity(savedActivity)
+                    .questionText("Match each item correctly")
+                    .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
+                    .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
+                    .build();
+
+            QuizMatchingPairAnswer matchingPairAnswer = activityUtils.createDefaultMatchingPairAnswer(quiz);
+            quiz.setQuizMatchingPairAnswer(matchingPairAnswer);
+
+            quizRepository.save(quiz);
+            savedActivity.setQuiz(quiz);
         }
 
         return activityMapper.activityToSummaryResponse(savedActivity);
@@ -147,6 +181,10 @@ public class ActivityServiceImpl implements ActivityService {
                 UpdateLocationQuizRequest locationRequest = (UpdateLocationQuizRequest) updateQuizRequest;
                 activityUtils.handleLocationQuiz(quiz, locationRequest);
                 break;
+            case QUIZ_MATCHING_PAIRS:
+                UpdateMatchingPairQuizRequest matchingRequest = (UpdateMatchingPairQuizRequest) updateQuizRequest;
+                activityUtils.handleMatchingPairQuiz(quiz, matchingRequest);
+                break;
             default:
                 throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         }
@@ -157,6 +195,8 @@ public class ActivityServiceImpl implements ActivityService {
         // Load answer list based on activityType
         if (activityType == ActivityType.QUIZ_LOCATION) {
             Hibernate.initialize(updatedQuiz.getQuizLocationAnswers());
+        } else if (activityType == ActivityType.QUIZ_MATCHING_PAIRS) {
+            Hibernate.initialize(updatedQuiz.getQuizMatchingPairAnswer());
         } else {
             Hibernate.initialize(updatedQuiz.getQuizAnswers());
         }
@@ -231,12 +271,8 @@ public class ActivityServiceImpl implements ActivityService {
         activityUtils.validateActivityOwnership(activityId);
         Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
-        if (activity.getQuiz() != null) {
-            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
-        }
-        if (activity.getSlide() != null) {
-            Hibernate.initialize(activity.getSlide());
-        }
+        // Initialize quiz answer, location answer, matching pair answer (Hibernate)
+        activityUtils.initializeActivityComponents(activity);
 
         ActivityType oldType = activity.getActivityType();
 
@@ -264,12 +300,8 @@ public class ActivityServiceImpl implements ActivityService {
 
         activityRepository.save(activity);
 
-        if (activity.getQuiz() != null) {
-            Hibernate.initialize(activity.getQuiz().getQuizAnswers());
-        }
-        if (activity.getSlide() != null) {
-            Hibernate.initialize(activity.getSlide());
-        }
+        // Initialize quiz answer, location answer, matching pair answer (Hibernate)
+        activityUtils.initializeActivityComponents(activity);
 
         ActivitySummaryResponse response = activityMapper.activityToSummaryResponse(activity);
         response.setConversionWarning(!conversionWarning.isEmpty() ? conversionWarning.toString() : null);
@@ -280,5 +312,265 @@ public class ActivityServiceImpl implements ActivityService {
     public ActivityDetailResponse getActivityById(String activityId){
         Activity currentActivity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
         return activityMapper.activityToDetailResponse(currentActivity);
+    }
+
+    // Quiz matching pairs (logic item, connection)
+    @Override
+    @Transactional
+    public void addMatchingPairItem(String quizId) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+
+        QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer();
+        if (answer == null) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND);
+        }
+
+        // Auto increase display order +1 for left column
+        int leftDisplayOrder = quizMatchingPairItemRepository
+                .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, true)
+                .orElse(0) + 1;
+
+        // Auto increase display order +1 for right column
+        int rightDisplayOrder = quizMatchingPairItemRepository
+                .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, false)
+                .orElse(0) + 1;
+
+        // Create the left item
+        QuizMatchingPairItem leftItem = QuizMatchingPairItem.builder()
+                .quizMatchingPairAnswer(answer)
+                .content("Left Item")
+                .isLeftColumn(true)
+                .displayOrder(leftDisplayOrder)
+                .build();
+
+        // Create the right item
+        QuizMatchingPairItem rightItem = QuizMatchingPairItem.builder()
+                .quizMatchingPairAnswer(answer)
+                .content("Right Item")
+                .isLeftColumn(false)
+                .displayOrder(rightDisplayOrder)
+                .build();
+
+        // Save both items
+        quizMatchingPairItemRepository.save(leftItem);
+        quizMatchingPairItemRepository.save(rightItem);
+    }
+
+    @Override
+    @Transactional
+    public QuizMatchingPairAnswerResponse updateAndReorderMatchingPairItem(String quizId, String itemId, UpdateAndReorderMatchingPairItemRequest request) {
+        // Check quiz matching pair item and get item
+        Pair<Quiz, QuizMatchingPairItem> validated = validateQuizAndItem(quizId, itemId);
+        QuizMatchingPairItem item = validated.getRight();
+
+        QuizMatchingPairAnswer answer = item.getQuizMatchingPairAnswer();
+        Boolean currentIsLeftColumn = item.getIsLeftColumn();
+        Integer currentDisplayOrder = item.getDisplayOrder();
+
+        // Get the new value from the request (null if not provided)
+        String newContent = request.getContent();
+        Boolean newIsLeftColumn = request.getIsLeftColumn();
+        Integer newDisplayOrder = request.getDisplayOrder();
+
+        // Validate no changes
+        boolean isLeftColumnUnchanged = newIsLeftColumn != null && newIsLeftColumn.equals(currentIsLeftColumn);
+        boolean isDisplayOrderUnchanged = newDisplayOrder != null && newDisplayOrder.equals(currentDisplayOrder);
+        if (isLeftColumnUnchanged && isDisplayOrderUnchanged) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_ALREADY_IN_COLUMN_AND_POSITION);
+        }
+
+        // Get target value isLeftColumn, displayOrder
+        Boolean targetIsLeftColumn = newIsLeftColumn != null ? newIsLeftColumn : currentIsLeftColumn;
+        Integer targetDisplayOrder = newDisplayOrder != null ? newDisplayOrder : currentDisplayOrder;
+
+        // Validate displayOrder range
+        if (newDisplayOrder != null) {
+            int maxDisplayOrder = quizMatchingPairItemRepository
+                    .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, targetIsLeftColumn)
+                    .orElse(0);
+            if (newDisplayOrder < 1 || newDisplayOrder > maxDisplayOrder) {
+                throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER);
+            }
+        }
+
+        // Delete connection if isLeftColumn or displayOrder changed
+        List<QuizMatchingPairConnection> connections = quizMatchingPairConnectionRepository
+                .findByQuizIdAndLeftItemIdOrRightItemId(quizId, itemId);
+        if (connections.size() > 1) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS);
+        }
+        if (!connections.isEmpty()) {
+            QuizMatchingPairConnection connection = connections.getFirst();
+            quizMatchingPairConnectionRepository.delete(connection);
+        }
+
+        // Logic to handle change
+        if (targetIsLeftColumn != currentIsLeftColumn) {
+            // Column changed: decrement in old column, increment in new column
+            quizMatchingPairItemRepository.decrementDisplayOrder(answer, currentIsLeftColumn, currentDisplayOrder);
+            quizMatchingPairItemRepository.incrementDisplayOrder(answer, targetIsLeftColumn, targetDisplayOrder);
+        } else if (newDisplayOrder != null && !newDisplayOrder.equals(currentDisplayOrder)) {
+            // Move within the same column: swap displayOrder with target item
+            QuizMatchingPairItem targetItem = quizMatchingPairItemRepository
+                    .findByQuizMatchingPairAnswerAndIsLeftColumnAndDisplayOrder(answer, currentIsLeftColumn, newDisplayOrder)
+                    .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND));
+            targetItem.setDisplayOrder(currentDisplayOrder);
+            quizMatchingPairItemRepository.save(targetItem);
+        }
+
+        // Update item
+        if (newContent != null) {
+            item.setContent(newContent);
+        }
+        if (newIsLeftColumn != null) {
+            item.setIsLeftColumn(newIsLeftColumn);
+        }
+        if (newDisplayOrder != null) {
+            item.setDisplayOrder(newDisplayOrder);
+        }
+
+        quizMatchingPairItemRepository.save(item);
+
+        // Normalize displayOrder for both columns
+        normalizeDisplayOrder(answer);
+
+        return activityMapper.quizMatchingPairAnswerToResponse(answer);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMatchingPairItem(String quizId, String itemId) {
+        Pair<Quiz, QuizMatchingPairItem> validated = validateQuizAndItem(quizId, itemId);
+        QuizMatchingPairItem item = validated.getRight();
+
+        QuizMatchingPairAnswer answer = item.getQuizMatchingPairAnswer();
+        Boolean isLeftColumn = item.getIsLeftColumn();
+        Integer displayOrder = item.getDisplayOrder();
+
+        // Delete any associated connection
+        deleteAssociatedConnection(quizId, itemId);
+
+        // Decrement the displayOrder of the later items in the same column and delete the item
+        quizMatchingPairItemRepository.decrementDisplayOrder(answer, isLeftColumn, displayOrder);
+        quizMatchingPairItemRepository.delete(item);
+    }
+
+    @Override
+    @Transactional
+    public QuizMatchingPairConnectionResponse addMatchingPairConnection(String quizId, CreateMatchingPairConnectionRequest request) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+        QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer();
+        if (answer == null) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND);
+        }
+
+        // Validate items
+        Pair<Quiz, QuizMatchingPairItem> leftValidated = validateQuizAndItem(quizId, request.getLeftItemId());
+        Pair<Quiz, QuizMatchingPairItem> rightValidated = validateQuizAndItem(quizId, request.getRightItemId());
+        QuizMatchingPairItem leftItem = leftValidated.getRight();
+        QuizMatchingPairItem rightItem = rightValidated.getRight();
+
+        // Check column validity and duplicate connection
+        if (!leftItem.getIsLeftColumn() || rightItem.getIsLeftColumn()) {
+            throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN);
+        }
+
+        if (quizMatchingPairConnectionRepository.existsByQuizIdAndLeftItemIdAndRightItemId(quizId, request.getLeftItemId(), request.getRightItemId())) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_DUPLICATE_CONNECTION);
+        }
+
+        // Validate 1-1 relationship (item column A <-> item column B)
+        validateItemOneToOneRelation(quizId, request.getLeftItemId(), request.getRightItemId());
+
+        // Create connection
+        QuizMatchingPairConnection connection = QuizMatchingPairConnection.builder()
+                .quizMatchingPairAnswer(answer)
+                .leftItem(leftItem)
+                .rightItem(rightItem)
+                .build();
+
+        quizMatchingPairConnectionRepository.save(connection);
+        return activityMapper.quizMatchingPairConnectionToResponse(connection);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMatchingPairConnection(String quizId, String connectionId) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+
+        QuizMatchingPairConnection connection = quizMatchingPairConnectionRepository
+                .findById(connectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND));
+
+        if (!connection.getQuizMatchingPairAnswer().getQuiz().getQuizId().equals(quiz.getQuizId())) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ);
+        }
+
+        quizMatchingPairConnectionRepository.delete(connection);
+    }
+
+    @Transactional
+    protected void deleteAssociatedConnection(String quizId, String itemId) {
+        List<QuizMatchingPairConnection> connections = quizMatchingPairConnectionRepository
+                .findByQuizIdAndLeftItemIdOrRightItemId(quizId, itemId);
+
+        if (connections.size() > 1) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS);
+        }
+
+        if (!connections.isEmpty()) {
+            QuizMatchingPairConnection connection = connections.getFirst();
+            deleteMatchingPairConnection(quizId, connection.getQuizMatchingPairConnectionId());
+        }
+    }
+
+    private void normalizeDisplayOrder(QuizMatchingPairAnswer answer) {
+        // Normalize left column
+        List<QuizMatchingPairItem> leftItems = quizMatchingPairItemRepository
+                .findByQuizMatchingPairAnswerAndIsLeftColumnOrderByDisplayOrderAsc(answer, true);
+        for (int i = 0; i < leftItems.size(); i++) {
+            QuizMatchingPairItem item = leftItems.get(i);
+            if (item.getDisplayOrder() != i + 1) {
+                item.setDisplayOrder(i + 1);
+                quizMatchingPairItemRepository.save(item);
+            }
+        }
+
+        // Normalize right column
+        List<QuizMatchingPairItem> rightItems = quizMatchingPairItemRepository
+                .findByQuizMatchingPairAnswerAndIsLeftColumnOrderByDisplayOrderAsc(answer, false);
+        for (int i = 0; i < rightItems.size(); i++) {
+            QuizMatchingPairItem item = rightItems.get(i);
+            if (item.getDisplayOrder() != i + 1) {
+                item.setDisplayOrder(i + 1);
+                quizMatchingPairItemRepository.save(item);
+            }
+        }
+    }
+
+    private void validateItemOneToOneRelation(String quizId, String leftItemId, String rightItemId) {
+        // Validate 1-1 relationship (item column A <-> item column B)
+        List<QuizMatchingPairConnection> existingConnections = quizMatchingPairConnectionRepository
+                .findByQuizIdAndLeftItemIdOrRightItemId(quizId, leftItemId);
+        if (!existingConnections.isEmpty()) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_ALREADY_CONNECTED);
+        }
+        existingConnections = quizMatchingPairConnectionRepository
+                .findByQuizIdAndLeftItemIdOrRightItemId(quizId, rightItemId);
+        if (!existingConnections.isEmpty()) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_ALREADY_CONNECTED);
+        }
+    }
+
+    private Pair<Quiz, QuizMatchingPairItem> validateQuizAndItem(String quizId, String itemId) {
+        Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
+
+        QuizMatchingPairItem item = quizMatchingPairItemRepository.findById(itemId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND));
+        if (!item.getQuizMatchingPairAnswer().getQuiz().getQuizId().equals(quizId)) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_NOT_BELONG_TO_QUIZ);
+        }
+
+        return Pair.of(quiz, item);
     }
 }
