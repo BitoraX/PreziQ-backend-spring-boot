@@ -68,7 +68,6 @@ priziq:
         reorder:
             step1: ${QUIZ_REORDER_STEP1:Step 1}
             step2: ${QUIZ_REORDER_STEP2:Step 2}
-            default_step: ${QUIZ_REORDER_DEFAULT_STEP:Default step}
         choice:
             option1: ${QUIZ_CHOICE_OPTION1:Option 1}
             option2: ${QUIZ_CHOICE_OPTION2:Option 2}
