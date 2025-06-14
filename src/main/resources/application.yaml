@@ -80,6 +80,7 @@ priziq:
             option_true: ${QUIZ_CHOICE_TRUE:True}
             option_false: ${QUIZ_CHOICE_FALSE:False}
         matching_pairs:
+            default_question: ${QUIZ_MATCHING_PAIRS_DEFAULT_QUESTION:Match each item correctly}
             left_column: ${QUIZ_MATCHING_PAIRS_LEFT_COLUMN:Left Column}
             right_column: ${QUIZ_MATCHING_PAIRS_RIGHT_COLUMN:Right Column}
             item1: ${QUIZ_MATCHING_PAIRS_ITEM_1:Item 1}
