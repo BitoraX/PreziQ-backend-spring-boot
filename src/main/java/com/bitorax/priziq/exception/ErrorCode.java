@@ -210,14 +210,13 @@ public enum ErrorCode {
     QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND(1766, HttpStatus.NOT_FOUND, "Quiz matching pair answer not found"),
     QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND(1767, HttpStatus.NOT_FOUND, "Quiz matching pair item not found"),
     QUIZ_MATCHING_PAIR_ITEM_NOT_BELONG_TO_QUIZ(1768, HttpStatus.BAD_REQUEST, "Matching pair item is not part of the quiz"),
-    QUIZ_MATCHING_PAIR_ITEM_ALREADY_IN_COLUMN_AND_POSITION(1769, HttpStatus.BAD_REQUEST, "Item is already in the specified column and position"),
-    INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER(1770, HttpStatus.BAD_REQUEST, "Display order must be positive or within valid range"),
-    INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN(1771, HttpStatus.BAD_REQUEST, "Invalid column for items: left item must be in left column, right item in right column"),
-    QUIZ_MATCHING_PAIR_DUPLICATE_CONNECTION(1772, HttpStatus.BAD_REQUEST, "Connection already exists"),
-    QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND(1773, HttpStatus.NOT_FOUND, "Quiz matching pair connection not found"),
-    QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ(1774, HttpStatus.BAD_REQUEST, "Connection does not belong to the specified quiz"),
-    QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS(1775, HttpStatus.BAD_REQUEST, "Quiz matching pair item has multiple connections"),
-    QUIZ_MATCHING_PAIR_ITEM_ALREADY_CONNECTED(1776, HttpStatus.BAD_REQUEST, "This quiz matching pair item has already been connected to another item"),
+    INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER(1769, HttpStatus.BAD_REQUEST, "Display order must be positive or within valid range"),
+    INVALID_QUIZ_MATCHING_PAIR_ITEM_COLUMN(1770, HttpStatus.BAD_REQUEST, "Invalid column for items: left item must be in left column, right item in right column"),
+    QUIZ_MATCHING_PAIR_DUPLICATE_CONNECTION(1771, HttpStatus.BAD_REQUEST, "Connection already exists"),
+    QUIZ_MATCHING_PAIR_CONNECTION_NOT_FOUND(1772, HttpStatus.NOT_FOUND, "Quiz matching pair connection not found"),
+    QUIZ_MATCHING_PAIR_CONNECTION_NOT_BELONG_TO_QUIZ(1773, HttpStatus.BAD_REQUEST, "Connection does not belong to the specified quiz"),
+    QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS(1774, HttpStatus.BAD_REQUEST, "Quiz matching pair item has multiple connections"),
+    QUIZ_MATCHING_PAIR_ITEM_ALREADY_CONNECTED(1775, HttpStatus.BAD_REQUEST, "This quiz matching pair item has already been connected to another item"),
 
     // Module session errors
     UNABLE_TO_GENERATE_SESSION_CODE(1801, HttpStatus.BAD_REQUEST, "Could not generate unique session code"),
@@ -248,6 +247,10 @@ public enum ErrorCode {
     INVALID_COORDINATE_PRECISION (2005, HttpStatus.BAD_REQUEST, "Coordinates must have exactly 6 decimal places, e.g., '2.294500,48.858400'"),
     DUPLICATE_COORDINATE_PAIR(2006, HttpStatus.BAD_REQUEST, "Duplicate coordinate pairs are not allowed"),
     INVALID_LAT_LNG_FORMAT(2007, HttpStatus.BAD_REQUEST, "Invalid longitude or latitude format"),
+    INVALID_MATCHING_PAIR_ANSWER(2008, HttpStatus.BAD_REQUEST, "The number of IDs in the matching pair answer must be even"),
+    DUPLICATE_MATCHING_PAIR_ITEM(2009, HttpStatus.BAD_REQUEST, "Duplicate item IDs found in the matching pair answer"),
+    INVALID_MATCHING_PAIR_COLUMN(2010, HttpStatus.BAD_REQUEST, "The matching pair does not correspond to left-right columns"),
+    NO_CORRECT_MATCHING_PAIR_CONNECTIONS(2011, HttpStatus.BAD_REQUEST, "No correct matching pair connections found in the system"),
 
     // Module achievement errors
     ACHIEVEMENT_NOT_FOUND(2101, HttpStatus.NOT_FOUND, "Achievement not found"),
