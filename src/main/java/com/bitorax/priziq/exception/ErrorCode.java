@@ -248,6 +248,10 @@ public enum ErrorCode {
     INVALID_COORDINATE_PRECISION (2005, HttpStatus.BAD_REQUEST, "Coordinates must have exactly 6 decimal places, e.g., '2.294500,48.858400'"),
     DUPLICATE_COORDINATE_PAIR(2006, HttpStatus.BAD_REQUEST, "Duplicate coordinate pairs are not allowed"),
     INVALID_LAT_LNG_FORMAT(2007, HttpStatus.BAD_REQUEST, "Invalid longitude or latitude format"),
+    INVALID_MATCHING_PAIR_ANSWER(2008, HttpStatus.BAD_REQUEST, "The number of IDs in the matching pair answer must be even"),
+    DUPLICATE_MATCHING_PAIR_ITEM(2009, HttpStatus.BAD_REQUEST, "Duplicate item IDs found in the matching pair answer"),
+    INVALID_MATCHING_PAIR_COLUMN(2010, HttpStatus.BAD_REQUEST, "The matching pair does not correspond to left-right columns"),
+    NO_CORRECT_MATCHING_PAIR_CONNECTIONS(2011, HttpStatus.BAD_REQUEST, "No correct matching pair connections found in the system"),
 
     // Module achievement errors
     ACHIEVEMENT_NOT_FOUND(2101, HttpStatus.NOT_FOUND, "Achievement not found"),
