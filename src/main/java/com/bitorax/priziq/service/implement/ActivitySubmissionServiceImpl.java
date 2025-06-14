@@ -270,8 +270,8 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
             throw new ApplicationException(ErrorCode.MISSING_LAT_LNG_PAIR);
         }
 
-        List<QuizLocationAnswer> correctLocations = quiz.getQuizLocationAnswers();
         // Check if number of coordinates exceeds correct locations
+        List<QuizLocationAnswer> correctLocations = quiz.getQuizLocationAnswers();
         if (coordinates.length / 2 > correctLocations.size()) {
             throw new ApplicationException(ErrorCode.TOO_MANY_COORDINATE_PAIRS);
         }
@@ -310,31 +310,26 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 }
             }
 
-            // Match each user coordinate to a unique correct location
-            List<QuizLocationAnswer> unmatchedLocations = new ArrayList<>(correctLocations);
+            // Check if each user coordinate is within radius of any correct location // UPDATE
             int correctCount = 0;
-
             for (double[] userCoord : userCoordinates) {
                 double userLong = userCoord[0];
                 double userLat = userCoord[1];
-                QuizLocationAnswer matchedLocation = null;
-                double minDistance = Double.MAX_VALUE;
+                boolean isWithinRadius = false;
 
-                // Find the closest unmatched correct location within radius
-                for (QuizLocationAnswer location : unmatchedLocations) {
+                for (QuizLocationAnswer location : correctLocations) {
                     double distance = calculateHaversineDistance(
                             userLat, userLong,
                             location.getLatitude(), location.getLongitude()
                     );
-                    if (distance <= location.getRadius() && distance < minDistance) {
-                        minDistance = distance;
-                        matchedLocation = location;
+                    if (distance <= location.getRadius()) {
+                        isWithinRadius = true;
+                        break; // Stop checking once a valid location is found
                     }
                 }
 
-                if (matchedLocation != null) {
+                if (isWithinRadius) {
                     correctCount++;
-                    unmatchedLocations.remove(matchedLocation); // Remove matched location
                 }
             }
 
