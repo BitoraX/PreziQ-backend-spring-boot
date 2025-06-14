@@ -68,6 +68,10 @@ public class ActivityServiceImpl implements ActivityService {
     @Value("${priziq.quiz.default.point_type}")
     String DEFAULT_POINT_TYPE;
 
+    @NonFinal
+    @Value("${priziq.quiz.matching_pairs.default_question}")
+    String DEFAULT_MATCHING_PAIRS_QUESTION;
+
     private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION", "MATCHING_PAIRS");
 
     @Override
@@ -105,7 +109,7 @@ public class ActivityServiceImpl implements ActivityService {
             Quiz quiz = Quiz.builder()
                     .quizId(savedActivity.getActivityId())
                     .activity(savedActivity)
-                    .questionText("Match each item correctly")
+                    .questionText(DEFAULT_MATCHING_PAIRS_QUESTION)
                     .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
                     .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
                     .build();
@@ -371,13 +375,6 @@ public class ActivityServiceImpl implements ActivityService {
         String newContent = request.getContent();
         Boolean newIsLeftColumn = request.getIsLeftColumn();
         Integer newDisplayOrder = request.getDisplayOrder();
-
-        // Validate no changes
-        boolean isLeftColumnUnchanged = newIsLeftColumn != null && newIsLeftColumn.equals(currentIsLeftColumn);
-        boolean isDisplayOrderUnchanged = newDisplayOrder != null && newDisplayOrder.equals(currentDisplayOrder);
-        if (isLeftColumnUnchanged && isDisplayOrderUnchanged) {
-            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_ALREADY_IN_COLUMN_AND_POSITION);
-        }
 
         // Get target value isLeftColumn, displayOrder
         Boolean targetIsLeftColumn = newIsLeftColumn != null ? newIsLeftColumn : currentIsLeftColumn;

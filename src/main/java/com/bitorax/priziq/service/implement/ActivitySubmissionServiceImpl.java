@@ -3,9 +3,7 @@ package com.bitorax.priziq.service.implement;
 import com.bitorax.priziq.constant.ActivityType;
 import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.activity.Activity;
-import com.bitorax.priziq.domain.activity.quiz.Quiz;
-import com.bitorax.priziq.domain.activity.quiz.QuizAnswer;
-import com.bitorax.priziq.domain.activity.quiz.QuizLocationAnswer;
+import com.bitorax.priziq.domain.activity.quiz.*;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
@@ -26,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -33,8 +32,8 @@ import java.util.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ActivitySubmissionServiceImpl implements ActivitySubmissionService {
     ActivitySubmissionRepository activitySubmissionRepository;
-    SessionRepository sessionRepository;
     ActivityRepository activityRepository;
+    SessionRepository sessionRepository;
     SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionMapper activitySubmissionMapper;
 
@@ -78,6 +77,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
             case QUIZ_TYPE_ANSWER -> processQuizTypeAnswer(request, quiz);
             case QUIZ_REORDER -> processQuizReorder(request, quiz);
             case QUIZ_LOCATION -> processQuizLocation(request, quiz);
+            case QUIZ_MATCHING_PAIRS -> processQuizMatchingPairs(request, quiz);
             default -> throw new ApplicationException(ErrorCode.INVALID_ACTIVITY_TYPE);
         };
 
@@ -126,6 +126,78 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
         }
 
         return activitySubmissionMapper.activitySubmissionToSummaryResponse(savedSubmission);
+    }
+
+    private QuizResult processQuizMatchingPairs(CreateActivitySubmissionRequest request, Quiz quiz) {
+        // Validate answerContent
+        if (request.getAnswerContent() == null || request.getAnswerContent().trim().isEmpty()) {
+            return new QuizResult(false, 0);
+        }
+
+        String[] itemIds = request.getAnswerContent().split(",");
+        if (itemIds.length % 2 != 0) {
+            throw new ApplicationException(ErrorCode.INVALID_MATCHING_PAIR_ANSWER);
+        }
+
+        // Validate item IDs
+        QuizMatchingPairAnswer matchingPairAnswer = quiz.getQuizMatchingPairAnswer();
+        if (matchingPairAnswer == null) {
+            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ANSWER_NOT_FOUND);
+        }
+
+        List<QuizMatchingPairItem> items = matchingPairAnswer.getItems();
+        Set<String> validItemIds = items.stream().map(QuizMatchingPairItem::getQuizMatchingPairItemId).collect(Collectors.toSet());
+        Set<String> uniqueItemIds = new HashSet<>();
+
+        for (String itemId : itemIds) {
+            if (!validItemIds.contains(itemId)) {
+                throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_NOT_FOUND);
+            }
+            if (!uniqueItemIds.add(itemId)) {
+                throw new ApplicationException(ErrorCode.DUPLICATE_MATCHING_PAIR_ITEM);
+            }
+        }
+
+        // Validate pairs (left-right)
+        List<QuizMatchingPairItem> leftItems = items.stream().filter(QuizMatchingPairItem::getIsLeftColumn).toList();
+        List<QuizMatchingPairItem> rightItems = items.stream().filter(item -> !item.getIsLeftColumn()).toList();
+        Set<String> leftItemIds = leftItems.stream().map(QuizMatchingPairItem::getQuizMatchingPairItemId).collect(Collectors.toSet());
+        Set<String> rightItemIds = rightItems.stream().map(QuizMatchingPairItem::getQuizMatchingPairItemId).collect(Collectors.toSet());
+
+        List<String[]> userPairs = new ArrayList<>();
+        for (int i = 0; i < itemIds.length; i += 2) {
+            String leftId = itemIds[i];
+            String rightId = itemIds[i + 1];
+            if (!leftItemIds.contains(leftId) || !rightItemIds.contains(rightId)) {
+                throw new ApplicationException(ErrorCode.INVALID_MATCHING_PAIR_COLUMN);
+            }
+            userPairs.add(new String[]{leftId, rightId});
+        }
+
+        // Compare with correct connections
+        List<QuizMatchingPairConnection> correctConnections = matchingPairAnswer.getConnections();
+        if (correctConnections.isEmpty()) {
+            throw new ApplicationException(ErrorCode.NO_CORRECT_MATCHING_PAIR_CONNECTIONS);
+        }
+
+        int correctCount = 0;
+        for (String[] userPair : userPairs) {
+            String userLeftId = userPair[0];
+            String userRightId = userPair[1];
+            boolean isPairCorrect = correctConnections.stream().anyMatch(conn ->
+                    conn.getLeftItem().getQuizMatchingPairItemId().equals(userLeftId) &&
+                            conn.getRightItem().getQuizMatchingPairItemId().equals(userRightId));
+            if (isPairCorrect) {
+                correctCount++;
+            }
+        }
+
+        // Calculate score
+        boolean isCorrect = correctCount == correctConnections.size();
+        double proportionCorrect = (double) correctCount / correctConnections.size();
+        int responseScore = (int) Math.floor(baseScore * proportionCorrect);
+
+        return new QuizResult(isCorrect, responseScore);
     }
 
     private QuizResult processQuizButtonsOrTrueFalse(CreateActivitySubmissionRequest request, Quiz quiz) {
@@ -198,8 +270,8 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
             throw new ApplicationException(ErrorCode.MISSING_LAT_LNG_PAIR);
         }
 
-        List<QuizLocationAnswer> correctLocations = quiz.getQuizLocationAnswers();
         // Check if number of coordinates exceeds correct locations
+        List<QuizLocationAnswer> correctLocations = quiz.getQuizLocationAnswers();
         if (coordinates.length / 2 > correctLocations.size()) {
             throw new ApplicationException(ErrorCode.TOO_MANY_COORDINATE_PAIRS);
         }
@@ -238,31 +310,26 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 }
             }
 
-            // Match each user coordinate to a unique correct location
-            List<QuizLocationAnswer> unmatchedLocations = new ArrayList<>(correctLocations);
+            // Check if each user coordinate is within radius of any correct location // UPDATE
             int correctCount = 0;
-
             for (double[] userCoord : userCoordinates) {
                 double userLong = userCoord[0];
                 double userLat = userCoord[1];
-                QuizLocationAnswer matchedLocation = null;
-                double minDistance = Double.MAX_VALUE;
+                boolean isWithinRadius = false;
 
-                // Find the closest unmatched correct location within radius
-                for (QuizLocationAnswer location : unmatchedLocations) {
+                for (QuizLocationAnswer location : correctLocations) {
                     double distance = calculateHaversineDistance(
                             userLat, userLong,
                             location.getLatitude(), location.getLongitude()
                     );
-                    if (distance <= location.getRadius() && distance < minDistance) {
-                        minDistance = distance;
-                        matchedLocation = location;
+                    if (distance <= location.getRadius()) {
+                        isWithinRadius = true;
+                        break; // Stop checking once a valid location is found
                     }
                 }
 
-                if (matchedLocation != null) {
+                if (isWithinRadius) {
                     correctCount++;
-                    unmatchedLocations.remove(matchedLocation); // Remove matched location
                 }
             }
 
