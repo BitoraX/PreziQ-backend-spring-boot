@@ -147,11 +147,6 @@ public class UserServiceImpl implements UserService {
                 throw new ApplicationException(ErrorCode.PHONE_NUMBER_EXISTED);
         }
 
-        // Check avatar (delete old avatar) and status isVerified
-        String currentAvatar = updateUserForAdminRequest.getAvatar();
-        if (currentAvatar != null)
-            s3FileStorageService.deleteOldSingleImageIfPresent(currentUser.getAvatar());
-
         Boolean isVerifiedAccount = updateUserForAdminRequest.getIsVerified();
         if (currentUser.getIsVerified().equals(isVerifiedAccount))
             throw new ApplicationException(ErrorCode.USER_SAME_IS_VERIFY);
