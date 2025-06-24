@@ -36,7 +36,7 @@ public interface ActivityService {
 
     void deleteSlideElement(String slideId, String elementId);
 
-    void addMatchingPairItem(String quizId);
+    QuizMatchingPairAnswerResponse addMatchingPairItem(String quizId);
 
     QuizMatchingPairAnswerResponse updateAndReorderMatchingPairItem(String quizId, String itemId, UpdateAndReorderMatchingPairItemRequest request);
 
