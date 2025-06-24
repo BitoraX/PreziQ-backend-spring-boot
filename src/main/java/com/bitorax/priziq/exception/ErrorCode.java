@@ -34,6 +34,7 @@ public enum ErrorCode {
     UNAUTHORIZED_ACCESS(1019, HttpStatus.UNAUTHORIZED, "User does not have permission to access this resource"),
     INVALID_SORT_FIELD(1020, HttpStatus.BAD_REQUEST, "Invalid sort field"),
     NO_UPDATE_PROVIDED(1021, HttpStatus.BAD_REQUEST, "No changes provided for update"),
+    TOO_MANY_REQUESTS(1022, HttpStatus.TOO_MANY_REQUESTS, "Too many requests"),
 
     // Module auth errors
     EMAIL_NOT_BLANK(1101, HttpStatus.BAD_REQUEST, "Email must not be blank"),
