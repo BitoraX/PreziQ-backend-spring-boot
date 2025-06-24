@@ -129,13 +129,13 @@ public class ActivityController {
     }
 
     @PostMapping("/quizzes/{quizId}/matching-pairs/items")
-    ApiResponse<Void> addMatchingPairItem(
+    ApiResponse<QuizMatchingPairAnswerResponse> addMatchingPairItem(
             @PathVariable String quizId,
             HttpServletRequest servletRequest
     ) {
-        activityService.addMatchingPairItem(quizId);
-        return ApiResponse.<Void>builder()
+        return ApiResponse.<QuizMatchingPairAnswerResponse>builder()
                 .message("Matching pair item added successfully")
+                .data(activityService.addMatchingPairItem(quizId))
                 .meta(buildMetaInfo(servletRequest))
                 .build();
     }

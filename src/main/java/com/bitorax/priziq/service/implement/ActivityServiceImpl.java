@@ -166,7 +166,6 @@ public class ActivityServiceImpl implements ActivityService {
                 break;
             case QUIZ_CHECKBOXES:
                 UpdateChoiceQuizRequest checkboxesRequest = (UpdateChoiceQuizRequest) updateQuizRequest;
-                activityUtils.validateQuizCheckboxes(checkboxesRequest);
                 activityUtils.handleChoiceQuiz(quiz, checkboxesRequest);
                 break;
             case QUIZ_REORDER:
@@ -321,7 +320,7 @@ public class ActivityServiceImpl implements ActivityService {
     // Quiz matching pairs (logic item, connection)
     @Override
     @Transactional
-    public void addMatchingPairItem(String quizId) {
+    public QuizMatchingPairAnswerResponse addMatchingPairItem(String quizId) {
         Quiz quiz = activityUtils.validateMatchingPairQuiz(quizId);
 
         QuizMatchingPairAnswer answer = quiz.getQuizMatchingPairAnswer();
@@ -358,6 +357,8 @@ public class ActivityServiceImpl implements ActivityService {
         // Save both items
         quizMatchingPairItemRepository.save(leftItem);
         quizMatchingPairItemRepository.save(rightItem);
+
+        return activityMapper.quizMatchingPairAnswerToResponse(answer);
     }
 
     @Override
@@ -385,20 +386,22 @@ public class ActivityServiceImpl implements ActivityService {
             int maxDisplayOrder = quizMatchingPairItemRepository
                     .findMaxDisplayOrderByQuizMatchingPairAnswerAndIsLeftColumn(answer, targetIsLeftColumn)
                     .orElse(0);
-            if (newDisplayOrder < 1 || newDisplayOrder > maxDisplayOrder) {
+            if (newDisplayOrder < 1 || (maxDisplayOrder > 0 && newDisplayOrder > maxDisplayOrder)) {
                 throw new ApplicationException(ErrorCode.INVALID_QUIZ_MATCHING_PAIR_DISPLAY_ORDER);
             }
         }
 
         // Delete connection if isLeftColumn or displayOrder changed
-        List<QuizMatchingPairConnection> connections = quizMatchingPairConnectionRepository
-                .findByQuizIdAndLeftItemIdOrRightItemId(quizId, itemId);
-        if (connections.size() > 1) {
-            throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS);
-        }
-        if (!connections.isEmpty()) {
-            QuizMatchingPairConnection connection = connections.getFirst();
-            quizMatchingPairConnectionRepository.delete(connection);
+        if (!Objects.equals(newIsLeftColumn, currentIsLeftColumn) || !Objects.equals(newDisplayOrder, currentDisplayOrder)) {
+            List<QuizMatchingPairConnection> connections = quizMatchingPairConnectionRepository
+                    .findByQuizIdAndLeftItemIdOrRightItemId(quizId, itemId);
+            if (connections.size() > 1) {
+                throw new ApplicationException(ErrorCode.QUIZ_MATCHING_PAIR_ITEM_MULTIPLE_CONNECTIONS);
+            }
+            if (!connections.isEmpty()) {
+                QuizMatchingPairConnection connection = connections.getFirst();
+                quizMatchingPairConnectionRepository.delete(connection);
+            }
         }
 
         // Logic to handle change
