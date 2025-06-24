@@ -105,13 +105,6 @@ public class ActivityUtils {
         }
     }
 
-    public void validateQuizCheckboxes(UpdateChoiceQuizRequest request) {
-        long correctCount = request.getAnswers().stream().filter(ChoiceAnswerRequest::getIsCorrect).count();
-        if (correctCount < 1) {
-            throw new ApplicationException(ErrorCode.INVALID_QUIZ_CHECKBOXES_ANSWERS);
-        }
-    }
-
     public void handleChoiceQuiz(Quiz quiz, UpdateChoiceQuizRequest request) {
         List<QuizAnswer> answers = new ArrayList<>();
         for (int i = 0; i < request.getAnswers().size(); i++) {
