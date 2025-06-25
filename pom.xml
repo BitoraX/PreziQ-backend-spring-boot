@@ -24,6 +24,7 @@
         <libphonenumber.version>9.0.1</libphonenumber.version>
         <dotenv-java.version>3.2.0</dotenv-java.version>
         <google.zxing.version>3.5.3</google.zxing.version>
+        <bucket4j-core.version>8.0.1</bucket4j-core.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -37,6 +38,11 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>com.github.vladimir-bukhtoyarov</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j-core.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-java</artifactId>
