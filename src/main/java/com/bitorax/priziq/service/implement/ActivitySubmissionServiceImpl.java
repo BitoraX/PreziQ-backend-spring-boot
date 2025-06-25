@@ -310,7 +310,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 }
             }
 
-            // Check if each user coordinate is within radius of any correct location // UPDATE
+            // Check if each user coordinate is within radius of any correct location
             int correctCount = 0;
             for (double[] userCoord : userCoordinates) {
                 double userLong = userCoord[0];
@@ -322,7 +322,10 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                             userLat, userLong,
                             location.getLatitude(), location.getLongitude()
                     );
-                    if (distance <= location.getRadius()) {
+
+                    double radiusInMeters = location.getRadius() * 1000; // convert km to meters
+
+                    if (distance <= radiusInMeters) {
                         isWithinRadius = true;
                         break; // Stop checking once a valid location is found
                     }
@@ -344,12 +347,12 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
         }
     }
 
-    private double calculateHaversineDistance(double lat1, double lon1, double lat2, double lon2) {
+    private double calculateHaversineDistance(double lat1, double long1, double lat2, double long2) {
         final int EARTH_RADIUS = 6371000; // meters
         double lat1Rad = Math.toRadians(lat1);
         double lat2Rad = Math.toRadians(lat2);
         double deltaLatRad = Math.toRadians(lat2 - lat1);
-        double deltaLonRad = Math.toRadians(lon2 - lon1);
+        double deltaLonRad = Math.toRadians(long2 - long1);
 
         double a = Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
                 Math.cos(lat1Rad) * Math.cos(lat2Rad) *
