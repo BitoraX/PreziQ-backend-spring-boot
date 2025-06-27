@@ -146,7 +146,7 @@ public class CollectionServiceImpl implements CollectionService {
                         .hasNext(collectionPage.hasNext())
                         .hasPrevious(collectionPage.hasPrevious())
                         .build())
-                .content(this.collectionMapper.collectionsToCollectionDetailResponseList(collectionPage.getContent()))
+                .content(this.collectionMapper.collectionsToCollectionSummaryResponseList(collectionPage.getContent()))
                 .build();
     }
 
