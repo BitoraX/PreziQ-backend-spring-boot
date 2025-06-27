@@ -32,11 +32,12 @@ spring:
         redis:
             host: ${REDIS_HOST:localhost}
             port: ${REDIS_PORT:6379}
-            password: ${REDIS_PASSWORD:}
+            username: ${REDIS_USERNAME:default}  # Username for Redis authentication, default to 'default'
+            password: ${REDIS_PASSWORD:}         # Password for Redis authentication
             database: ${REDIS_DATABASE:0}
-            timeout: ${REDIS_TIMEOUT:2000ms} # Timeout for Redis command
+            timeout: ${REDIS_TIMEOUT:2000}    # Timeout for Redis commands
             lettuce:
-                shutdown-timeout: ${REDIS_SHUTDOWN_TIMEOUT:100ms} # Timeout when closing connection
+                shutdown-timeout: ${REDIS_SHUTDOWN_TIMEOUT:100}  # Timeout when closing connection
 
     servlet:
         multipart:
