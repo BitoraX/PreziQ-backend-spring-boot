@@ -347,14 +347,21 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 }
             }
 
-            // Check if each user coordinate is within radius of any correct location
+            // Track matched correct locations to prevent reuse
+            Set<String> matchedLocationIds = new HashSet<>();
             int correctCount = 0;
+
             for (double[] userCoord : userCoordinates) {
                 double userLong = userCoord[0];
                 double userLat = userCoord[1];
                 boolean isWithinRadius = false;
 
                 for (QuizLocationAnswer location : correctLocations) {
+                    // Skip if this location was already matched
+                    if (matchedLocationIds.contains(location.getQuizLocationAnswerId())) {
+                        continue;
+                    }
+
                     double distance = calculateHaversineDistance(
                             userLat, userLong,
                             location.getLatitude(), location.getLongitude()
@@ -364,6 +371,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
                     if (distance <= radiusInMeters) {
                         isWithinRadius = true;
+                        matchedLocationIds.add(location.getQuizLocationAnswerId()); // Mark as matched
                         break; // Stop checking once a valid location is found
                     }
                 }
