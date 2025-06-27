@@ -24,10 +24,10 @@ public class QuizMatchingPairAnswer {
     @MapsId
     Quiz quiz;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     String leftColumnName;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     String rightColumnName;
 
     @OneToMany(mappedBy = "quizMatchingPairAnswer", cascade = CascadeType.ALL, orphanRemoval = true)

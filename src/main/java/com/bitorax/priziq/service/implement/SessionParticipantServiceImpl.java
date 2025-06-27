@@ -5,6 +5,8 @@ import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
+import com.bitorax.priziq.dto.cache.ParticipantCacheDTO;
+import com.bitorax.priziq.dto.cache.SessionCacheDTO;
 import com.bitorax.priziq.dto.request.session.session_participant.GetParticipantsRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.JoinSessionRequest;
 import com.bitorax.priziq.dto.request.session.session_participant.LeaveSessionRequest;
@@ -13,11 +15,14 @@ import com.bitorax.priziq.dto.response.session.SessionParticipantSummaryResponse
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.SessionParticipantMapper;
+import com.bitorax.priziq.mapper.cache.ParticipantCacheMapper;
+import com.bitorax.priziq.mapper.cache.SessionCacheMapper;
 import com.bitorax.priziq.repository.ActivitySubmissionRepository;
 import com.bitorax.priziq.repository.SessionParticipantRepository;
 import com.bitorax.priziq.repository.SessionRepository;
 import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.SessionParticipantService;
+import com.bitorax.priziq.service.cache.SessionRedisCache;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -38,12 +43,19 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
     UserRepository userRepository;
     ActivitySubmissionRepository activitySubmissionRepository;
     SessionParticipantMapper sessionParticipantMapper;
+    ParticipantCacheMapper participantCacheMapper;
+    SessionCacheMapper sessionCacheMapper;
+    SessionRedisCache sessionRedisCache;
 
     @Override
     @Transactional
     public List<SessionParticipantSummaryResponse> joinSession(JoinSessionRequest request, String websocketSessionId, String stompClientId) {
         Session session = sessionRepository.findBySessionCode(request.getSessionCode())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Cache Session after retrieval
+        SessionCacheDTO cacheDTO = sessionCacheMapper.sessionToCacheDTO(session);
+        sessionRedisCache.cacheSession(session.getSessionId(), cacheDTO);
 
         if (session.getSessionStatus() != SessionStatus.PENDING) {
             throw new ApplicationException(ErrorCode.SESSION_NOT_PENDING);
@@ -87,6 +99,13 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
         sessionParticipantRepository.save(sessionParticipant);
 
+        // Update cache for Participants
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(session.getSessionCode());
+        sessionRedisCache.cacheParticipants(session.getSessionId(),
+                participants.stream()
+                        .map(participantCacheMapper::sessionParticipantToCacheDTO)
+                        .collect(Collectors.toList()));
+
         return findParticipantsBySessionCode(GetParticipantsRequest.builder()
                 .sessionCode(session.getSessionCode())
                 .build());
@@ -99,6 +118,10 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
         SessionStatus sessionStatus = session.getSessionStatus();
 
+        // Cache Session after retrieval
+        SessionCacheDTO cacheDTO = sessionCacheMapper.sessionToCacheDTO(session);
+        sessionRedisCache.cacheSession(session.getSessionId(), cacheDTO);
+
         SessionParticipant participant = sessionParticipantRepository
                 .findBySessionAndWebsocketSessionId(session, websocketSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
@@ -109,10 +132,20 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                     .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
             if (!submissions.isEmpty()) {
                 activitySubmissionRepository.deleteAll(submissions);
+
+                // Update cache for Submissions
+                sessionRedisCache.cacheSubmissions(session.getSessionId(), new ArrayList<>());
             }
 
             // Delete the SessionParticipant
             sessionParticipantRepository.delete(participant);
+
+            // Update cache for Participants
+            List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(session.getSessionCode());
+            sessionRedisCache.cacheParticipants(session.getSessionId(),
+                    participants.stream()
+                            .map(participantCacheMapper::sessionParticipantToCacheDTO)
+                            .collect(Collectors.toList()));
 
             // Return updated participant list
             return findParticipantsBySessionCode(GetParticipantsRequest.builder()
@@ -123,10 +156,16 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
             participant.setIsConnected(false);
             sessionParticipantRepository.save(participant);
 
+            // Update cache for Participants
+            List<SessionParticipant> participants = sessionParticipantRepository
+                    .findBySession_SessionCodeAndIsConnectedTrue(session.getSessionCode());
+            sessionRedisCache.cacheParticipants(session.getSessionId(),
+                    participants.stream()
+                            .map(participantCacheMapper::sessionParticipantToCacheDTO)
+                            .collect(Collectors.toList()));
+
             // Return list of active participants
-            return sessionParticipantRepository
-                    .findBySession_SessionCodeAndIsConnectedTrue(session.getSessionCode())
-                    .stream()
+            return participants.stream()
                     .map(sessionParticipantMapper::sessionParticipantToSummaryResponse)
                     .collect(Collectors.toList());
         } else {
@@ -135,8 +174,33 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
     }
 
     @Override
-    public List<SessionParticipantSummaryResponse> findParticipantsBySessionCode(GetParticipantsRequest request){
-        return sessionParticipantMapper.sessionParticipantsToSummaryResponseList(sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode()));
+    public List<SessionParticipantSummaryResponse> findParticipantsBySessionCode(GetParticipantsRequest request) {
+        Session session = sessionRepository.findBySessionCode(request.getSessionCode())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
+        // Check the cache for Participants before querying DB
+        List<ParticipantCacheDTO> cachedParticipants = sessionRedisCache.getCachedParticipants(session.getSessionId());
+        if (!cachedParticipants.isEmpty()) {
+            return cachedParticipants.stream()
+                    .map(participant -> SessionParticipantSummaryResponse.builder()
+                            .sessionParticipantId(participant.getSessionParticipantId())
+                            .displayName(participant.getDisplayName())
+                            .displayAvatar(participant.getDisplayAvatar())
+                            .realtimeScore(participant.getRealtimeScore())
+                            .realtimeRanking(participant.getRealtimeRanking())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
+        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionCode(request.getSessionCode());
+
+        // Cache Participants after retrieval
+        sessionRedisCache.cacheParticipants(session.getSessionId(),
+                participants.stream()
+                        .map(participantCacheMapper::sessionParticipantToCacheDTO)
+                        .collect(Collectors.toList()));
+
+        return sessionParticipantMapper.sessionParticipantsToSummaryResponseList(participants);
     }
 
     @Override
@@ -166,10 +230,23 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
         // Update realtimeRanking
         for (int i = 0; i < sortedParticipants.size(); i++) {
             sortedParticipants.get(i).setRealtimeRanking(i + 1);
+            // Update cache for each participant
+            sessionRedisCache.updateParticipantScoreAndRanking(
+                    session.getSessionId(),
+                    sortedParticipants.get(i).getSessionParticipantId(),
+                    sortedParticipants.get(i).getRealtimeScore(),
+                    sortedParticipants.get(i).getRealtimeRanking()
+            );
         }
 
         // Save all participants with updated rankings
         sessionParticipantRepository.saveAll(sortedParticipants);
+
+        // Update cache for all Participants
+        sessionRedisCache.cacheParticipants(session.getSessionId(),
+                sortedParticipants.stream()
+                        .map(participantCacheMapper::sessionParticipantToCacheDTO)
+                        .collect(Collectors.toList()));
 
         // Return updated participant list
         return sessionParticipantMapper.sessionParticipantsToSummaryResponseList(participants);
@@ -177,6 +254,22 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
 
     @Override
     public List<Map.Entry<String, AchievementUpdateResponse>> getAchievementUpdateDetails(List<AchievementUpdateResponse> achievementUpdates, String sessionId) {
+        // Check the cache for Participants before querying DB
+        List<ParticipantCacheDTO> cachedParticipants = sessionRedisCache.getCachedParticipants(sessionId);
+        List<SessionParticipant> participants;
+        if (!cachedParticipants.isEmpty()) {
+            participants = cachedParticipants.stream()
+                    .map(participantCacheMapper::participantCacheDTOToSessionParticipant)
+                    .collect(Collectors.toList());
+        } else {
+            participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
+            // Cache Participants after retrieval
+            sessionRedisCache.cacheParticipants(sessionId,
+                    participants.stream()
+                            .map(participantCacheMapper::sessionParticipantToCacheDTO)
+                            .collect(Collectors.toList()));
+        }
+
         List<Map.Entry<String, AchievementUpdateResponse>> updateDetails = new ArrayList<>();
 
         if (achievementUpdates == null || achievementUpdates.isEmpty()) {
@@ -190,8 +283,6 @@ public class SessionParticipantServiceImpl implements SessionParticipantService 
                 userIdToUpdateMap.put(userId, update);
             }
         }
-
-        List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
 
         for (SessionParticipant participant : participants) {
             String stompClientId = participant.getStompClientId();

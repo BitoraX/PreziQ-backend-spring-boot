@@ -8,6 +8,8 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.*;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
+import com.bitorax.priziq.dto.cache.CollectionCacheDTO;
+import com.bitorax.priziq.dto.cache.ActivityCacheDTO;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -21,12 +23,15 @@ import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
+import com.bitorax.priziq.mapper.cache.ActivityCacheMapper;
+import com.bitorax.priziq.mapper.cache.CollectionCacheMapper;
 import com.bitorax.priziq.repository.ActivityRepository;
 import com.bitorax.priziq.repository.CollectionRepository;
 import com.bitorax.priziq.repository.QuizRepository;
 import com.bitorax.priziq.repository.UserRepository;
 import com.bitorax.priziq.service.ActivityService;
 import com.bitorax.priziq.service.CollectionService;
+import com.bitorax.priziq.service.cache.SessionRedisCache;
 import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -56,6 +61,9 @@ public class CollectionServiceImpl implements CollectionService {
     ActivityService activityService;
     CollectionMapper collectionMapper;
     SecurityUtils securityUtils;
+    SessionRedisCache sessionRedisCache;
+    CollectionCacheMapper collectionCacheMapper;
+    ActivityCacheMapper activityCacheMapper;
 
     @NonFinal
     @Value("${priziq.quiz.default.question}")
@@ -109,6 +117,10 @@ public class CollectionServiceImpl implements CollectionService {
 
         Collection savedCollection = collectionRepository.save(collection);
 
+        // Cache Collection after creation
+        sessionRedisCache.cacheCollectionById(savedCollection.getCollectionId(),
+                collectionCacheMapper.collectionToCacheDTO(savedCollection));
+
         // Create default QUIZ_BUTTONS activity
         createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
 
@@ -131,12 +143,28 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     public CollectionDetailResponse getCollectionById(String collectionId){
-        return collectionMapper.collectionToDetailResponse(collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND)));
+        // Check cache before querying DB
+        Collection collection = getCollectionFromCacheOrDb(collectionId);
+
+        // Cache Activities list
+        List<ActivityCacheDTO> cachedActivities = sessionRedisCache.getCachedCollectionActivities(collectionId);
+        if (cachedActivities.isEmpty()) {
+            cachedActivities = collection.getActivities().stream()
+                    .map(activityCacheMapper::activityToCacheDTO)
+                    .collect(Collectors.toList());
+            sessionRedisCache.cacheCollectionActivities(collectionId, cachedActivities);
+        }
+        return collectionMapper.collectionToDetailResponse(collection);
     }
 
     @Override
     public PaginationResponse getAllCollectionWithQuery(Specification<Collection> spec, Pageable pageable) {
         Page<Collection> collectionPage = this.collectionRepository.findAll(spec, pageable);
+        // Cache each Collection in the page
+        collectionPage.getContent().forEach(collection ->
+                sessionRedisCache.cacheCollectionById(collection.getCollectionId(),
+                        collectionCacheMapper.collectionToCacheDTO(collection)));
+
         return PaginationResponse.builder()
                 .meta(PaginationMeta.builder()
                         .currentPage(pageable.getPageNumber() + 1) // base-index = 0
@@ -146,7 +174,7 @@ public class CollectionServiceImpl implements CollectionService {
                         .hasNext(collectionPage.hasNext())
                         .hasPrevious(collectionPage.hasPrevious())
                         .build())
-                .content(this.collectionMapper.collectionsToCollectionDetailResponseList(collectionPage.getContent()))
+                .content(this.collectionMapper.collectionsToCollectionSummaryResponseList(collectionPage.getContent()))
                 .build();
     }
 
@@ -154,7 +182,8 @@ public class CollectionServiceImpl implements CollectionService {
     public CollectionSummaryResponse updateCollectionById(String collectionId, UpdateCollectionRequest updateCollectionRequest){
         // Check owner or admin to access and get the current collection
         validateCollectionOwnership(collectionId);
-        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+        Collection currentCollection = this.collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         String collectionTopic = updateCollectionRequest.getTopic();
         if(collectionTopic != null){
@@ -162,7 +191,11 @@ public class CollectionServiceImpl implements CollectionService {
         }
 
         this.collectionMapper.updateCollectionRequestToCollection(currentCollection, updateCollectionRequest);
-        return this.collectionMapper.collectionToSummaryResponse(collectionRepository.save(currentCollection));
+        Collection savedCollection = collectionRepository.save(currentCollection);
+
+        // Update cache after updating Collection
+        sessionRedisCache.cacheCollectionById(collectionId, collectionCacheMapper.collectionToCacheDTO(savedCollection));
+        return this.collectionMapper.collectionToSummaryResponse(savedCollection);
     }
 
     @Override
@@ -170,9 +203,13 @@ public class CollectionServiceImpl implements CollectionService {
     public void deleteCollectionById(String collectionId){
         // Check owner or admin to access and get the current collection
         validateCollectionOwnership(collectionId);
-        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+        Collection currentCollection = this.collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         collectionRepository.delete(currentCollection);
+
+        // Remove cache after deleting Collection
+        sessionRedisCache.removeCachedCollection(collectionId);
     }
 
     @Override
@@ -244,7 +281,7 @@ public class CollectionServiceImpl implements CollectionService {
 
         // Save only if any changes
         if (!updatedActivities.isEmpty()) {
-            activityRepository.saveAll(
+            List<Activity> savedActivities = activityRepository.saveAll(
                     updatedActivities.stream()
                             .map(r -> {
                                 Activity a = activityMap.get(r.getActivityId());
@@ -252,6 +289,11 @@ public class CollectionServiceImpl implements CollectionService {
                                 return a;
                             }).collect(Collectors.toList())
             );
+            // Update cache for Activities after reordering
+            sessionRedisCache.cacheCollectionActivities(collectionId,
+                    savedActivities.stream()
+                            .map(activityCacheMapper::activityToCacheDTO)
+                            .collect(Collectors.toList()));
         }
 
         return updatedActivities;
@@ -268,9 +310,14 @@ public class CollectionServiceImpl implements CollectionService {
         Map<String, List<CollectionSummaryResponse>> grouped = results.stream()
                 .map(result -> {
                     Collection collection = (Collection) result[1];
+
                     // Group all isPublished = true into a PUBLISH and base topic
-                    String groupKey = CollectionTopicType.PUBLISH.name(); // Always add to PUBLISH
+                    String groupKey = CollectionTopicType.PUBLISH.name();
                     CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+
+                    // Cache Collection
+                    sessionRedisCache.cacheCollectionById(collection.getCollectionId(),
+                            collectionCacheMapper.collectionToCacheDTO(collection));
                     return new AbstractMap.SimpleEntry<>(groupKey, summary);
                 })
                 .collect(Collectors.groupingBy(
@@ -282,8 +329,12 @@ public class CollectionServiceImpl implements CollectionService {
         Map<String, List<CollectionSummaryResponse>> topicGroups = results.stream()
                 .map(result -> {
                     Collection collection = (Collection) result[1];
-                    String groupKey = ((CollectionTopicType) result[0]).name(); // Group by base topic
+                    String groupKey = ((CollectionTopicType) result[0]).name();
                     CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+
+                    // Cache Collection
+                    sessionRedisCache.cacheCollectionById(collection.getCollectionId(),
+                            collectionCacheMapper.collectionToCacheDTO(collection));
                     return new AbstractMap.SimpleEntry<>(groupKey, summary);
                 })
                 .collect(Collectors.groupingBy(
@@ -313,9 +364,8 @@ public class CollectionServiceImpl implements CollectionService {
         User currentUser = userRepository.findByEmail(SecurityUtils.getCurrentUserEmailFromJwt())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.USER_NOT_FOUND));
 
-        // Find the collection to be copied
-        Collection sourceCollection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+        // Find the collection to be copied and check the cache before querying DB
+        Collection sourceCollection = getCollectionFromCacheOrDb(collectionId);
 
         // Check if the collection is published if it belongs to another user
         if (!Objects.equals(sourceCollection.getCreator().getUserId(), currentUser.getUserId())
@@ -336,6 +386,10 @@ public class CollectionServiceImpl implements CollectionService {
                 .build();
 
         Collection savedCollection = collectionRepository.save(newCollection);
+
+        // Cache new Collection
+        sessionRedisCache.cacheCollectionById(savedCollection.getCollectionId(),
+                collectionCacheMapper.collectionToCacheDTO(savedCollection));
 
         // Copy activities
         List<Activity> sourceActivities = sourceCollection.getActivities();
@@ -484,6 +538,12 @@ public class CollectionServiceImpl implements CollectionService {
             activityRepository.save(newActivity);
         }
 
+        // Cache Activities of the new Collection
+        List<ActivityCacheDTO> newActivities = savedCollection.getActivities().stream()
+                .map(activityCacheMapper::activityToCacheDTO)
+                .collect(Collectors.toList());
+        sessionRedisCache.cacheCollectionActivities(savedCollection.getCollectionId(), newActivities);
+
         return collectionMapper.collectionToSummaryResponse(savedCollection);
     }
 
@@ -561,5 +621,21 @@ public class CollectionServiceImpl implements CollectionService {
         activity.setQuiz(defaultQuiz);
 
         quizRepository.save(defaultQuiz);
+
+        // Cache new Activity
+        sessionRedisCache.cacheCollectionActivities(collectionId,
+                List.of(activityCacheMapper.activityToCacheDTO(activity)));
+    }
+
+    private Collection getCollectionFromCacheOrDb(String collectionId) {
+        CollectionCacheDTO cachedCollection = sessionRedisCache.getCachedCollectionById(collectionId);
+        if (cachedCollection != null) {
+            return collectionCacheMapper.collectionCacheDTOToCollection(cachedCollection);
+        }
+        Collection collection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+        sessionRedisCache.cacheCollectionById(collectionId,
+                collectionCacheMapper.collectionToCacheDTO(collection));
+        return collection;
     }
 }

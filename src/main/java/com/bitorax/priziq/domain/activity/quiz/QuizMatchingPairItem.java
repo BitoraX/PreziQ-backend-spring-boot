@@ -21,7 +21,7 @@ public class QuizMatchingPairItem {
     @JoinColumn(name = "quiz_matching_pair_answer_id", nullable = false)
     QuizMatchingPairAnswer quizMatchingPairAnswer;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     String content;
 
     @Column(nullable = false)

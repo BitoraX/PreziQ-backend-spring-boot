@@ -23,4 +23,6 @@ public interface CollectionMapper {
     void updateCollectionRequestToCollection(@MappingTarget Collection collection, UpdateCollectionRequest updateCollectionRequest);
 
     List<CollectionDetailResponse> collectionsToCollectionDetailResponseList(List<Collection> collections);
+
+    List<CollectionSummaryResponse> collectionsToCollectionSummaryResponseList(List<Collection> collections);
 }
