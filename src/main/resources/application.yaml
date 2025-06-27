@@ -29,6 +29,14 @@ spring:
         web:
             pageable:
                 one-indexed-parameters: true
+        redis:
+            host: ${REDIS_HOST:localhost}
+            port: ${REDIS_PORT:6379}
+            password: ${REDIS_PASSWORD:}
+            database: ${REDIS_DATABASE:0}
+            timeout: ${REDIS_TIMEOUT:2000ms} # Timeout for Redis command
+            lettuce:
+                shutdown-timeout: ${REDIS_SHUTDOWN_TIMEOUT:100ms} # Timeout when closing connection
 
     servlet:
         multipart:

@@ -7,13 +7,18 @@ import com.bitorax.priziq.domain.activity.quiz.*;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
+import com.bitorax.priziq.dto.cache.SessionCacheDTO;
+import com.bitorax.priziq.dto.cache.SubmissionCacheDTO;
 import com.bitorax.priziq.dto.request.session.activity_submission.CreateActivitySubmissionRequest;
 import com.bitorax.priziq.dto.response.session.ActivitySubmissionSummaryResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
+import com.bitorax.priziq.mapper.cache.SessionCacheMapper;
+import com.bitorax.priziq.mapper.cache.SubmissionCacheMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.ActivitySubmissionService;
+import com.bitorax.priziq.service.cache.SessionRedisCache;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +41,9 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
     SessionRepository sessionRepository;
     SessionParticipantRepository sessionParticipantRepository;
     ActivitySubmissionMapper activitySubmissionMapper;
+    SubmissionCacheMapper submissionCacheMapper;
+    SessionCacheMapper sessionCacheMapper;
+    SessionRedisCache sessionRedisCache;
 
     @NonFinal
     @Value("${priziq.submission.base-score}")
@@ -59,6 +67,10 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
         SessionParticipant sessionParticipant = sessionParticipantRepository
                 .findBySessionAndWebsocketSessionId(session, websocketSessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
+
+        // Cache Session after retrieval
+        SessionCacheDTO cacheDTO = sessionCacheMapper.sessionToCacheDTO(session);
+        sessionRedisCache.cacheSession(session.getSessionId(), cacheDTO);
 
         // Check if activity is a quiz
         Quiz quiz = activity.getQuiz();
@@ -111,9 +123,26 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
         // Adjust the score based on response time if correct and not NO_POINTS
         if (isCorrect && pointType != PointType.NO_POINTS) {
-            List<ActivitySubmission> correctSubmissions = activitySubmissionRepository
-                    .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
-                            session.getSessionId(), request.getActivityId(), true);
+            // Check cache for Submissions before querying DB
+            List<SubmissionCacheDTO> cachedSubmissions = sessionRedisCache.getCachedSubmissions(session.getSessionId());
+            List<ActivitySubmission> correctSubmissions;
+            if (!cachedSubmissions.isEmpty()) {
+                correctSubmissions = cachedSubmissions.stream()
+                        .map(submissionCacheMapper::submissionCacheDTOToActivitySubmission)
+                        .filter(sub -> sub.getActivity().getActivityId().equals(request.getActivityId())
+                                && Boolean.TRUE.equals(sub.getIsCorrect()))
+                        .collect(Collectors.toList());
+            } else {
+                correctSubmissions = activitySubmissionRepository
+                        .findBySessionParticipant_Session_SessionIdAndActivity_ActivityIdAndIsCorrect(
+                                session.getSessionId(), request.getActivityId(), true);
+
+                // Cache Submissions after retrieval
+                sessionRedisCache.cacheSubmissions(session.getSessionId(),
+                        correctSubmissions.stream()
+                                .map(submissionCacheMapper::activitySubmissionToCacheDTO)
+                                .collect(Collectors.toList()));
+            }
 
             // Sort by createdAt (earliest first) and find the index of the current submission
             correctSubmissions.sort(Comparator.comparing(ActivitySubmission::getCreatedAt));
@@ -123,6 +152,14 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
             responseScore = Math.max(0, responseScore - (rank * timeDecrement));
             savedSubmission.setResponseScore(responseScore);
             savedSubmission = activitySubmissionRepository.save(savedSubmission);
+
+            // Update cache for Submissions after score adjustment
+            List<ActivitySubmission> allSubmissions = activitySubmissionRepository
+                    .findBySessionParticipant_Session_SessionId(session.getSessionId());
+            sessionRedisCache.cacheSubmissions(session.getSessionId(),
+                    allSubmissions.stream()
+                            .map(submissionCacheMapper::activitySubmissionToCacheDTO)
+                            .collect(Collectors.toList()));
         }
 
         return activitySubmissionMapper.activitySubmissionToSummaryResponse(savedSubmission);
@@ -310,14 +347,21 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
                 }
             }
 
-            // Check if each user coordinate is within radius of any correct location
+            // Track matched correct locations to prevent reuse
+            Set<String> matchedLocationIds = new HashSet<>();
             int correctCount = 0;
+
             for (double[] userCoord : userCoordinates) {
                 double userLong = userCoord[0];
                 double userLat = userCoord[1];
                 boolean isWithinRadius = false;
 
                 for (QuizLocationAnswer location : correctLocations) {
+                    // Skip if this location was already matched
+                    if (matchedLocationIds.contains(location.getQuizLocationAnswerId())) {
+                        continue;
+                    }
+
                     double distance = calculateHaversineDistance(
                             userLat, userLong,
                             location.getLatitude(), location.getLongitude()
@@ -327,6 +371,7 @@ public class ActivitySubmissionServiceImpl implements ActivitySubmissionService 
 
                     if (distance <= radiusInMeters) {
                         isWithinRadius = true;
+                        matchedLocationIds.add(location.getQuizLocationAnswerId()); // Mark as matched
                         break; // Stop checking once a valid location is found
                     }
                 }
