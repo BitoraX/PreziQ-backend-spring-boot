@@ -1,20 +1,22 @@
 package com.bitorax.priziq.dto.cache;
 
 import com.bitorax.priziq.constant.ActivityType;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ActivityCacheDTO implements Serializable {
+public class ActivityCacheDTO {
     String activityId;
+    String collectionId;
     String title;
+    String description;
     Boolean isPublished;
-    ActivityType activityType;
     Integer orderIndex;
+    String backgroundColor;
+    String backgroundImage;
+    ActivityType activityType;
 }

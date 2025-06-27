@@ -1,24 +1,23 @@
 package com.bitorax.priziq.dto.cache;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
+import com.bitorax.priziq.constant.SessionStatus;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.io.Serializable;
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SessionCacheDTO implements Serializable {
+public class SessionCacheDTO {
     String sessionId;
-    String sessionCode;
     String collectionId;
     String hostUserId;
-    String sessionStatus;
+    String sessionCode;
+    String joinSessionQrUrl;
     Instant startTime;
     Instant endTime;
-    List<String> participantIds;
+    SessionStatus sessionStatus;
 }

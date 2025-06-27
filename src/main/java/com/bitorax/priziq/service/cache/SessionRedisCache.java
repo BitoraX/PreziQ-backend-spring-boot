@@ -20,9 +20,10 @@ public class SessionRedisCache {
     static String ACTIVITIES_KEY_SUFFIX = ":activities";
     static String PARTICIPANTS_KEY_SUFFIX = ":participants";
     static String SUBMISSIONS_KEY_SUFFIX = ":submissions";
+    Integer CACHE_TTL_HOURS = 7200; // TTL 2 hours
 
     public void cacheSession(String sessionId, SessionCacheDTO sessionCacheDTO) {
-        cacheUtils.cacheHash(SESSION_CACHE_PREFIX + sessionId, sessionCacheDTO, 7200); // TTL 2 hours
+        cacheUtils.cacheHash(SESSION_CACHE_PREFIX + sessionId, sessionCacheDTO, CACHE_TTL_HOURS);
     }
 
     public SessionCacheDTO getCachedSession(String sessionId) {
@@ -30,7 +31,7 @@ public class SessionRedisCache {
     }
 
     public void cacheCollection(String sessionId, CollectionCacheDTO collectionCacheDTO) {
-        cacheUtils.cacheHash(SESSION_CACHE_PREFIX + sessionId + COLLECTION_KEY_SUFFIX, collectionCacheDTO, 7200);
+        cacheUtils.cacheHash(SESSION_CACHE_PREFIX + sessionId + COLLECTION_KEY_SUFFIX, collectionCacheDTO, CACHE_TTL_HOURS);
     }
 
     public CollectionCacheDTO getCachedCollection(String sessionId) {
@@ -38,7 +39,7 @@ public class SessionRedisCache {
     }
 
     public void cacheActivities(String sessionId, List<ActivityCacheDTO> activities) {
-        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + ACTIVITIES_KEY_SUFFIX, activities, 7200);
+        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + ACTIVITIES_KEY_SUFFIX, activities, CACHE_TTL_HOURS);
     }
 
     public List<ActivityCacheDTO> getCachedActivities(String sessionId) {
@@ -46,7 +47,7 @@ public class SessionRedisCache {
     }
 
     public void cacheParticipants(String sessionId, List<ParticipantCacheDTO> participants) {
-        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + PARTICIPANTS_KEY_SUFFIX, participants, 7200);
+        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + PARTICIPANTS_KEY_SUFFIX, participants, CACHE_TTL_HOURS);
     }
 
     public List<ParticipantCacheDTO> getCachedParticipants(String sessionId) {
@@ -54,7 +55,7 @@ public class SessionRedisCache {
     }
 
     public void cacheSubmissions(String sessionId, List<SubmissionCacheDTO> submissions) {
-        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + SUBMISSIONS_KEY_SUFFIX, submissions, 7200);
+        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + SUBMISSIONS_KEY_SUFFIX, submissions, CACHE_TTL_HOURS);
     }
 
     public List<SubmissionCacheDTO> getCachedSubmissions(String sessionId) {
@@ -70,7 +71,7 @@ public class SessionRedisCache {
                     p.setRealtimeScore(score);
                     p.setRealtimeRanking(ranking);
                 });
-        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + PARTICIPANTS_KEY_SUFFIX, participants, 7200);
+        cacheUtils.cacheList(SESSION_CACHE_PREFIX + sessionId + PARTICIPANTS_KEY_SUFFIX, participants, CACHE_TTL_HOURS);
     }
 
     public void removeCachedSession(String sessionId) {
@@ -80,6 +81,29 @@ public class SessionRedisCache {
                 SESSION_CACHE_PREFIX + sessionId + ACTIVITIES_KEY_SUFFIX,
                 SESSION_CACHE_PREFIX + sessionId + PARTICIPANTS_KEY_SUFFIX,
                 SESSION_CACHE_PREFIX + sessionId + SUBMISSIONS_KEY_SUFFIX
+        );
+    }
+
+    public void cacheCollectionById(String collectionId, CollectionCacheDTO collectionCacheDTO) {
+        cacheUtils.cacheHash("collection:" + collectionId, collectionCacheDTO, CACHE_TTL_HOURS);
+    }
+
+    public CollectionCacheDTO getCachedCollectionById(String collectionId) {
+        return cacheUtils.getCachedHash("collection:" + collectionId, CollectionCacheDTO.class);
+    }
+
+    public void cacheCollectionActivities(String collectionId, List<ActivityCacheDTO> activities) {
+        cacheUtils.cacheList("collection:" + collectionId + ":activities", activities, CACHE_TTL_HOURS);
+    }
+
+    public List<ActivityCacheDTO> getCachedCollectionActivities(String collectionId) {
+        return cacheUtils.getCachedList("collection:" + collectionId + ":activities", ActivityCacheDTO.class);
+    }
+
+    public void removeCachedCollection(String collectionId) {
+        cacheUtils.deleteCache(
+                "collection:" + collectionId,
+                "collection:" + collectionId + ":activities"
         );
     }
 }

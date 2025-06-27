@@ -1,20 +1,21 @@
 package com.bitorax.priziq.dto.cache;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
+import com.bitorax.priziq.constant.CollectionTopicType;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
-import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CollectionCacheDTO implements Serializable {
+public class CollectionCacheDTO {
     String collectionId;
+    String creatorId;
     String title;
+    String description;
     Boolean isPublished;
-    String topic;
-    List<String> activityIds;
+    String coverImage;
+    String defaultBackgroundMusic;
+    CollectionTopicType topic;
 }

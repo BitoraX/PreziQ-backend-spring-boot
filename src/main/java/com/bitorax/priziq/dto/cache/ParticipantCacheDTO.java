@@ -1,20 +1,22 @@
 package com.bitorax.priziq.dto.cache;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.io.Serializable;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ParticipantCacheDTO implements Serializable {
+public class ParticipantCacheDTO {
     String sessionParticipantId;
     String sessionId;
     String userId;
     String displayName;
-    int realtimeScore;
-    int realtimeRanking;
+    String displayAvatar;
+    String websocketSessionId;
+    String stompClientId;
+    Integer realtimeScore;
+    Integer realtimeRanking;
+    Boolean isConnected;
 }
