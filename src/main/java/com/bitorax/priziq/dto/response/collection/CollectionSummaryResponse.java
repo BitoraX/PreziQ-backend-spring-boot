@@ -21,4 +21,5 @@ public class CollectionSummaryResponse extends AuditResponse {
     String coverImage;
     String defaultBackgroundMusic;
     String topic;
+    Integer totalActivities;
 }
