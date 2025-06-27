@@ -7,10 +7,6 @@ import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.session.ActivitySubmission;
 import com.bitorax.priziq.domain.session.Session;
 import com.bitorax.priziq.domain.session.SessionParticipant;
-import com.bitorax.priziq.dto.cache.SessionCacheDTO;
-import com.bitorax.priziq.dto.cache.CollectionCacheDTO;
-import com.bitorax.priziq.dto.cache.ActivityCacheDTO;
-import com.bitorax.priziq.dto.cache.SubmissionCacheDTO;
 import com.bitorax.priziq.dto.request.achievement.AssignAchievementToUserRequest;
 import com.bitorax.priziq.dto.request.session.CreateSessionRequest;
 import com.bitorax.priziq.dto.request.session.EndSessionRequest;
@@ -26,14 +22,9 @@ import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.ActivityMapper;
 import com.bitorax.priziq.mapper.ActivitySubmissionMapper;
 import com.bitorax.priziq.mapper.SessionMapper;
-import com.bitorax.priziq.mapper.cache.ActivityCacheMapper;
-import com.bitorax.priziq.mapper.cache.CollectionCacheMapper;
-import com.bitorax.priziq.mapper.cache.SessionCacheMapper;
-import com.bitorax.priziq.mapper.cache.SubmissionCacheMapper;
 import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.AchievementService;
 import com.bitorax.priziq.service.SessionService;
-import com.bitorax.priziq.service.cache.SessionRedisCache;
 import com.bitorax.priziq.utils.QRCodeUtils;
 import com.bitorax.priziq.utils.SecurityUtils;
 import jakarta.persistence.criteria.Join;
@@ -53,7 +44,6 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -71,11 +61,6 @@ public class SessionServiceImpl implements SessionService {
     ActivitySubmissionMapper activitySubmissionMapper;
     SecurityUtils securityUtils;
     QRCodeUtils qrCodeUtils;
-    SessionRedisCache sessionRedisCache;
-    SessionCacheMapper sessionCacheMapper;
-    CollectionCacheMapper collectionCacheMapper;
-    ActivityCacheMapper activityCacheMapper;
-    SubmissionCacheMapper submissionCacheMapper;
 
     @NonFinal
     @Value("${session.code.characters}")
@@ -96,17 +81,8 @@ public class SessionServiceImpl implements SessionService {
     @Override
     @Transactional
     public SessionDetailResponse createSession(CreateSessionRequest createSessionRequest) {
-        // Check cache for Collection before querying DB
-        CollectionCacheDTO cachedCollection = sessionRedisCache.getCachedCollectionById(createSessionRequest.getCollectionId());
-        Collection currentCollection;
-        if (cachedCollection != null) {
-            currentCollection = collectionCacheMapper.collectionCacheDTOToCollection(cachedCollection);
-        } else {
-            currentCollection = collectionRepository.findById(createSessionRequest.getCollectionId())
-                    .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
-            sessionRedisCache.cacheCollectionById(createSessionRequest.getCollectionId(),
-                    collectionCacheMapper.collectionToCacheDTO(currentCollection));
-        }
+        Collection currentCollection = collectionRepository.findById(createSessionRequest.getCollectionId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
         Session session = Session.builder()
                 .collection(currentCollection)
@@ -126,19 +102,7 @@ public class SessionServiceImpl implements SessionService {
             throw new ApplicationException(ErrorCode.QR_CODE_GENERATION_FAILED);
         }
 
-        Session savedSession = sessionRepository.save(session);
-        // Cache Session and Collection
-        sessionRedisCache.cacheSession(savedSession.getSessionId(),
-                sessionCacheMapper.sessionToCacheDTO(savedSession));
-        sessionRedisCache.cacheCollection(savedSession.getSessionId(),
-                collectionCacheMapper.collectionToCacheDTO(currentCollection));
-        // Cache Activities
-        List<ActivityCacheDTO> activities = currentCollection.getActivities().stream()
-                .map(activityCacheMapper::activityToCacheDTO)
-                .collect(Collectors.toList());
-        sessionRedisCache.cacheActivities(savedSession.getSessionId(), activities);
-
-        return sessionMapper.sessionToDetailResponse(savedSession);
+        return sessionMapper.sessionToDetailResponse(sessionRepository.save(session));
     }
 
     @Override
@@ -151,13 +115,9 @@ public class SessionServiceImpl implements SessionService {
         }
 
         session.setSessionStatus(SessionStatus.STARTED);
-        Session savedSession = sessionRepository.save(session);
+        sessionRepository.save(session);
 
-        // Update cache for Session
-        sessionRedisCache.cacheSession(savedSession.getSessionId(),
-                sessionCacheMapper.sessionToCacheDTO(savedSession));
-
-        return sessionMapper.sessionToSummaryResponse(savedSession);
+        return sessionMapper.sessionToSummaryResponse(session);
     }
 
     @Override
@@ -169,25 +129,11 @@ public class SessionServiceImpl implements SessionService {
             throw new ApplicationException(ErrorCode.SESSION_NOT_STARTED);
         }
 
-        // Check the cache for Activities before querying DB and find the next activity
-        List<ActivityCacheDTO> cachedActivities = sessionRedisCache.getCachedActivities(session.getSessionId());
-        List<Activity> activities;
-        if (!cachedActivities.isEmpty()) {
-            activities = cachedActivities.stream()
-                    .map(activityCacheMapper::activityCacheDTOToActivity)
-                    .filter(activity -> activity.getIsPublished() != null && activity.getIsPublished())
-                    .sorted(Comparator.comparingInt(Activity::getOrderIndex))
-                    .collect(Collectors.toList());
-        } else {
-            activities = session.getCollection().getActivities().stream()
-                    .filter(Activity::getIsPublished)
-                    .sorted(Comparator.comparingInt(Activity::getOrderIndex))
-                    .toList();
-            sessionRedisCache.cacheActivities(session.getSessionId(),
-                    activities.stream()
-                            .map(activityCacheMapper::activityToCacheDTO)
-                            .collect(Collectors.toList()));
-        }
+        // Find the next activity
+        List<Activity> activities = session.getCollection().getActivities().stream()
+                .filter(Activity::getIsPublished)
+                .sorted(Comparator.comparingInt(Activity::getOrderIndex))
+                .toList();
 
         if (activities.isEmpty()) {
             return null;
@@ -219,11 +165,7 @@ public class SessionServiceImpl implements SessionService {
         // Update session status and end time
         currentSession.setEndTime(Instant.now());
         currentSession.setSessionStatus(SessionStatus.ENDED);
-        Session savedSession = sessionRepository.save(currentSession);
-
-        // Update cache for Session
-        sessionRedisCache.cacheSession(savedSession.getSessionId(),
-                sessionCacheMapper.sessionToCacheDTO(savedSession));
+        sessionRepository.save(currentSession);
 
         // Update totalPoints for each participant and collect achievement updates
         List<AchievementUpdateResponse> achievementUpdates = new ArrayList<>();
@@ -268,11 +210,8 @@ public class SessionServiceImpl implements SessionService {
             }
         }
 
-        // Remove Session cache after ending
-        sessionRedisCache.removeCachedSession(savedSession.getSessionId());
-
         return SessionEndResultResponse.builder()
-                .sessionSummary(sessionMapper.sessionToSummaryResponse(savedSession))
+                .sessionSummary(sessionMapper.sessionToSummaryResponse(currentSession))
                 .achievementUpdates(achievementUpdates)
                 .build();
     }
@@ -285,7 +224,6 @@ public class SessionServiceImpl implements SessionService {
         // Filter sessions where the user is either the host or a participant
         Specification<Session> userSpec = (root, query, criteriaBuilder) -> {
             Join<Session, SessionParticipant> participantJoin = root.join("sessionParticipants", JoinType.LEFT);
-
             // Condition: user is either the host (hostUser) or a participant (user in sessionParticipants)
             return criteriaBuilder.or(
                     criteriaBuilder.equal(root.get("hostUser").get("userId"), creator.getUserId()),
@@ -296,11 +234,6 @@ public class SessionServiceImpl implements SessionService {
         // Merge with client-provided specification if present and query
         Specification<Session> finalSpec = spec != null ? Specification.where(spec).and(userSpec) : userSpec;
         Page<Session> sessionPage = this.sessionRepository.findAll(finalSpec, pageable);
-
-        // Cache each Session in the page
-        sessionPage.getContent().forEach(session ->
-                sessionRedisCache.cacheSession(session.getSessionId(),
-                        sessionCacheMapper.sessionToCacheDTO(session)));
         return PaginationResponse.builder()
                 .meta(PaginationMeta.builder()
                         .currentPage(pageable.getPageNumber() + 1) // base-index = 0
@@ -316,33 +249,14 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public List<SessionEndSummaryResponse> calculateSessionSummary(String sessionId) {
-        // Check cache for Session before querying DB
-        SessionCacheDTO cachedSession = sessionRedisCache.getCachedSession(sessionId);
-        if (cachedSession == null) {
-            sessionRepository.findById(sessionId)
-                    .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-        }
+        sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
         List<SessionParticipant> participants = sessionParticipantRepository.findBySession_SessionId(sessionId);
         List<SessionEndSummaryResponse> summaries = new ArrayList<>();
 
         for (SessionParticipant participant : participants) {
-            // Check cache for Submissions
-            List<SubmissionCacheDTO> cachedSubmissions = sessionRedisCache.getCachedSubmissions(sessionId);
-            List<ActivitySubmission> submissions;
-            if (!cachedSubmissions.isEmpty()) {
-                submissions = cachedSubmissions.stream()
-                        .filter(sub -> sub.getSessionParticipantId().equals(participant.getSessionParticipantId()))
-                        .map(submissionCacheMapper::submissionCacheDTOToActivitySubmission)
-                        .collect(Collectors.toList());
-            } else {
-                submissions = activitySubmissionRepository
-                        .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
-                sessionRedisCache.cacheSubmissions(sessionId,
-                        submissions.stream()
-                                .map(submissionCacheMapper::activitySubmissionToCacheDTO)
-                                .collect(Collectors.toList()));
-            }
+            List<ActivitySubmission> submissions = activitySubmissionRepository
+                    .findBySessionParticipant_SessionParticipantId(participant.getSessionParticipantId());
 
             int finalScore = submissions.stream()
                     .mapToInt(submission -> submission.getResponseScore() != null ? submission.getResponseScore() : 0)
@@ -375,8 +289,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public List<Map.Entry<String, Object>> getSessionSummaryDetails(String sessionId) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
         User hostUser = session.getHostUser();
 
         List<SessionEndSummaryResponse> summaries = calculateSessionSummary(sessionId);
@@ -410,22 +323,15 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public String findSessionCodeBySessionId(String sessionId) {
-        // Check cache before querying DB
-        SessionCacheDTO cachedSession = sessionRedisCache.getCachedSession(sessionId);
-        if (cachedSession != null) {
-            return cachedSession.getSessionCode();
-        }
-
         return sessionRepository.findSessionCodeBySessionId(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
     }
 
     @Override
     public PaginationResponse getAllParticipantHistoryWithQuery(String sessionId, Specification<SessionParticipant> spec, Pageable pageable) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+        Session session = sessionRepository.findById(sessionId).orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
 
-        // Check if a user has an ADMIN role. If not admin, verify if user is a participant in the session
+        // Check if user has ADMIN role. If not admin, verify if user is a participant in the session
         User currentUser = securityUtils.getAuthenticatedUser();
         boolean isAdmin = securityUtils.isAdmin(currentUser);
         boolean isParticipant = session.getSessionParticipants().stream()
@@ -477,7 +383,10 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public PaginationResponse getAllActivitySubmissionHistoryWithQuery(String sessionId, String participantId, Specification<ActivitySubmission> spec, Pageable pageable) {
-        // Validate participant
+        // Validate session and participant
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
+
         SessionParticipant participant = sessionParticipantRepository.findById(participantId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_PARTICIPANT_NOT_FOUND));
 
@@ -518,17 +427,8 @@ public class SessionServiceImpl implements SessionService {
     }
 
     private Session getSessionById(String sessionId) {
-        // Check cache before querying DB
-        SessionCacheDTO cachedSession = sessionRedisCache.getCachedSession(sessionId);
-        if (cachedSession != null) {
-            return sessionCacheMapper.sessionCacheDTOToSession(cachedSession);
-        }
-
-        Session session = sessionRepository.findById(sessionId)
+        return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SESSION_NOT_FOUND));
-        sessionRedisCache.cacheSession(sessionId, sessionCacheMapper.sessionToCacheDTO(session));
-
-        return session;
     }
 
     private String generateUniqueSessionCode() {
