@@ -20,7 +20,7 @@ public enum CollectionBackgroundMusic {
     QUIRKY_CARTOON("Quirky Cartoon", "https://preziq-spring-uploader.s3.amazonaws.com/sounds/system/Quirky-Cartoon---Collection-Background-Music-a61248eb-ee08-4e5c-9e3c-237f2a4d8649.mp3"),
     FUNNY_ADVENTURE("Funny Adventure", "https://preziq-spring-uploader.s3.amazonaws.com/sounds/system/Funny-Adventure---Collection-Background-Music-a5b22b19-a829-4a0c-a846-6ad99fc0e2d6.mp3"),
     SILLY_KIDS("Silly Kids", "https://preziq-spring-uploader.s3.amazonaws.com/sounds/system/Silly-Kids---Collection-Background-Music-d1ca52d7-6d2e-45b6-91be-7f672072b079.mp3"),
-    STITCH("Stitch", "https://preziq-spring-uploader.s3.ap-southeast-1.amazonaws.com/sounds/system/Stitch+-+Collection+Background+Music.mp3"),
+    STITCH("Stitch", "https://preziq-spring-uploader.s3.ap-southeast-1.amazonaws.com/sounds/system/Stitch---Collection-Background-Music-200e4b23-0b67-4be7-82c1-beead3e7aw89.mp3"),
     WHO_ATE_THE_COOKIE("Who Ate The Cookie?", "https://preziq-spring-uploader.s3.amazonaws.com/sounds/system/Who-ate-the-cookie---Collection-Background-Music-aef7f6c9-8ba1-4be3-a198-8c21769ef617.mp3"),
 
     ;
