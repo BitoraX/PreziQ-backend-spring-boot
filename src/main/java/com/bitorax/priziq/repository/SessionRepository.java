@@ -20,4 +20,8 @@ public interface SessionRepository extends JpaRepository<Session, String>, JpaSp
     Optional<String> findSessionCodeBySessionId(@Param("sessionId") String sessionId);
 
     List<Session> findBySessionStatusAndStartTimeBefore(SessionStatus sessionStatus, Instant minus);
+
+    void deleteByCollectionCollectionId(String collectionId);
+
+    List<Session> findByCollectionCollectionId(String collectionId);
 }

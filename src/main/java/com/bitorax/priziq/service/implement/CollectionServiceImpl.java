@@ -1,13 +1,14 @@
 package com.bitorax.priziq.service.implement;
 
 import com.bitorax.priziq.constant.CollectionTopicType;
-import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.domain.Collection;
 import com.bitorax.priziq.domain.User;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.activity.quiz.*;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
+import com.bitorax.priziq.domain.session.Session;
+import com.bitorax.priziq.domain.session.SessionParticipant;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
 import com.bitorax.priziq.dto.request.collection.ActivityReorderRequest;
 import com.bitorax.priziq.dto.request.collection.CreateCollectionRequest;
@@ -21,10 +22,7 @@ import com.bitorax.priziq.dto.response.common.PaginationResponse;
 import com.bitorax.priziq.exception.ApplicationException;
 import com.bitorax.priziq.exception.ErrorCode;
 import com.bitorax.priziq.mapper.CollectionMapper;
-import com.bitorax.priziq.repository.ActivityRepository;
-import com.bitorax.priziq.repository.CollectionRepository;
-import com.bitorax.priziq.repository.QuizRepository;
-import com.bitorax.priziq.repository.UserRepository;
+import com.bitorax.priziq.repository.*;
 import com.bitorax.priziq.service.ActivityService;
 import com.bitorax.priziq.service.CollectionService;
 import com.bitorax.priziq.utils.SecurityUtils;
@@ -32,9 +30,7 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -52,50 +48,12 @@ public class CollectionServiceImpl implements CollectionService {
     CollectionRepository collectionRepository;
     ActivityRepository activityRepository;
     UserRepository userRepository;
-    QuizRepository quizRepository;
+    SessionRepository sessionRepository;
+    ActivitySubmissionRepository activitySubmissionRepository;
+    SessionParticipantRepository sessionParticipantRepository;
     ActivityService activityService;
     CollectionMapper collectionMapper;
     SecurityUtils securityUtils;
-
-    @NonFinal
-    @Value("${priziq.quiz.default.question}")
-    String DEFAULT_QUESTION;
-
-    @NonFinal
-    @Value("${priziq.quiz.choice.option1}")
-    String CHOICE_OPTION1;
-
-    @NonFinal
-    @Value("${priziq.quiz.choice.option2}")
-    String CHOICE_OPTION2;
-
-    @NonFinal
-    @Value("${priziq.quiz.choice.option3}")
-    String CHOICE_OPTION3;
-
-    @NonFinal
-    @Value("${priziq.quiz.choice.option4}")
-    String CHOICE_OPTION4;
-
-    @NonFinal
-    @Value("${priziq.quiz.default.time_limit_seconds}")
-    Integer DEFAULT_TIME_LIMIT_SECONDS;
-
-    @NonFinal
-    @Value("${priziq.quiz.default.point_type}")
-    String DEFAULT_POINT_TYPE;
-
-    @NonFinal
-    @Value("${priziq.quiz.default_activity.title}")
-    String DEFAULT_ACTIVITY_TITLE;
-
-    @NonFinal
-    @Value("${priziq.quiz.default_activity.description}")
-    String DEFAULT_ACTIVITY_DESCRIPTION;
-
-    @NonFinal
-    @Value("${priziq.quiz.default_activity.is_published}")
-    Boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
 
     @Override
     @Transactional
@@ -110,7 +68,7 @@ public class CollectionServiceImpl implements CollectionService {
         Collection savedCollection = collectionRepository.save(collection);
 
         // Create default QUIZ_BUTTONS activity
-        createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
+        activityService.createDefaultQuizButtonsActivity(savedCollection.getCollectionId());
 
         return collectionMapper.collectionToSummaryResponse(savedCollection);
     }
@@ -173,11 +131,29 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Transactional
-    public void deleteCollectionById(String collectionId){
+    public void deleteCollectionById(String collectionId) {
         // Check owner or admin to access and get the current collection
         validateCollectionOwnership(collectionId);
-        Collection currentCollection = this.collectionRepository.findById(collectionId).orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
+        Collection currentCollection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COLLECTION_NOT_FOUND));
 
+        // Delete ActivitySubmissions related to Activities in the Collection
+        List<Activity> activities = currentCollection.getActivities();
+        for (Activity activity : activities) {
+            activitySubmissionRepository.deleteByActivityActivityId(activity.getActivityId());
+        }
+
+        // Delete SessionParticipants and their ActivitySubmissions
+        List<Session> sessions = sessionRepository.findByCollectionCollectionId(collectionId);
+        for (Session session : sessions) {
+            List<SessionParticipant> participants = sessionParticipantRepository.findBySessionSessionId(session.getSessionId());
+            for (SessionParticipant participant : participants) {
+                activitySubmissionRepository.deleteBySessionParticipantSessionParticipantId(participant.getSessionParticipantId());
+            }
+            sessionParticipantRepository.deleteBySessionSessionId(session.getSessionId());
+        }
+
+        sessionRepository.deleteByCollectionCollectionId(collectionId);
         collectionRepository.delete(currentCollection);
     }
 
@@ -359,20 +335,30 @@ public class CollectionServiceImpl implements CollectionService {
             Activity newActivity = activityRepository.findById(activityResponse.getActivityId())
                     .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
-            // Copy quiz if present
+            // Copy quiz if present, reuse existing Quiz if available
             if (sourceActivity.getQuiz() != null) {
                 Quiz sourceQuiz = sourceActivity.getQuiz();
-                Quiz newQuiz = Quiz.builder()
-                        .quizId(newActivity.getActivityId())
-                        .activity(newActivity)
-                        .questionText(sourceQuiz.getQuestionText())
-                        .timeLimitSeconds(sourceQuiz.getTimeLimitSeconds())
-                        .pointType(sourceQuiz.getPointType())
-                        .quizAnswers(new ArrayList<>())
-                        .quizLocationAnswers(new ArrayList<>())
-                        .build();
+                Quiz newQuiz = newActivity.getQuiz(); // Check for existing Quiz
+                if (newQuiz == null) {
+                    // If no Quiz exists, create a new one with initialized lists
+                    newQuiz = Quiz.builder()
+                            .quizId(newActivity.getActivityId())
+                            .activity(newActivity)
+                            .quizAnswers(new ArrayList<>())
+                            .quizLocationAnswers(new ArrayList<>())
+                            .build();
+                    newActivity.setQuiz(newQuiz);
+                }
+                // Update Quiz properties
+                newQuiz.setQuestionText(sourceQuiz.getQuestionText());
+                newQuiz.setTimeLimitSeconds(sourceQuiz.getTimeLimitSeconds());
+                newQuiz.setPointType(sourceQuiz.getPointType());
 
-                // Copy quiz answers
+                // Initialize quizAnswers if null before clearing
+                if (newQuiz.getQuizAnswers() == null) {
+                    newQuiz.setQuizAnswers(new ArrayList<>());
+                }
+                newQuiz.getQuizAnswers().clear();
                 for (QuizAnswer sourceAnswer : sourceQuiz.getQuizAnswers()) {
                     QuizAnswer newAnswer = QuizAnswer.builder()
                             .quiz(newQuiz)
@@ -384,7 +370,11 @@ public class CollectionServiceImpl implements CollectionService {
                     newQuiz.getQuizAnswers().add(newAnswer);
                 }
 
-                // Copy quiz location answers
+                // Initialize quizLocationAnswers if null before clearing
+                if (newQuiz.getQuizLocationAnswers() == null) {
+                    newQuiz.setQuizLocationAnswers(new ArrayList<>());
+                }
+                newQuiz.getQuizLocationAnswers().clear();
                 for (QuizLocationAnswer sourceLocationAnswer : sourceQuiz.getQuizLocationAnswers()) {
                     QuizLocationAnswer newLocationAnswer = QuizLocationAnswer.builder()
                             .quiz(newQuiz)
@@ -395,22 +385,35 @@ public class CollectionServiceImpl implements CollectionService {
                     newQuiz.getQuizLocationAnswers().add(newLocationAnswer);
                 }
 
-                // Copy quiz matching pair answer if present
+                // Copy quiz matching pair answer if present, reuse existing if available
                 if (sourceQuiz.getQuizMatchingPairAnswer() != null) {
                     QuizMatchingPairAnswer sourceMatchingPairAnswer = sourceQuiz.getQuizMatchingPairAnswer();
-                    // Create a new QuizMatchingPairAnswer with copied column names
-                    QuizMatchingPairAnswer newMatchingPairAnswer = QuizMatchingPairAnswer.builder()
-                            .quiz(newQuiz)
-                            .leftColumnName(sourceMatchingPairAnswer.getLeftColumnName())
-                            .rightColumnName(sourceMatchingPairAnswer.getRightColumnName())
-                            .items(new ArrayList<>())
-                            .connections(new ArrayList<>())
-                            .build();
+                    QuizMatchingPairAnswer newMatchingPairAnswer = newQuiz.getQuizMatchingPairAnswer();
+                    if (newMatchingPairAnswer == null) {
+                        newMatchingPairAnswer = QuizMatchingPairAnswer.builder()
+                                .quiz(newQuiz)
+                                .quizMatchingPairAnswerId(newQuiz.getQuizId()) // Ensure ID matches Quiz
+                                .items(new ArrayList<>())
+                                .connections(new ArrayList<>())
+                                .build();
+                        newQuiz.setQuizMatchingPairAnswer(newMatchingPairAnswer);
+                    }
+                    // Update properties
+                    newMatchingPairAnswer.setLeftColumnName(sourceMatchingPairAnswer.getLeftColumnName());
+                    newMatchingPairAnswer.setRightColumnName(sourceMatchingPairAnswer.getRightColumnName());
 
-                    // Map to track old item IDs to new items for connection copying
+                    // Initialize items and connections if null before clearing
+                    if (newMatchingPairAnswer.getItems() == null) {
+                        newMatchingPairAnswer.setItems(new ArrayList<>());
+                    }
+                    if (newMatchingPairAnswer.getConnections() == null) {
+                        newMatchingPairAnswer.setConnections(new ArrayList<>());
+                    }
+                    newMatchingPairAnswer.getItems().clear();
+                    newMatchingPairAnswer.getConnections().clear();
+
+                    // Copy items and create an item map for connections
                     Map<String, QuizMatchingPairItem> itemMap = new HashMap<>();
-
-                    // Copy all QuizMatchingPairItems
                     for (QuizMatchingPairItem sourceItem : sourceMatchingPairAnswer.getItems()) {
                         QuizMatchingPairItem newItem = QuizMatchingPairItem.builder()
                                 .quizMatchingPairAnswer(newMatchingPairAnswer)
@@ -422,7 +425,7 @@ public class CollectionServiceImpl implements CollectionService {
                         itemMap.put(sourceItem.getQuizMatchingPairItemId(), newItem);
                     }
 
-                    // Copy all QuizMatchingPairConnections using the item map
+                    // Copy connections
                     for (QuizMatchingPairConnection sourceConnection : sourceMatchingPairAnswer.getConnections()) {
                         QuizMatchingPairItem newLeftItem = itemMap.get(sourceConnection.getLeftItem().getQuizMatchingPairItemId());
                         QuizMatchingPairItem newRightItem = itemMap.get(sourceConnection.getRightItem().getQuizMatchingPairItemId());
@@ -435,28 +438,41 @@ public class CollectionServiceImpl implements CollectionService {
                             newMatchingPairAnswer.getConnections().add(newConnection);
                         }
                     }
-
-                    // Set the new matching pair answer to the quiz
-                    newQuiz.setQuizMatchingPairAnswer(newMatchingPairAnswer);
+                } else {
+                    // Remove QuizMatchingPairAnswer if a source doesn't have it
+                    if (newQuiz.getQuizMatchingPairAnswer() != null) {
+                        newQuiz.setQuizMatchingPairAnswer(null);
+                    }
                 }
-
-                newActivity.setQuiz(newQuiz);
-                quizRepository.save(newQuiz);
+            } else {
+                // Remove Quiz if a source doesn't have it
+                if (newActivity.getQuiz() != null) {
+                    newActivity.setQuiz(null);
+                }
             }
 
-            // Copy slide if present
+            // Copy slide if present, reuse existing Slide if available
             if (sourceActivity.getSlide() != null) {
                 Slide sourceSlide = sourceActivity.getSlide();
-                Slide newSlide = Slide.builder()
-                        .slideId(newActivity.getActivityId())
-                        .activity(newActivity)
-                        .transitionEffect(sourceSlide.getTransitionEffect())
-                        .transitionDuration(sourceSlide.getTransitionDuration())
-                        .autoAdvanceSeconds(sourceSlide.getAutoAdvanceSeconds())
-                        .slideElements(new ArrayList<>())
-                        .build();
+                Slide newSlide = newActivity.getSlide(); // Check for existing Slide
+                if (newSlide == null) {
+                    newSlide = Slide.builder()
+                            .slideId(newActivity.getActivityId())
+                            .activity(newActivity)
+                            .slideElements(new ArrayList<>())
+                            .build();
+                    newActivity.setSlide(newSlide);
+                }
+                // Update Slide properties
+                newSlide.setTransitionEffect(sourceSlide.getTransitionEffect());
+                newSlide.setTransitionDuration(sourceSlide.getTransitionDuration());
+                newSlide.setAutoAdvanceSeconds(sourceSlide.getAutoAdvanceSeconds());
 
-                // Copy slide elements
+                // Initialize slideElements if null before clearing
+                if (newSlide.getSlideElements() == null) {
+                    newSlide.setSlideElements(new ArrayList<>());
+                }
+                newSlide.getSlideElements().clear();
                 for (SlideElement sourceElement : sourceSlide.getSlideElements()) {
                     SlideElement newElement = SlideElement.builder()
                             .slide(newSlide)
@@ -478,15 +494,19 @@ public class CollectionServiceImpl implements CollectionService {
                             .build();
                     newSlide.getSlideElements().add(newElement);
                 }
-
-                newActivity.setSlide(newSlide);
-                activityRepository.save(newActivity);
+            } else {
+                // Remove Slide if a source doesn't have it
+                if (newActivity.getSlide() != null) {
+                    newActivity.setSlide(null);
+                }
             }
 
             // Set orderIndex and other activity properties
             newActivity.setOrderIndex(sourceActivity.getOrderIndex());
             newActivity.setBackgroundColor(sourceActivity.getBackgroundColor());
             newActivity.setBackgroundImage(sourceActivity.getBackgroundImage());
+
+            // Save the activity once to persist all changes via cascading
             activityRepository.save(newActivity);
         }
 
@@ -512,61 +532,6 @@ public class CollectionServiceImpl implements CollectionService {
         return ids.stream()
                 .filter(id -> !seen.add(id))
                 .collect(Collectors.toSet());
-    }
-
-    private void createDefaultQuizButtonsActivity(String collectionId) {
-        CreateActivityRequest request = CreateActivityRequest.builder()
-                .collectionId(collectionId)
-                .activityType("QUIZ_BUTTONS")
-                .title(DEFAULT_ACTIVITY_TITLE)
-                .description(DEFAULT_ACTIVITY_DESCRIPTION)
-                .isPublished(DEFAULT_ACTIVITY_IS_PUBLISHED)
-                .build();
-
-        ActivitySummaryResponse activityResponse = activityService.createActivity(request);
-
-        Activity activity = activityRepository.findById(activityResponse.getActivityId())
-                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
-
-        Quiz defaultQuiz = Quiz.builder()
-                .quizId(activity.getActivityId())
-                .activity(activity)
-                .questionText(DEFAULT_QUESTION)
-                .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
-                .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
-                .quizAnswers(new ArrayList<>())
-                .build();
-
-        List<QuizAnswer> defaultAnswers = new ArrayList<>();
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION1)
-                .isCorrect(true)
-                .orderIndex(0)
-                .build());
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION2)
-                .isCorrect(false)
-                .orderIndex(1)
-                .build());
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION3)
-                .isCorrect(false)
-                .orderIndex(2)
-                .build());
-        defaultAnswers.add(QuizAnswer.builder()
-                .quiz(defaultQuiz)
-                .answerText(CHOICE_OPTION4)
-                .isCorrect(false)
-                .orderIndex(3)
-                .build());
-
-        defaultQuiz.setQuizAnswers(defaultAnswers);
-        activity.setQuiz(defaultQuiz);
-
-        quizRepository.save(defaultQuiz);
     }
 
     private CollectionSummaryResponse mapToSummaryResponseWithTotalActivities(Collection collection) {

@@ -5,10 +5,7 @@ import com.bitorax.priziq.constant.PointType;
 import com.bitorax.priziq.constant.SlideElementType;
 import com.bitorax.priziq.domain.activity.Activity;
 import com.bitorax.priziq.domain.Collection;
-import com.bitorax.priziq.domain.activity.quiz.Quiz;
-import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairAnswer;
-import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairConnection;
-import com.bitorax.priziq.domain.activity.quiz.QuizMatchingPairItem;
+import com.bitorax.priziq.domain.activity.quiz.*;
 import com.bitorax.priziq.domain.activity.slide.Slide;
 import com.bitorax.priziq.domain.activity.slide.SlideElement;
 import com.bitorax.priziq.dto.request.activity.CreateActivityRequest;
@@ -41,6 +38,7 @@ import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -57,20 +55,21 @@ public class ActivityServiceImpl implements ActivityService {
     SlideElementRepository slideElementRepository;
     QuizMatchingPairItemRepository quizMatchingPairItemRepository;
     QuizMatchingPairConnectionRepository quizMatchingPairConnectionRepository;
+    ActivitySubmissionRepository activitySubmissionRepository;
     ActivityMapper activityMapper;
     ActivityUtils activityUtils;
 
-    @NonFinal
-    @Value("${priziq.quiz.default.time_limit_seconds}")
-    Integer DEFAULT_TIME_LIMIT_SECONDS;
-
-    @NonFinal
-    @Value("${priziq.quiz.default.point_type}")
-    String DEFAULT_POINT_TYPE;
-
-    @NonFinal
-    @Value("${priziq.quiz.matching_pairs.default_question}")
-    String DEFAULT_MATCHING_PAIRS_QUESTION;
+    @NonFinal @Value("${priziq.quiz.default.time_limit_seconds}") Integer DEFAULT_TIME_LIMIT_SECONDS;
+    @NonFinal @Value("${priziq.quiz.default.point_type}") String DEFAULT_POINT_TYPE;
+    @NonFinal @Value("${priziq.quiz.matching_pairs.default_question}") String DEFAULT_MATCHING_PAIRS_QUESTION;
+    @NonFinal @Value("${priziq.quiz.default.question}") String DEFAULT_QUESTION;
+    @NonFinal @Value("${priziq.quiz.choice.option1}") String CHOICE_OPTION1;
+    @NonFinal @Value("${priziq.quiz.choice.option2}") String CHOICE_OPTION2;
+    @NonFinal @Value("${priziq.quiz.choice.option3}") String CHOICE_OPTION3;
+    @NonFinal @Value("${priziq.quiz.choice.option4}") String CHOICE_OPTION4;
+    @NonFinal @Value("${priziq.quiz.default_activity.title}") String DEFAULT_ACTIVITY_TITLE;
+    @NonFinal @Value("${priziq.quiz.default_activity.description}") String DEFAULT_ACTIVITY_DESCRIPTION;
+    @NonFinal @Value("${priziq.quiz.default_activity.is_published}") Boolean DEFAULT_ACTIVITY_IS_PUBLISHED;
 
     private static final Set<String> VALID_QUIZ_TYPES = Set.of("CHOICE", "REORDER", "TYPE_ANSWER", "TRUE_FALSE", "LOCATION", "MATCHING_PAIRS");
 
@@ -212,13 +211,7 @@ public class ActivityServiceImpl implements ActivityService {
     public void deleteActivity(String activityId) {
         activityUtils.validateActivityOwnership(activityId);
         Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
-
-        if (activity.getActivityType().name().startsWith("QUIZ_")) {
-            quizRepository.findById(activityId).ifPresent(quizRepository::delete);
-        } else if (activity.getActivityType() == ActivityType.INFO_SLIDE) {
-            slideRepository.findById(activityId).ifPresent(slideRepository::delete);
-        }
-
+        activitySubmissionRepository.deleteByActivityActivityId(activityId);
         activityRepository.delete(activity);
     }
 
@@ -572,5 +565,61 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         return Pair.of(quiz, item);
+    }
+
+    @Transactional
+    public void createDefaultQuizButtonsActivity(String collectionId) {
+        CreateActivityRequest request = CreateActivityRequest.builder()
+                .collectionId(collectionId)
+                .activityType("QUIZ_BUTTONS")
+                .title(DEFAULT_ACTIVITY_TITLE)
+                .description(DEFAULT_ACTIVITY_DESCRIPTION)
+                .isPublished(DEFAULT_ACTIVITY_IS_PUBLISHED)
+                .build();
+
+        ActivitySummaryResponse activityResponse = createActivity(request);
+
+        Activity activity = activityRepository.findById(activityResponse.getActivityId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
+
+        Quiz defaultQuiz = Quiz.builder()
+                .quizId(activity.getActivityId())
+                .activity(activity)
+                .questionText(DEFAULT_QUESTION)
+                .timeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS)
+                .pointType(PointType.valueOf(DEFAULT_POINT_TYPE))
+                .quizAnswers(new ArrayList<>())
+                .build();
+
+        List<QuizAnswer> defaultAnswers = new ArrayList<>();
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION1)
+                .isCorrect(true)
+                .orderIndex(0)
+                .build());
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION2)
+                .isCorrect(false)
+                .orderIndex(1)
+                .build());
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION3)
+                .isCorrect(false)
+                .orderIndex(2)
+                .build());
+        defaultAnswers.add(QuizAnswer.builder()
+                .quiz(defaultQuiz)
+                .answerText(CHOICE_OPTION4)
+                .isCorrect(false)
+                .orderIndex(3)
+                .build());
+
+        defaultQuiz.setQuizAnswers(defaultAnswers);
+        activity.setQuiz(defaultQuiz);
+
+        quizRepository.save(defaultQuiz);
     }
 }
