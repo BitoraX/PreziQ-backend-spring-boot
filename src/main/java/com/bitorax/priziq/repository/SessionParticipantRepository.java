@@ -22,4 +22,8 @@ public interface SessionParticipantRepository extends JpaRepository<SessionParti
     List<SessionParticipant> findBySession_SessionCodeAndIsConnectedTrue(String sessionCode);
 
     void deleteBySession_SessionIdIn(List<String> sessionIds);
+
+    void deleteBySessionSessionId(String sessionId);
+
+    List<SessionParticipant> findBySessionSessionId(String sessionId);
 }

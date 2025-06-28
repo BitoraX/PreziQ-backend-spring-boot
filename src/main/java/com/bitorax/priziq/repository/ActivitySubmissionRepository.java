@@ -13,5 +13,7 @@ public interface ActivitySubmissionRepository extends JpaRepository<ActivitySubm
 
     List<ActivitySubmission> findBySessionParticipant_SessionParticipantId(String participantId);
 
-    List<ActivitySubmission> findBySessionParticipant_Session_SessionId(String sessionId);
+    void deleteByActivityActivityId(String activityId);
+
+    void deleteBySessionParticipantSessionParticipantId(String sessionParticipantId);
 }
