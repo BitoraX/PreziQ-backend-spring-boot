@@ -45,4 +45,6 @@ public interface ActivityService {
     QuizMatchingPairConnectionResponse addMatchingPairConnection(String quizId, CreateMatchingPairConnectionRequest request);
 
     void deleteMatchingPairConnection(String quizId, String connectionId);
+
+    public void createDefaultQuizButtonsActivity(String collectionId);
 }
