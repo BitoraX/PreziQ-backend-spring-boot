@@ -359,20 +359,30 @@ public class CollectionServiceImpl implements CollectionService {
             Activity newActivity = activityRepository.findById(activityResponse.getActivityId())
                     .orElseThrow(() -> new ApplicationException(ErrorCode.ACTIVITY_NOT_FOUND));
 
-            // Copy quiz if present
+            // Copy quiz if present, reuse existing Quiz if available
             if (sourceActivity.getQuiz() != null) {
                 Quiz sourceQuiz = sourceActivity.getQuiz();
-                Quiz newQuiz = Quiz.builder()
-                        .quizId(newActivity.getActivityId())
-                        .activity(newActivity)
-                        .questionText(sourceQuiz.getQuestionText())
-                        .timeLimitSeconds(sourceQuiz.getTimeLimitSeconds())
-                        .pointType(sourceQuiz.getPointType())
-                        .quizAnswers(new ArrayList<>())
-                        .quizLocationAnswers(new ArrayList<>())
-                        .build();
+                Quiz newQuiz = newActivity.getQuiz(); // Check for existing Quiz
+                if (newQuiz == null) {
+                    // If no Quiz exists, create a new one with initialized lists
+                    newQuiz = Quiz.builder()
+                            .quizId(newActivity.getActivityId())
+                            .activity(newActivity)
+                            .quizAnswers(new ArrayList<>())
+                            .quizLocationAnswers(new ArrayList<>())
+                            .build();
+                    newActivity.setQuiz(newQuiz);
+                }
+                // Update Quiz properties
+                newQuiz.setQuestionText(sourceQuiz.getQuestionText());
+                newQuiz.setTimeLimitSeconds(sourceQuiz.getTimeLimitSeconds());
+                newQuiz.setPointType(sourceQuiz.getPointType());
 
-                // Copy quiz answers
+                // Initialize quizAnswers if null before clearing
+                if (newQuiz.getQuizAnswers() == null) {
+                    newQuiz.setQuizAnswers(new ArrayList<>());
+                }
+                newQuiz.getQuizAnswers().clear();
                 for (QuizAnswer sourceAnswer : sourceQuiz.getQuizAnswers()) {
                     QuizAnswer newAnswer = QuizAnswer.builder()
                             .quiz(newQuiz)
@@ -384,7 +394,11 @@ public class CollectionServiceImpl implements CollectionService {
                     newQuiz.getQuizAnswers().add(newAnswer);
                 }
 
-                // Copy quiz location answers
+                // Initialize quizLocationAnswers if null before clearing
+                if (newQuiz.getQuizLocationAnswers() == null) {
+                    newQuiz.setQuizLocationAnswers(new ArrayList<>());
+                }
+                newQuiz.getQuizLocationAnswers().clear();
                 for (QuizLocationAnswer sourceLocationAnswer : sourceQuiz.getQuizLocationAnswers()) {
                     QuizLocationAnswer newLocationAnswer = QuizLocationAnswer.builder()
                             .quiz(newQuiz)
@@ -395,22 +409,35 @@ public class CollectionServiceImpl implements CollectionService {
                     newQuiz.getQuizLocationAnswers().add(newLocationAnswer);
                 }
 
-                // Copy quiz matching pair answer if present
+                // Copy quiz matching pair answer if present, reuse existing if available
                 if (sourceQuiz.getQuizMatchingPairAnswer() != null) {
                     QuizMatchingPairAnswer sourceMatchingPairAnswer = sourceQuiz.getQuizMatchingPairAnswer();
-                    // Create a new QuizMatchingPairAnswer with copied column names
-                    QuizMatchingPairAnswer newMatchingPairAnswer = QuizMatchingPairAnswer.builder()
-                            .quiz(newQuiz)
-                            .leftColumnName(sourceMatchingPairAnswer.getLeftColumnName())
-                            .rightColumnName(sourceMatchingPairAnswer.getRightColumnName())
-                            .items(new ArrayList<>())
-                            .connections(new ArrayList<>())
-                            .build();
+                    QuizMatchingPairAnswer newMatchingPairAnswer = newQuiz.getQuizMatchingPairAnswer();
+                    if (newMatchingPairAnswer == null) {
+                        newMatchingPairAnswer = QuizMatchingPairAnswer.builder()
+                                .quiz(newQuiz)
+                                .quizMatchingPairAnswerId(newQuiz.getQuizId()) // Ensure ID matches Quiz
+                                .items(new ArrayList<>())
+                                .connections(new ArrayList<>())
+                                .build();
+                        newQuiz.setQuizMatchingPairAnswer(newMatchingPairAnswer);
+                    }
+                    // Update properties
+                    newMatchingPairAnswer.setLeftColumnName(sourceMatchingPairAnswer.getLeftColumnName());
+                    newMatchingPairAnswer.setRightColumnName(sourceMatchingPairAnswer.getRightColumnName());
 
-                    // Map to track old item IDs to new items for connection copying
+                    // Initialize items and connections if null before clearing
+                    if (newMatchingPairAnswer.getItems() == null) {
+                        newMatchingPairAnswer.setItems(new ArrayList<>());
+                    }
+                    if (newMatchingPairAnswer.getConnections() == null) {
+                        newMatchingPairAnswer.setConnections(new ArrayList<>());
+                    }
+                    newMatchingPairAnswer.getItems().clear();
+                    newMatchingPairAnswer.getConnections().clear();
+
+                    // Copy items and create an item map for connections
                     Map<String, QuizMatchingPairItem> itemMap = new HashMap<>();
-
-                    // Copy all QuizMatchingPairItems
                     for (QuizMatchingPairItem sourceItem : sourceMatchingPairAnswer.getItems()) {
                         QuizMatchingPairItem newItem = QuizMatchingPairItem.builder()
                                 .quizMatchingPairAnswer(newMatchingPairAnswer)
@@ -422,7 +449,7 @@ public class CollectionServiceImpl implements CollectionService {
                         itemMap.put(sourceItem.getQuizMatchingPairItemId(), newItem);
                     }
 
-                    // Copy all QuizMatchingPairConnections using the item map
+                    // Copy connections
                     for (QuizMatchingPairConnection sourceConnection : sourceMatchingPairAnswer.getConnections()) {
                         QuizMatchingPairItem newLeftItem = itemMap.get(sourceConnection.getLeftItem().getQuizMatchingPairItemId());
                         QuizMatchingPairItem newRightItem = itemMap.get(sourceConnection.getRightItem().getQuizMatchingPairItemId());
@@ -435,28 +462,41 @@ public class CollectionServiceImpl implements CollectionService {
                             newMatchingPairAnswer.getConnections().add(newConnection);
                         }
                     }
-
-                    // Set the new matching pair answer to the quiz
-                    newQuiz.setQuizMatchingPairAnswer(newMatchingPairAnswer);
+                } else {
+                    // Remove QuizMatchingPairAnswer if a source doesn't have it
+                    if (newQuiz.getQuizMatchingPairAnswer() != null) {
+                        newQuiz.setQuizMatchingPairAnswer(null);
+                    }
                 }
-
-                newActivity.setQuiz(newQuiz);
-                quizRepository.save(newQuiz);
+            } else {
+                // Remove Quiz if a source doesn't have it
+                if (newActivity.getQuiz() != null) {
+                    newActivity.setQuiz(null);
+                }
             }
 
-            // Copy slide if present
+            // Copy slide if present, reuse existing Slide if available
             if (sourceActivity.getSlide() != null) {
                 Slide sourceSlide = sourceActivity.getSlide();
-                Slide newSlide = Slide.builder()
-                        .slideId(newActivity.getActivityId())
-                        .activity(newActivity)
-                        .transitionEffect(sourceSlide.getTransitionEffect())
-                        .transitionDuration(sourceSlide.getTransitionDuration())
-                        .autoAdvanceSeconds(sourceSlide.getAutoAdvanceSeconds())
-                        .slideElements(new ArrayList<>())
-                        .build();
+                Slide newSlide = newActivity.getSlide(); // Check for existing Slide
+                if (newSlide == null) {
+                    newSlide = Slide.builder()
+                            .slideId(newActivity.getActivityId())
+                            .activity(newActivity)
+                            .slideElements(new ArrayList<>())
+                            .build();
+                    newActivity.setSlide(newSlide);
+                }
+                // Update Slide properties
+                newSlide.setTransitionEffect(sourceSlide.getTransitionEffect());
+                newSlide.setTransitionDuration(sourceSlide.getTransitionDuration());
+                newSlide.setAutoAdvanceSeconds(sourceSlide.getAutoAdvanceSeconds());
 
-                // Copy slide elements
+                // Initialize slideElements if null before clearing
+                if (newSlide.getSlideElements() == null) {
+                    newSlide.setSlideElements(new ArrayList<>());
+                }
+                newSlide.getSlideElements().clear();
                 for (SlideElement sourceElement : sourceSlide.getSlideElements()) {
                     SlideElement newElement = SlideElement.builder()
                             .slide(newSlide)
@@ -478,15 +518,19 @@ public class CollectionServiceImpl implements CollectionService {
                             .build();
                     newSlide.getSlideElements().add(newElement);
                 }
-
-                newActivity.setSlide(newSlide);
-                activityRepository.save(newActivity);
+            } else {
+                // Remove Slide if a source doesn't have it
+                if (newActivity.getSlide() != null) {
+                    newActivity.setSlide(null);
+                }
             }
 
             // Set orderIndex and other activity properties
             newActivity.setOrderIndex(sourceActivity.getOrderIndex());
             newActivity.setBackgroundColor(sourceActivity.getBackgroundColor());
             newActivity.setBackgroundImage(sourceActivity.getBackgroundImage());
+
+            // Save the activity once to persist all changes via cascading
             activityRepository.save(newActivity);
         }
 
