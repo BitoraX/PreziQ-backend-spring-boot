@@ -140,11 +140,7 @@ public class CollectionServiceImpl implements CollectionService {
 
         // Calculate total activities in collections
         List<CollectionSummaryResponse> responses = collectionPage.getContent().stream()
-                .map(collection -> {
-                    CollectionSummaryResponse dto = collectionMapper.collectionToSummaryResponse(collection);
-                    dto.setTotalActivities(collection.getActivities().size());
-                    return dto;
-                })
+                .map(this::mapToSummaryResponseWithTotalActivities)
                 .toList();
 
         return PaginationResponse.builder()
@@ -280,7 +276,7 @@ public class CollectionServiceImpl implements CollectionService {
                     Collection collection = (Collection) result[1];
                     // Group all isPublished = true into a PUBLISH and base topic
                     String groupKey = CollectionTopicType.PUBLISH.name(); // Always add to PUBLISH
-                    CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+                    CollectionSummaryResponse summary = mapToSummaryResponseWithTotalActivities(collection);
                     return new AbstractMap.SimpleEntry<>(groupKey, summary);
                 })
                 .collect(Collectors.groupingBy(
@@ -293,7 +289,7 @@ public class CollectionServiceImpl implements CollectionService {
                 .map(result -> {
                     Collection collection = (Collection) result[1];
                     String groupKey = ((CollectionTopicType) result[0]).name(); // Group by base topic
-                    CollectionSummaryResponse summary = collectionMapper.collectionToSummaryResponse(collection);
+                    CollectionSummaryResponse summary = mapToSummaryResponseWithTotalActivities(collection);
                     return new AbstractMap.SimpleEntry<>(groupKey, summary);
                 })
                 .collect(Collectors.groupingBy(
@@ -571,5 +567,11 @@ public class CollectionServiceImpl implements CollectionService {
         activity.setQuiz(defaultQuiz);
 
         quizRepository.save(defaultQuiz);
+    }
+
+    private CollectionSummaryResponse mapToSummaryResponseWithTotalActivities(Collection collection) {
+        CollectionSummaryResponse dto = collectionMapper.collectionToSummaryResponse(collection);
+        dto.setTotalActivities(collection.getActivities().size());
+        return dto;
     }
 }
