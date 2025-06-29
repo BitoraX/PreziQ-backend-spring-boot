@@ -1,0 +1,7 @@
+.git
+.gitignore
+target/
+*.md
+*.log
+dockerfiles/* Dockerfile* Dockerfile.nginx
+nginx/* nginx.conf
