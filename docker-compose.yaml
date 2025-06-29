@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  backend:
+    image: thuanflu/preziq-backend:latest
+    container_name: preziq-backend
+    env_file:
+      - .env
+    networks:
+      - preziq-network
+    expose:
+      - 8080
+
+  nginx:
+    image: thuanflu/preziq-nginx:latest
+    container_name: preziq-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+    networks:
+      - preziq-network
+
+networks:
+  preziq-network:
+    driver: bridge
