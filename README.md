@@ -1,4 +1,4 @@
-# ** PreziQ! - Nền tảng học tập tương tác theo mô hình Game-Based Learning **
+# PreziQ! - Nền tảng học tập tương tác theo mô hình Game-Based Learning
 
 Ứng dụng Java Spring Boot kết hợp PostgreSQL, Maven, STOMP, Docker,...
 
@@ -6,7 +6,7 @@
 
 ## **Yêu cầu hệ thống**
 
-Trước khi chạy dự án, hãy đảm bảo bạn đã cài đặt các công cụ sau:
+Trước khi chạy dự án, hãy đảm bảo bạn đã cài đặt các công cụ sau:   
 
 1. **Java Development Kit (JDK)**
    - Phiên bản: 21 hoặc cao hơn
